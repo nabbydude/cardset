@@ -1,0 +1,22 @@
+<div class="card_editor">
+	<img class="frame" src="/assets/card/red.jpg"/>
+	<div class="name_line">
+		<div class="name" contenteditable="true" data-field="name"><br/></div>
+		<div class="cost" contenteditable="true" data-field="cost"><br/></div>
+	</div>
+
+	<div class="type_line">
+		<div class="type" contenteditable="true" data-field="type"></div>
+		<div class="set_symbol"></div>
+	</div>
+	<div class="text_box">
+		<div class="rules_text" contenteditable="true" data-field="rules_text"><p><br/></p></div><!-- no whitespace since this is pre-wrap -->
+		<div class="visual_box"></div><!-- placed above rules_text with css grid, markup is down here for css `+` selector compat -->
+		<hr class="flavor_bar"/>
+		<div class="flavor_text" contenteditable="true" data-field="flavor_text"><p><br/></p></div><!-- no whitespace since this is pre-wrap -->
+		<div class="visual_box"></div>
+	</div>
+	<img class="pt_box" src="/assets/red_pt.png"/>
+	<div class="pt" contenteditable="true" data-field="pt"></div>
+	<!-- <img class="tester" src="/assets/test_card.png"/> -->
+</div>

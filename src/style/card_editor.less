@@ -1,0 +1,207 @@
+@import "./colors.less";
+
+div.card_editor {
+	--title-color: #000;
+	--text-color: #000;
+	--hover-color: rgba(0 255 255 / 0.5);
+	--flavor-bar-color: rgba(23 23 23 / 0.26);
+	--flavor-bar-gradient: linear-gradient(90deg, transparent 0%, var(--flavor-bar-color) 10% 90%, transparent 100%);
+	color: var(--text-color);
+
+
+	width: 375px;
+	height: 523px;
+	position: relative;
+
+	img.frame {
+		position: absolute;
+		width: 375px;
+		height: 523px;
+		border-radius: 16px;
+	}
+
+	img.tester {
+		position: absolute;
+		width: 375px;
+		height: 523px;
+		border-radius: 16px;
+		opacity: 0.2;
+		pointer-events: none;
+	}
+
+	div.name_line {
+		position: absolute;
+		left:   22px;
+		top:    25px;
+		right:  22px;
+		height: 32px;
+		box-sizing: border-box;
+		display: grid;
+		grid-template-columns: 1fr auto;
+		color: var(--title-color);
+		>.name {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 2px 0px 4px 10px;
+			font: bold 16pt "Beleren";
+			-webkit-text-stroke: var(--title-color) 0.2px;
+		}
+		>.cost {
+			min-width: 40px;
+			padding: 4px 5.6px 5px 2px;
+			text-align: right;
+		}
+		>:first-child {
+			border-top-left-radius: 7px 50%;
+			border-bottom-left-radius: 7px 50%;
+		}
+		>:last-child {
+			border-top-right-radius: 7px 50%;
+			border-bottom-right-radius: 7px 50%;
+		}
+		div.cost {
+			font: 14pt "MPlantin";
+		}
+	}
+
+	div.type_line {
+		position: absolute;
+		left:   22px;
+		top:    294px;
+		right:  22px;
+		height: 30px;
+		box-sizing: border-box;
+		display: grid;
+		grid-template-columns: 1fr auto;
+		color: var(--title-color);
+		>.type {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 4px 10px 4px 10px;
+			font: bold 13pt "Beleren";
+			-webkit-text-stroke: var(--title-color) 0.2px;
+		}
+		>.set_symbol {
+			min-width: 32px;
+		}
+		>:first-child {
+			border-top-left-radius: 6px 50%;
+			border-bottom-left-radius: 6px 50%;
+		}
+		>:last-child {
+			border-top-right-radius: 6px 50%;
+			border-bottom-right-radius: 6px 50%;
+		}
+	}
+	div[contenteditable="true"] {
+		&:hover {
+			background-color: var(--hover-color);
+			// outline: 2px solid rgba(127 127 127 / 0.5);
+		}
+		&:focus {
+			background-color: transparent;
+			outline-offset: -1px;
+			outline: 2px solid var(--focused-outline-color);
+		}
+	}
+	div.text_box {
+		position: absolute;
+		left: 28px;
+		top: 327px;
+		right: 29px;
+		bottom: 40px;
+		margin: 0;
+		padding-bottom: 4px;
+		box-sizing: border-box;
+		display: grid;
+		grid-template-rows: 1fr auto auto 1fr;
+		// grid-template-rows: 1fr repeat(auto-fit, auto) 1fr;
+		align-content: center;
+		font: 14pt "MPlantin";
+		color: var(--text-color);
+		line-height: 1.05;
+
+		>div[contenteditable="true"] {
+			z-index: 10;
+			padding: 0.4em 6px 0.4em 7px;
+			min-height: 0;
+			white-space: pre-wrap;
+			&:hover {
+				background-color: transparent;
+				+ .visual_box {
+					background-color: var(--hover-color);
+				}
+			}
+			&:focus {
+				outline: none;
+				// border: 2px solid var(--focused-outline-color);
+				// padding: calc(0.25em - 2px) 4px;
+				+ .visual_box {
+					outline-offset: -1px;
+					outline: 2px solid var(--focused-outline-color);
+					background-color: transparent;
+				}
+				.atom {
+					background-color: var(--faded-grey);
+				}
+			}
+		}
+
+		p {
+			margin: 0 0 0.5em;
+			&:last-child {
+				margin: 0;
+			}
+		}
+		>.visual_box {
+			cursor: text;
+			&:hover {
+				background-color: var(--hover-color);
+			}
+			&:focus-within {
+				border-top: none;
+				padding-top: 0.25em;
+			}
+		}
+		>div.rules_text {
+			grid-area: 2 / 1 / 3 / 2;
+			+ .visual_box {
+				grid-area: 1 / 1 / 3 / 2;
+			}
+		}
+		>div.flavor_text {
+			grid-area: 3 / 1 / 4 / 2;
+			font-style: italic;
+			+ .visual_box {
+				grid-area: 3 / 1 / 5 / 2;
+				margin-bottom: -4px;
+			}
+		}
+		>hr.flavor_bar {
+			grid-area: 3 / 1 / 3 / 2;
+			margin: 0 12px -1px;
+			height: 1px;
+			background-image: var(--flavor-bar-gradient);
+			border: none;
+		}
+	}
+	img.pt_box {
+		position: absolute;
+		right:  21px;
+		bottom: 15px;
+		width:  81px;
+		height: 42px;
+	}
+	div.pt {
+		position: absolute;
+		right:  25px;
+		bottom: 27px;
+		width:  67px;
+		height: 27px;
+		border-radius: 5px / 50%;
+		box-sizing: border-box;
+		padding-top: 1px;
+		font: bold 16pt "Beleren";
+		text-align: center;
+	}
+}

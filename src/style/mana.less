@@ -1,0 +1,23 @@
+html {
+	--generic-mana-color: #cbc6c1;
+}
+
+span.mana {
+	display: inline-block;
+	background-color: var(--generic-mana-color);
+	width: 17px;
+	height: 17px;
+	text-align: center;
+	margin: 1.5px;
+	padding-right: 0.5px;
+	box-sizing: border-box;
+	border-radius: 50% 50%;
+	box-shadow: -0.4px 1.5px black;
+	line-height: 1;
+
+	user-select: all;
+
+	&.generic {
+		background-color: var(--generic-mana-color);
+	}
+}

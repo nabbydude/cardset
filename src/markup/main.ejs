@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<link rel="stylesheet" href="/src/style/main.less">
+		<title>Makard</title>
+	</head>
+	<body>
+		<template class="card_editor"><%- include("./card_editor") %></template>
+		<template class="frame_select_menu"><%- include("./frame_select_menu") %></template>
+		<div id="header">
+			<h1>Makard</h1>
+		</div>
+		<div id="main">
+			<%- include("./card_editor") %>
+			<%- include("./card_list") %>
+		</div>
+		<div id="test_editor" contenteditable="true">
+		</div>
+		<div id="popup_container" style="display: none;">
+		</div>
+		<div id="tooltip" role="tooltip" style="display: none;">
+		</div>
+		<script type="module" src="/src/script/main.ts"></script>
+	</body>
+</html>

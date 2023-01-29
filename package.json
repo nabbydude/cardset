@@ -1,0 +1,32 @@
+{
+  "name": "makard",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "dev": "parcel"
+  },
+  "targets": {
+    "i_cant_call_this_main_or_browser_the_two_most_sensible_names_or_it_uses_shitty_arcane_defaults_that_break_everything_so_i_guess_its_called_this": {
+      "source": "src/markup/main.ejs",
+      "distDir": "dist"
+    }
+  },
+  "devDependencies": {
+    "@parcel/resolver-glob": "^2.6.2",
+    "@parcel/transformer-less": "^2.6.2",
+    "@types/eslint": "^8",
+    "@typescript-eslint/eslint-plugin": "^5.29.0",
+    "@typescript-eslint/parser": "^5.29.0",
+    "ejs": "^3.1.7",
+    "eslint": "^8.18.0",
+    "parcel": "^2.6.2",
+    "parcel-transformer-ejs": "^0.2.0",
+    "typescript": "^4.6.3"
+  },
+  "packageManager": "yarn@3.2.1",
+  "dependencies": {
+    "@parcel/config-default": "^2.6.2",
+    "@saeris/typeface-beleren-bold": "^1.0.1"
+  }
+}
