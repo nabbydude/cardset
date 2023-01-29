@@ -1,3 +1,5 @@
+import { PropsWithoutRef, ReactElement } from "react";
+
 export function index_in_parent(node: Node) {
 	return Array.prototype.indexOf.call(node.parentNode!.childNodes, node);
 }
@@ -45,3 +47,18 @@ export function current_selection(): [StaticRange] {
 	const selection = document.getSelection()!;
 	return [new StaticRange(selection.getRangeAt(0))];
 }
+
+export interface SlateProps {
+	attributes: { [x: keyof any]: unknown },
+	children: ReactElement[],
+}
+
+export interface LeafProps extends SlateProps {
+	leaf: CustomText,
+}
+
+export interface CustomText {
+	text: string,
+	bold: boolean,
+	italic: boolean,
+};
