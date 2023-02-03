@@ -1,8 +1,12 @@
 import React from "react";
-import { CustomText } from "../util";
+import { BaseElement } from "slate";
 import { RenderElementProps } from "slate-react";
+import { StyledText } from "./StyledText";
 
-export interface CodeBlock { type: "CodeBlock", children: CustomText[] };
+export interface CodeBlock extends BaseElement {
+	type: "CodeBlock",
+	children: StyledText[]
+};
 
 export function CodeBlockElement(props: RenderElementProps) {
 	return (

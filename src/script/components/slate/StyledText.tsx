@@ -1,13 +1,14 @@
 import React from "react";
+import { BaseText } from "slate";
 import { RenderLeafProps } from "slate-react";
 
-export interface StyledText {
+export interface StyledText extends BaseText {
 	text: string,
 	bold: boolean,
 	italic: boolean,
 };
 
-export function LeafElement(props: RenderLeafProps) {
+export function StyledTextElement(props: RenderLeafProps) {
 	return (
 		<span
 			{...props.attributes}

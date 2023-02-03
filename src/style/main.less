@@ -30,7 +30,7 @@ h3, h4 {
 	background-color: var(--accent-background-color);
 }
 
-#main {
+#content {
 	display: grid;
 	gap: 0.5rem;
 	padding: 0.5rem;
@@ -55,17 +55,19 @@ h3, h4 {
 	}
 }
 
-html {
+html, body {
 	height: 100%;
 }
 
-body {
+#app {
 	height: 100%;
 	display: grid;
 	grid-template-rows: auto auto 1fr;
 }
 
-#test_editor {
-	bottom: 0;
-	padding: 1rem;
+p {
+	margin: 0 0 0.5em;
+	&:last-child {
+		margin: 0;
+	}
 }

@@ -1,9 +1,14 @@
 import React from "react";
-import { CustomText, SlateProps } from "../util";
+import { BaseElement } from "slate";
+import { RenderElementProps } from "slate-react";
+import { StyledText } from "./StyledText";
 
-export interface Paragraph { type: "Paragraph", children: CustomText[] };
+export interface Paragraph extends BaseElement {
+	type: "Paragraph",
+	children: StyledText[]
+};
 
-export function ParagraphElement(props: SlateProps) {
+export function ParagraphElement(props: RenderElementProps) {
 	return (
 		<p {...props.attributes}>
 			{props.children}
