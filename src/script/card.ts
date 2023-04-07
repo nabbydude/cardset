@@ -1,9 +1,5 @@
 import { card_frame, frame_urls } from "./card_frame";
-import { create_rich_text_value_from_plain_text, rich_text_value } from "./rich_text_value";
-
-export type card_field_id = {
-	[K in keyof card]: card[K] extends rich_text_value ? K : never;
-}[keyof card];
+import { Card } from "./components/slate/Card";
 
 let last_card_id = 0;
 export function new_card_id(): number {
@@ -15,25 +11,25 @@ export const card_lookup = new Map<number, card>();
 
 export interface card {
 	id: number;
-	name: rich_text_value;
-	type: rich_text_value;
-	cost: rich_text_value;
-	rules_text: rich_text_value;
-	flavor_text: rich_text_value;
-	pt: rich_text_value;
 	frame: card_frame;
+	markup: Card;
 }
 
 export function create_test_card(): card {
-	const card = {
+	const card: card = {
 		id: new_card_id(),
-		name: create_rich_text_value_from_plain_text("Test Card"),
-		type: create_rich_text_value_from_plain_text("Legendary Test"),
-		cost: create_rich_text_value_from_plain_text(""),
-		rules_text: create_rich_text_value_from_plain_text("<p>Rules are rules.</p>"),
-		flavor_text: create_rich_text_value_from_plain_text("<p>Flavor is nice.</p>"),
-		pt: create_rich_text_value_from_plain_text(""),
 		frame: { image: frame_urls.red },
+		markup: {
+			type: "Card",
+			children: [
+				{ type: "Field", name: "name",        children: [{ type: "Paragraph", children: [{ text: "Test Card",        bold: false, italic: false }] }] },
+				{ type: "Field", name: "cost",        children: [{ type: "Paragraph", children: [{ text: "",                 bold: false, italic: false }] }] },
+				{ type: "Field", name: "type",        children: [{ type: "Paragraph", children: [{ text: "Legendary Test",   bold: false, italic: false }] }] },
+				{ type: "Field", name: "rules_text",  children: [{ type: "Paragraph", children: [{ text: "Rules are rules.", bold: false, italic: false }] }] },
+				{ type: "Field", name: "flavor_text", children: [{ type: "Paragraph", children: [{ text: "Flavor is nice.",  bold: false, italic: false }] }] },
+				{ type: "Field", name: "pt",          children: [{ type: "Paragraph", children: [{ text: "2/2",              bold: false, italic: false }] }] },
+			]
+		},
 	};
 	card_lookup.set(card.id, card);
 	return card;

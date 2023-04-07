@@ -1,6 +1,6 @@
 // import "@saeris/typeface-beleren-bold"
 import { create_test_card } from "./card";
-import { render } from "react-dom";
+import { createRoot } from "react-dom/client";
 import { App } from "./components/App";
 
 const card_editor_div = document.querySelector("div.card_editor") as HTMLDivElement;
@@ -33,4 +33,5 @@ const test_cards = [
 // change_card(main_card_editor, test_cards[0]);
 
 const root_element = document.querySelector("#app");
-render(App(), root_element);
+const root = createRoot(root_element!);
+root.render(App());
