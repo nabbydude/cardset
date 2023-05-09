@@ -6,7 +6,7 @@ import { StyledText } from "./StyledText";
 export interface CodeBlock extends BaseElement {
 	type: "CodeBlock",
 	children: StyledText[]
-};
+}
 
 export function CodeBlockElement(props: RenderElementProps) {
 	return (

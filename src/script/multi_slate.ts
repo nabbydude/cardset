@@ -1,5 +1,6 @@
 import { BaseEditor, Editor, Node, Operation, Path, PathRef, Transforms } from "slate"
 import { HistoryEditor } from "slate-history";
+import { CustomEditor } from "./slate";
 
 export const SENDING = new WeakMap<MultiEditor | ViewEditor, boolean | undefined>();
 
@@ -44,7 +45,9 @@ export function withMulti<T extends BaseEditor>(editor: T): T & MultiEditor {
 						if (MultiEditor.isSending(view)) continue;
 						const path = ref.current;
 						if (!path) continue;
-						Editor.withoutNormalizing(view as Editor, () => {
+
+						
+						CustomEditor.withoutEverNormalizing(view as Editor, () => {
 							if (e.selection && Path.isDescendant(e.selection.anchor.path, path) && Path.isDescendant(e.selection.focus.path, path)) {
 								// if something is selected and its fully contained in this view.
 								// we dont currently handle partial overlaps.
@@ -65,7 +68,7 @@ export function withMulti<T extends BaseEditor>(editor: T): T & MultiEditor {
 						const path = ref.current;
 						if (!path) continue;
 						if (!Path.isDescendant(op.path, path)) continue;
-						Editor.withoutNormalizing(view as Editor, () => {
+						CustomEditor.withoutEverNormalizing(view as Editor, () => {
 							view.apply({ ...op, path: Path.relative(op.path, path) });
 						});
 					}
@@ -94,28 +97,25 @@ export function withView<T extends BaseEditor>(editor: T): T & ViewEditor {
 			const path = e.viewParent.path!.current;
 			if (!path) return;
 
-			// HACK: We manually set/reset normalizing here because Editor.withoutNormalizing normalizes when its done, which is bad if we are in the middle of a multi-step command
-			const old_normalizing = Editor.isNormalizing(parent as Editor);
-			Editor.setNormalizing(parent as Editor, false);
-
-			switch (op.type) {
-				case "set_selection": {
-					// since we apply above, might as well forego the actual arguments and use e.selection for consistency, this shouldnt have any issues unless there's some case where applying a set_selection doesn't actually set the selection to its arguments.
-					if (e.selection) {
-						Transforms.setSelection(parent as Editor, {
-							anchor: { path: path.concat(e.selection.anchor.path), offset: e.selection.anchor.offset },
-							focus:  { path: path.concat(e.selection.focus.path),  offset: e.selection.focus.offset  },
-						});
-					} else {
-						Transforms.deselect(parent as Editor);
+			CustomEditor.withoutEverNormalizing(parent as Editor, () => {
+				switch (op.type) {
+					case "set_selection": {
+						// since we apply above, might as well forego the actual arguments and use e.selection for consistency, this shouldnt have any issues unless there's some case where applying a set_selection doesn't actually set the selection to its arguments.
+						if (e.selection) {
+							Transforms.setSelection(parent as Editor, {
+								anchor: { path: path.concat(e.selection.anchor.path), offset: e.selection.anchor.offset },
+								focus:  { path: path.concat(e.selection.focus.path),  offset: e.selection.focus.offset  },
+							});
+						} else {
+							Transforms.deselect(parent as Editor);
+						}
+						break;
 					}
-					break;
+					default: {
+						parent.apply({ ...op, path: path.concat(op.path) });
+					}
 				}
-				default: {
-					parent.apply({ ...op, path: path.concat(op.path) });
-				}
-			}
-			Editor.setNormalizing(parent as Editor, old_normalizing); // see above for why we manually set/reset this
+			});
 		});
 	};
 

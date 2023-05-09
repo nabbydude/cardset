@@ -6,7 +6,7 @@ import { StyledText } from "./StyledText";
 export interface Paragraph extends BaseElement {
 	type: "Paragraph",
 	children: StyledText[]
-};
+}
 
 export function ParagraphElement(props: RenderElementProps) {
 	return (

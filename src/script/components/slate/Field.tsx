@@ -5,12 +5,12 @@ import { RenderElementProps } from "slate-react";
 export interface Field extends BaseElement {
 	type: "Field",
 	name: string,
-};
+}
 
 export function FieldElement(props: RenderElementProps) {
 	return (
-		<p {...props.attributes}>
+		<div {...props.attributes}>
 			{props.children}
-		</p>
+		</div>
 	)
 }

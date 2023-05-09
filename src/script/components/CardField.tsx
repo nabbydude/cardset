@@ -1,30 +1,32 @@
-import React, { KeyboardEvent, ReactElement, useCallback, useContext, useEffect } from "react";
+import React, { KeyboardEvent, useCallback, useEffect, useMemo } from "react";
 import { useState } from "react";
-import { Editor } from "slate";
-import { Editable, Slate } from "slate-react";
-import { card } from "../card";
-import { FocusedEditorContext } from "../focused_editor";
+import { Editor, Node, Path } from "slate";
+import { Slate } from "slate-react";
+import { FocusSendingEditable } from "./FocusSendingEditable";
 import { MultiEditor } from "../multi_slate";
-import { create_card_field_editor, CustomEditor, find_path_to_field, renderElement, renderLeaf } from "../slate";
+import { create_card_field_editor, CustomEditor, first_matching_path, renderElement, renderLeaf } from "../slate";
+import { useDocument } from "./DocumentContext";
 
 export interface CardFieldProps {
-	card: card,
+	card_path: Path,
 	field: string,
-	cardEditor: MultiEditor,
 }
 
 export function CardField(props: CardFieldProps) {
-	const { card, field, cardEditor } = props;
+	const { card_path, field } = props;
+	const doc = useDocument();
 	const [editor] = useState(create_card_field_editor);
-	const [, setFocusedEditor] = useContext(FocusedEditorContext);
-	useEffect(() => { const path = find_path_to_field(cardEditor as Editor, field); if(path) MultiEditor.setView(editor, cardEditor, path); }, [card]);
-
+	const card = Node.get(doc, card_path);
+	const field_path = useMemo(() => first_matching_path(card, { type: "Field", name: field }), [doc, card_path, field]);
+	if (!field_path) return <></>;
+	const full_path = useMemo(() => card_path.concat(field_path), [card_path, field_path]);
+	useEffect(() => {
+		MultiEditor.setView(editor, doc, full_path);
+	}, [editor, doc, full_path]);
 	return (
 		<Slate editor={editor} value={editor.children}>
-			<Editable
+			<FocusSendingEditable
 				className={field}
-				onFocus={useCallback(() => setFocusedEditor(editor), [setFocusedEditor, editor])}
-				onBlur={useCallback(() => setFocusedEditor(null), [setFocusedEditor])}
 				renderElement={renderElement}
 				renderLeaf={renderLeaf}
 				onKeyDown={useCallback((e: KeyboardEvent) => onKeyDown(e, editor), [editor])}
