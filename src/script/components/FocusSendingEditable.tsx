@@ -1,4 +1,4 @@
-import React, { useCallback, useContext } from "react";
+import React, { ForwardedRef, forwardRef, useCallback, useContext } from "react";
 import { Editable, ReactEditor, useSlate } from "slate-react";
 import { FocusedEditorContext } from "./FocusedEditorContext";
 

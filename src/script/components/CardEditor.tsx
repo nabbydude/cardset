@@ -1,12 +1,11 @@
 import React, { useMemo } from "react";
 import { first_matching_element, first_matching_entry, to_plaintext } from "../slate";
-import { CardField } from "./CardField";
+import { TextField } from "./TextField";
 import { CardFrame } from "./CardFrame";
 import { PowerToughnessBackground } from "./PowerToughnessBackground";
 import { Card } from "./slate/Card";
-import { Editor } from "slate";
-import { MultiEditor } from "../multi_slate";
-import { useDocument } from "./DocumentContext";
+import { useDocumentWithV } from "./DocumentContext";
+import { ImageField } from "./ImageField";
 
 export interface CardEditorProps {
 	card_id: number;
@@ -14,8 +13,8 @@ export interface CardEditorProps {
 
 export function CardEditor(props: CardEditorProps) {
 	const { card_id } = props;
-	const doc = useDocument();
-	const [card, path] = useMemo(() => first_matching_entry<Card>(doc, { type: "Card", id: card_id }) ?? [undefined, undefined], [doc, card_id]);
+	const { doc, v } = useDocumentWithV();
+	const [card, path] = useMemo(() => first_matching_entry<Card>(doc, { type: "Card", id: card_id }) ?? [undefined, undefined], [doc, v, card_id]);
 	if (!card) return (<div>No card focused</div>);
 
 	const frame_field = first_matching_element(card, { type: "Field", name: "frame" });
@@ -24,24 +23,26 @@ export function CardEditor(props: CardEditorProps) {
 		<div className="card_editor">
 			<CardFrame frame={{ image: frame_value }}/>
 			<div className="name_line">
-				<CardField card_path={path} field={"name"}/>
-				<CardField card_path={path} field={"cost"}/>
+				<TextField card_path={path} field={"name"} min_font_size={8} max_font_size={16}/>
+				<TextField card_path={path} field={"cost"} min_font_size={7} max_font_size={15}/>
 			</div>
 
+			<ImageField card_path={path} field={"image"}/>
 			<div className="type_line">
-				<CardField card_path={path} field={"type"}/>
+				<TextField card_path={path} field={"type"} min_font_size={5} max_font_size={13}/>
 
 				<div className="set_symbol"></div>
 			</div> 
-			<div className="text_box">
-				<CardField card_path={path} field={"rules_text"}/>
+			{/* <div className="text_box">
+				<TextField card_path={path} field={"rules_text"}/>
 				<div className="visual_box"></div>
 				<hr className="flavor_bar"/>
-				<CardField card_path={path} field={"flavor_text"}/>
+				<TextField card_path={path} field={"flavor_text"}/>
 				<div className="visual_box"></div>
-			</div>
+			</div> */}
+			<TextField card_path={path} field={"card_text"} min_font_size={6} max_font_size={14}/>
 			<PowerToughnessBackground card_path={path} field={"pt"}/>
-			<CardField card_path={path} field={"pt"}/>
+			<TextField card_path={path} field={"pt"} min_font_size={8} max_font_size={16}/>
 		</div>
 	);
 }

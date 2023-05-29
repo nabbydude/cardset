@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useMemo, useState } from "react";
+import React, { ReactElement, ReactNode, useCallback, useMemo, useState } from "react";
 import { CardEditor } from "./CardEditor";
 import { Header } from "./Header";
 import { FocusedEditorContext } from "./FocusedEditorContext";
@@ -10,6 +10,8 @@ import { Document } from "./slate/Document";
 import { DocumentContext, useDocument } from "./DocumentContext";
 import html2canvas from "html2canvas";
 import { Field } from "./slate/Field";
+import { ContextMenu, context_menu_data } from "./ContextMenu";
+import { ContextMenuContext } from "./ContextMenuContext";
 
 const starting_document: [Document] = [
 	{
@@ -37,32 +39,36 @@ export function App() {
 	const [active_id, set_active_id] = useState(0);
 	const [selected_ids, set_selected_ids] = useState(new Set<number>());
 	const [doc] = useState(() => create_document_editor(starting_document));
+	const [contextMenu, setContextMenu] = useState<context_menu_data>();
 	const [focused_editor, set_focused_editor] = useState<ReactEditor>();
 	const focused_editor_value = useMemo(() => [focused_editor, set_focused_editor] as const, [focused_editor, set_focused_editor]);
 
 	return (
-		<Slate editor={doc} value={doc.children}>
-			<FocusedEditorContext.Provider value={focused_editor_value}>
-				<DocumentWrapper>
-					<Header saveActiveCardImage={useCallback(() => save_card_image(doc, active_id), [doc, active_id])}/>
-					<div id="content">
-						<CardEditor card_id={active_id}/>
-						<MainCardList
-							columns={list_columns}
-							selected_ids={selected_ids}
-							set_selected_ids={set_selected_ids}
-							active_id={active_id}
-							set_active_id={set_active_id}
-						/>
-					</div>
-				</DocumentWrapper>
-			</FocusedEditorContext.Provider>
-		</Slate>
+		<ContextMenuContext.Provider value={setContextMenu}>
+			<Slate editor={doc} value={doc.children}>
+				<FocusedEditorContext.Provider value={focused_editor_value}>
+					<DocumentWrapper>
+						<Header saveActiveCardImage={useCallback(() => save_card_image(doc, active_id), [doc, active_id])}/>
+						<div id="content">
+							<CardEditor card_id={active_id}/>
+							<MainCardList
+								columns={list_columns}
+								selected_ids={selected_ids}
+								set_selected_ids={set_selected_ids}
+								active_id={active_id}
+								set_active_id={set_active_id}
+							/>
+						</div>
+						{contextMenu ? <ContextMenu position={contextMenu.position} options={contextMenu.options}/> : undefined}
+					</DocumentWrapper>
+				</FocusedEditorContext.Provider>
+			</Slate>
+		</ContextMenuContext.Provider>
 	);
 }
 
 export interface DocumentWrapperProps {
-	children: ReactElement[],
+	children: ReactNode[],
 }
 
 export function DocumentWrapper(props: DocumentWrapperProps) {

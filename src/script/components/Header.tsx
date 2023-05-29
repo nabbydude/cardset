@@ -9,7 +9,7 @@ export interface HeaderProps {
 export function Header(props: HeaderProps) {
 	const { saveActiveCardImage } = props;	return (
 		<div id="header">
-			<h1>Makard</h1>
+			<h1>Cardset</h1>
 			<Toolbar saveActiveCardImage={saveActiveCardImage}/>
 		</div>
 	);

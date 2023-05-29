@@ -112,7 +112,7 @@ export function withView<T extends BaseEditor>(editor: T): T & ViewEditor {
 						break;
 					}
 					default: {
-						parent.apply({ ...op, path: path.concat(op.path) });
+						parent.apply({ ...op, path: path.concat(op.path), newPath: "newPath" in op ? path.concat(op.newPath) : undefined } as Operation);
 					}
 				}
 			});
@@ -165,8 +165,7 @@ export const MultiEditor = {
 	 * Initialize or change a view editor's view to another parent and/or path
 	 */
 	setView(editor: ViewEditor, parent: MultiEditor, path: Path) {
-		if (editor.viewParent.editor) editor.viewParent.editor.views.delete(editor);
-		if (editor.viewParent.path) editor.viewParent.path.unref();
+		MultiEditor.unsetView(editor);
 
 		const ref = Editor.pathRef(parent as Editor, path);
 		editor.viewParent.editor = parent;
@@ -177,5 +176,12 @@ export const MultiEditor = {
 			Transforms.insertNodes(editor as Editor, children, { at: [0] });
 		});
 		parent.views.set(editor, ref);
+	},
+
+	unsetView(editor: ViewEditor) {
+		if (editor.viewParent.editor) editor.viewParent.editor.views.delete(editor);
+		if (editor.viewParent.path) editor.viewParent.path.unref();
+		editor.viewParent.editor = undefined;
+		editor.viewParent.path = undefined;
 	},
 }

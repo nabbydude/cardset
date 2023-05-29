@@ -1,7 +1,7 @@
 import React from "react";
-import { Ancestor, BaseEditor, BaseText, createEditor, Descendant, Editor, Element, Node, Path, Text, Transforms } from "slate";
+import { Ancestor, BaseEditor, BaseElement, BaseText, createEditor, Descendant, Editor, Element, Node, NodeEntry, Path, Text, Transforms } from "slate";
 import { HistoryEditor, withHistory } from "slate-history";
-import { ReactEditor, RenderElementProps, withReact } from "slate-react";
+import { ReactEditor, RenderElementProps as BaseRenderElementProps, RenderLeafProps as BaseRenderLeafProps, withReact } from "slate-react";
 import { Card } from "./components/slate/Card";
 import { CodeBlock, CodeBlockElement } from "./components/slate/CodeBlock";
 import { Field } from "./components/slate/Field";
@@ -11,6 +11,9 @@ import { ViewEditor, MultiEditor, withView, withMulti, withHistoryShim } from ".
 import { Document } from "./components/slate/Document";
 import { PlainText, PlainTextElement } from "./components/slate/PlainText";
 import { Absence } from "./components/slate/Absence";
+import { Image } from "./components/slate/Image";
+import { Section, SectionElement } from "./components/slate/Section";
+import { HorizontalRule, HorizontalRuleElement, isHorizontalRule } from "./components/slate/HorizontalRule";
 
 
 
@@ -23,8 +26,10 @@ declare module "slate" {
 		Editor: BaseEditor | HistoryEditor | ReactEditor | MultiEditor | ViewEditor,
 		Element: (
 			| Absence
-			| (Document | Card | Field)
+			| (Document | Card | Field | Section)
+			| HorizontalRule
 			| (Paragraph | CodeBlock)
+			| Image
 		),
 		Text: StyledText | PlainText,
 	}
@@ -37,14 +42,13 @@ export type DescendantOf<N extends Ancestor> = ChildOf<N> | (ChildOf<N> extends 
 
 export type DocumentEditor = BaseEditor & ReactEditor & HistoryEditor & MultiEditor;
 
-export interface RenderLeafProps<T extends BaseText = BaseText>
- {
-	children: any;
+export interface RenderElementProps<T extends Element = Element> extends BaseRenderElementProps {
+	element: T;
+}
+
+export interface RenderLeafProps<T extends Text = Text> extends BaseRenderLeafProps {
 	leaf: T;
 	text: T;
-	attributes: {
-			'data-slate-leaf': true;
-	};
 }
 
 //////////
@@ -62,7 +66,9 @@ export function create_document_editor(initial_value: [Document]): DocumentEdito
 }
 
 export function create_card_field_editor() {
-	return withHistoryShim(withView(withReact(createEditor())));
+	const editor = withHistoryShim(withView(withReact(createEditor())));
+	editor.isVoid = isVoid;
+	return editor;
 }
 
 export function to_plaintext(nodes: Descendant[]) {
@@ -110,6 +116,14 @@ export const CustomEditor = {
 		return !!match;
 	},
 
+	isItalicMarkActive(editor: Editor) {
+		const [match] = Editor.nodes(editor, {
+			match: n => isStyledText(n) && n.italic === true,
+			universal: true,
+		});
+		return !!match;
+	},
+
 	isCodeBlockActive(editor: Editor) {
 		const [match] = Editor.nodes(editor, {
 			match: n => !Editor.isEditor(n) && !("text" in n) && Editor.isBlock(editor, n) && n.type === "CodeBlock",
@@ -122,6 +136,15 @@ export const CustomEditor = {
 		Transforms.setNodes(
 			editor,
 			{ bold: !isActive },
+			{ match: n => Text.isText(n), split: true }
+		);
+	},
+
+	toggleItalicMark(editor: Editor) {
+		const isActive = CustomEditor.isItalicMarkActive(editor);
+		Transforms.setNodes(
+			editor,
+			{ italic: !isActive },
 			{ match: n => Text.isText(n), split: true }
 		);
 	},
@@ -139,9 +162,9 @@ export const CustomEditor = {
 
 export function renderElement(props: RenderElementProps) {
 	switch (props.element.type) {
-		case "CodeBlock": {
-			return <CodeBlockElement {...props}/>;
-		}
+		case "Section": return <SectionElement {...props as RenderElementProps<Section>}/>;
+		case "HorizontalRule": return <HorizontalRuleElement {...props as RenderElementProps<HorizontalRule>}/>;
+		case "CodeBlock": return <CodeBlockElement {...props as RenderElementProps<CodeBlock>}/>;
 		default: {
 		// case "Paragraph": {
 			return <ParagraphElement {...props}/>;
@@ -153,4 +176,8 @@ export function renderElement(props: RenderElementProps) {
 export function renderLeaf(props: RenderLeafProps) {
 	if (isStyledText(props.leaf)) return <StyledTextElement {...props as RenderLeafProps<StyledText>} />
 	return <PlainTextElement {...props} />
+}
+
+export function isVoid(element: Element) {
+	return isHorizontalRule(element);
 }

@@ -8,7 +8,7 @@ export function useDocument(): DocumentEditor {
 	return doc.editor;
 }
 
-export function useDocumentWithV(): EditorWithVersion<DocumentEditor> {
+export function useDocumentWithV(): { doc: DocumentEditor, v: number } {
 	const doc = useContext(DocumentContext);
-	return doc;
+	return { doc: doc.editor, v: doc.v };
 }

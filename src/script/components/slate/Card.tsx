@@ -38,9 +38,17 @@ export function create_test_card(name: string = "Test Card", color: keyof typeof
 			{ type: "Field", name: "frame",       children: [{ type: "Paragraph", children: [{ text: frame_urls[color],  bold: false, italic: false }] }] },
 			{ type: "Field", name: "cost",        children: [{ type: "Paragraph", children: [{ text: "",                 bold: false, italic: false }] }] },
 			{ type: "Field", name: "type",        children: [{ type: "Paragraph", children: [{ text: "Legendary Test",   bold: false, italic: false }] }] },
+
+			{ type: "Field", name: "card_text",   children: [
+				{ type: "Section", name: "rules_text", children: [{ type: "Paragraph", children: [{ text: "Rules are rules.", bold: false, italic: false }] }] },
+				{ type: "HorizontalRule", children: [{ text: "" }] },
+				{ type: "Section", name: "flavor_text", children: [{ type: "Paragraph", children: [{ text: "Flavor is nice.", bold: false, italic: false }] }] },
+			] },
+			
 			{ type: "Field", name: "rules_text",  children: [{ type: "Paragraph", children: [{ text: "Rules are rules.", bold: false, italic: false }] }] },
 			{ type: "Field", name: "flavor_text", children: [{ type: "Paragraph", children: [{ text: "Flavor is nice.",  bold: false, italic: false }] }] },
 			{ type: "Field", name: "pt",          children: [{ type: "Paragraph", children: [{ text: "2/2",              bold: false, italic: false }] }] },
+			{ type: "Field", name: "image",       children: [{ type: "Image", src: null, children: [{ text: "" }] }] },
 		]
 	};
 }

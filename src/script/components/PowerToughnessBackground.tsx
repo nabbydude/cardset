@@ -1,19 +1,18 @@
 import React, { useMemo } from "react";
-import { Editor, Element, Node } from "slate";
+import { Editor, Element, Node, Path } from "slate";
 import { RenderElementProps, RenderLeafProps } from "slate-react";
 import { first_matching_path } from "../slate";
-import { CardFieldProps } from "./CardField";
+import { TextFieldProps } from "./TextField";
 import { useDocument } from "./DocumentContext";
 
-export interface PowerToughnessBoxProps extends CardFieldProps {
-	editor: Editor,
-	renderElement: (props: RenderElementProps) => JSX.Element,
-	renderLeaf: (props: RenderLeafProps) => JSX.Element,
+export interface PowerToughnessBackgroundProps {
+	card_path: Path,
+	field: string,
 }
 
 const box_image_url = (new URL("/assets/red_pt.png", import.meta.url)).toString();
 
-export function PowerToughnessBackground(props: CardFieldProps) {
+export function PowerToughnessBackground(props: PowerToughnessBackgroundProps) {
 	const { card_path, field } = props;
 	const doc = useDocument();
 	const card = Node.get(doc, card_path);
