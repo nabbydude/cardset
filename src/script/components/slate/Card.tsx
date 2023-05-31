@@ -44,9 +44,7 @@ export function create_test_card(name: string = "Test Card", color: keyof typeof
 				{ type: "HorizontalRule", children: [{ text: "" }] },
 				{ type: "Section", name: "flavor_text", children: [{ type: "Paragraph", children: [{ text: "Flavor is nice.", bold: false, italic: false }] }] },
 			] },
-			
-			{ type: "Field", name: "rules_text",  children: [{ type: "Paragraph", children: [{ text: "Rules are rules.", bold: false, italic: false }] }] },
-			{ type: "Field", name: "flavor_text", children: [{ type: "Paragraph", children: [{ text: "Flavor is nice.",  bold: false, italic: false }] }] },
+
 			{ type: "Field", name: "pt",          children: [{ type: "Paragraph", children: [{ text: "2/2",              bold: false, italic: false }] }] },
 			{ type: "Field", name: "image",       children: [{ type: "Image", src: null, children: [{ text: "" }] }] },
 		]

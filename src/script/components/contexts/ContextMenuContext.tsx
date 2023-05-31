@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction, createContext, useContext } from "react";
-import { context_menu_data } from "./ContextMenu";
+import { context_menu_data } from "../ContextMenu";
 
 export const ContextMenuContext = createContext<Dispatch<SetStateAction<context_menu_data | undefined>>>(() => {});
 

@@ -3,7 +3,7 @@ import { Editor, Element, Node, Path } from "slate";
 import { RenderElementProps, RenderLeafProps } from "slate-react";
 import { first_matching_path } from "../slate";
 import { TextFieldProps } from "./TextField";
-import { useDocument } from "./DocumentContext";
+import { useDocument } from "./contexts/DocumentContext";
 
 export interface PowerToughnessBackgroundProps {
 	card_path: Path,

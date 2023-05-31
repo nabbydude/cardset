@@ -12,7 +12,7 @@ How to set up a cardset dev environment.
 
 Cardset is written in typescript, runs on node js, and uses pnpm as a package manager.
 
-If you have npm and need pnpm, it can intalled with the following command:
+If you have npm and need pnpm, it can be installed with the following command:
 
 ```
 npm install -g pnpm

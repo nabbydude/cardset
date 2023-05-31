@@ -4,7 +4,7 @@ import { TextField } from "./TextField";
 import { CardFrame } from "./CardFrame";
 import { PowerToughnessBackground } from "./PowerToughnessBackground";
 import { Card } from "./slate/Card";
-import { useDocumentWithV } from "./DocumentContext";
+import { useDocumentWithV } from "./contexts/DocumentContext";
 import { ImageField } from "./ImageField";
 
 export interface CardEditorProps {

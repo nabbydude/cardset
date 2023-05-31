@@ -1,7 +1,7 @@
 import React, { MouseEvent, MouseEventHandler, ReactNode, useCallback, useEffect } from "react";
 import { DocumentEditor } from "../slate";
-import { useDocument } from "./DocumentContext";
-import { useContextMenu } from "./ContextMenuContext";
+import { useDocument } from "./contexts/DocumentContext";
+import { useContextMenu } from "./contexts/ContextMenuContext";
 
 export interface menu_option {
 	name: string,

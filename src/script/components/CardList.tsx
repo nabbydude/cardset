@@ -2,8 +2,8 @@ import React, { MouseEventHandler, useCallback } from "react";
 
 import { first_matching_entry, first_matching_path, to_single_line_plaintext } from "../slate";
 import { Card } from "./slate/Card";
-import { useContextMenu } from "./ContextMenuContext";
-import { useDocument } from "./DocumentContext";
+import { useContextMenu } from "./contexts/ContextMenuContext";
+import { useDocument } from "./contexts/DocumentContext";
 import { Editor, Transforms } from "slate";
 import { Node } from "slate";
 

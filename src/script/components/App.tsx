@@ -1,17 +1,18 @@
-import React, { ReactElement, ReactNode, useCallback, useMemo, useState } from "react";
+import React, { ReactNode, useCallback, useMemo, useState } from "react";
 import { CardEditor } from "./CardEditor";
 import { Header } from "./Header";
-import { FocusedEditorContext } from "./FocusedEditorContext";
+import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
 import { ReactEditor, Slate, useSlateWithV } from "slate-react";
 import { CardList, list_column } from "./CardList";
 import { DocumentEditor, EditorWithVersion, create_document_editor, first_matching_element, to_single_line_plaintext } from "../slate";
 import { Card, create_test_card, isCard } from "./slate/Card";
 import { Document } from "./slate/Document";
-import { DocumentContext, useDocument } from "./DocumentContext";
+import { DocumentContext, useDocument } from "./contexts/DocumentContext";
 import html2canvas from "html2canvas";
 import { Field } from "./slate/Field";
 import { ContextMenu, context_menu_data } from "./ContextMenu";
-import { ContextMenuContext } from "./ContextMenuContext";
+import { ContextMenuContext } from "./contexts/ContextMenuContext";
+import { Transforms } from "slate";
 
 const starting_document: [Document] = [
 	{
@@ -48,7 +49,7 @@ export function App() {
 			<Slate editor={doc} value={doc.children}>
 				<FocusedEditorContext.Provider value={focused_editor_value}>
 					<DocumentWrapper>
-						<Header saveActiveCardImage={useCallback(() => save_card_image(doc, active_id), [doc, active_id])}/>
+						<Header save_active_card_image={useCallback(() => save_card_image(doc, active_id), [doc, active_id])}/>
 						<div id="content">
 							<CardEditor card_id={active_id}/>
 							<MainCardList
@@ -95,14 +96,17 @@ export function MainCardList(props: MainCardListProps) {
 	const listed_cards = useMemo(() => document_node.children.filter(isCard), [document_node]);
 
 	return (
-		<CardList
-			columns={columns}
-			cards={listed_cards}
-			selected_ids={selected_ids}
-			set_selected_ids={set_selected_ids}
-			active_id={active_id}
-			set_active_id={set_active_id}
-		/>
+		<div>
+			<button onClick={useCallback(() => add_new_card_to_doc(doc), [doc])}>New Card</button>
+			<CardList
+				columns={columns}
+				cards={listed_cards}
+				selected_ids={selected_ids}
+				set_selected_ids={set_selected_ids}
+				active_id={active_id}
+				set_active_id={set_active_id}
+			/>
+		</div>
 	);
 }
 
@@ -129,4 +133,9 @@ export async function save_card_image(doc: DocumentEditor, active_id: number) {
 	link.download = `${name}.png`;
 	link.href = canvas.toDataURL();
 	link.click();
+}
+
+export function add_new_card_to_doc(doc: DocumentEditor) {
+	const document_node = doc.children[0] as Document;
+	Transforms.insertNodes(doc, create_test_card("New Card", "white"), { at: [0, document_node.children.length] });
 }

@@ -5,7 +5,7 @@ import { ReactEditor, Slate } from "slate-react";
 import { FocusSendingEditable } from "./FocusSendingEditable";
 import { MultiEditor } from "../multi_slate";
 import { create_card_field_editor, CustomEditor, first_matching_path, renderElement, renderLeaf } from "../slate";
-import { useDocument, useDocumentWithV } from "./DocumentContext";
+import { useDocument, useDocumentWithV } from "./contexts/DocumentContext";
 import { Card } from "./slate/Card";
 import { get_fill_size } from "../util";
 

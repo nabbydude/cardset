@@ -1,6 +1,6 @@
 import React, { ForwardedRef, forwardRef, useCallback, useContext } from "react";
 import { Editable, ReactEditor, useSlate } from "slate-react";
-import { FocusedEditorContext } from "./FocusedEditorContext";
+import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
 
 type EditableProps = Parameters<typeof Editable>[0];
 

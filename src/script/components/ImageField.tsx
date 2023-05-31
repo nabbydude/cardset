@@ -2,7 +2,7 @@ import React, { DragEvent, DragEventHandler, KeyboardEvent, useCallback, useEffe
 import { Editor, Node, Path, Transforms } from "slate";
 
 import { first_matching_element, first_matching_path, } from "../slate";
-import { useDocument } from "./DocumentContext";
+import { useDocument } from "./contexts/DocumentContext";
 import { Card } from "./slate/Card";
 import { Image, isImage } from "./slate/Image";
 import { frame_urls } from "../card_frame";
