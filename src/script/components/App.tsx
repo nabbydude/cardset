@@ -96,7 +96,7 @@ export function MainCardList(props: MainCardListProps) {
 	const listed_cards = useMemo(() => document_node.children.filter(isCard), [document_node]);
 
 	return (
-		<div>
+		<div id="main_card_list_container">
 			<button onClick={useCallback(() => add_new_card_to_doc(doc), [doc])}>New Card</button>
 			<CardList
 				columns={columns}

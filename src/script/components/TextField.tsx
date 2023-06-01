@@ -31,7 +31,6 @@ export function TextField(props: TextFieldProps) {
 
 	useLayoutEffect(() => {
 		const el = ReactEditor.toDOMNode(editor, editor);
-		console.log(el.textContent);
 		const size = get_fill_size(el, min_font_size, max_font_size, 0.5);
 		el.style.fontSize = `${size}pt`;
 	});
