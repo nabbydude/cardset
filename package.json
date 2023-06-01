@@ -4,6 +4,9 @@
   "private": true,
   "license": "MIT",
   "scripts": {
+    "prebuild": "shx rm -rf dist/*",
+    "build": "parcel build",
+    "push-gh-pages": "push-dir --dir=dist --branch=gh-pages --cleanup --verbose",
     "dev": "parcel"
   },
   "targets": {
@@ -50,6 +53,7 @@
     "parcel": "^2.8.3",
     "parcel-transformer-ejs": "^0.2.1",
     "process": "^0.11.10",
+    "shx": "^0.3.4",
     "typescript": "4.4.4"
   },
   "dependencies": {
