@@ -5,14 +5,20 @@
   "license": "MIT",
   "scripts": {
     "prebuild": "shx rm -rf dist/*",
-    "build": "parcel build",
-    "push-gh-pages": "push-dir --dir=dist --branch=gh-pages --cleanup --verbose",
+    "build": "parcel build --target gh_pages",
+    "prepush_gh_pages": "pnpm build",
+    "push_gh_pages": "push-dir --dir=dist --branch=gh_pages --cleanup --verbose",
     "dev": "parcel"
   },
   "targets": {
     "i_cant_call_this_main_or_browser_the_two_most_sensible_names_or_it_uses_shitty_arcane_defaults_that_break_everything_so_i_guess_its_called_this": {
       "source": "src/markup/index.ejs",
       "distDir": "dist"
+    },
+    "gh_pages": {
+      "source": "src/markup/index.ejs",
+      "distDir": "dist",
+      "publicUrl": "/cardset/"
     }
   },
   "devDependencies": {
