@@ -13,6 +13,17 @@ div.card_editor {
 	height: 523px;
 	position: relative;
 
+	&.empty {
+		background-color: var(--accent-background-color);
+		--text-color: var(--main-outline-color);
+		border-radius: 16px;
+		display: grid;
+		align-items: center;
+		justify-items: center;
+		font-size: 1.5rem;
+		font-weight: bold;
+	}
+
 	img.frame {
 		position: absolute;
 		width: 100%;
