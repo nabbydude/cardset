@@ -12,8 +12,6 @@ export interface CardEditorProps {
 	card_id: number;
 }
 
-const tester_src = (new URL("/assets/tester.png", import.meta.url)).toString();
-
 export function CardEditor(props: CardEditorProps) {
 	const { card_id } = props;
 	const { doc, v } = useDocumentWithV();
@@ -48,7 +46,6 @@ export function CardEditor(props: CardEditorProps) {
 				<TextField card_path={path} field={"card_text"} min_font_size={4} max_font_size={9}/>
 				<PowerToughnessBackground card_path={path} field={"pt"}/>
 				<TextField card_path={path} field={"pt"} min_font_size={5} max_font_size={10.5}/>
-				{/* <img className="tester" src={tester_src}/> */}
 			</div>
 		</div>
 	);
