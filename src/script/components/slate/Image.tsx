@@ -1,17 +1,18 @@
 import React from "react";
 import { BaseElement, Element } from "slate";
-import { RenderElementProps } from "slate-react";
+import { RenderElementProps } from "../../slate";
 
 export interface Image extends BaseElement {
 	type: "Image",
 	src: string | null,
 }
 
-export function ImageElement(props: RenderElementProps) {
+export function ImageElement(props: RenderElementProps<Image>) {
 	return (
-		<img {...props.attributes}>
+		<div {...props.attributes} className="image">
+			<img  src={props.element.src ?? ""}/>
 			{props.children}
-		</img>
+		</div>
 	)
 }
 

@@ -8,11 +8,11 @@ import { DocumentEditor, EditorWithVersion, create_document_editor, first_matchi
 import { Card, create_test_card, isCard } from "./slate/Card";
 import { Document } from "./slate/Document";
 import { DocumentContext, useDocument } from "./contexts/DocumentContext";
-import html2canvas from "html2canvas";
 import { Field } from "./slate/Field";
 import { ContextMenu, context_menu_data } from "./ContextMenu";
 import { ContextMenuContext } from "./contexts/ContextMenuContext";
 import { Transforms } from "slate";
+import { domToPng } from "modern-screenshot";
 
 const starting_document: [Document] = [
 	{
@@ -46,7 +46,7 @@ export function App() {
 
 	return (
 		<ContextMenuContext.Provider value={setContextMenu}>
-			<Slate editor={doc} value={doc.children}>
+			<Slate editor={doc} initialValue={doc.children}>
 				<FocusedEditorContext.Provider value={focused_editor_value}>
 					<DocumentWrapper>
 						<Header save_active_card_image={useCallback(() => save_card_image(doc, active_id), [doc, active_id])}/>
@@ -90,7 +90,7 @@ export interface MainCardListProps {
 }
 
 export function MainCardList(props: MainCardListProps) {
-	const {columns, selected_ids, active_id, set_selected_ids, set_active_id } = props;
+	const { columns, selected_ids, active_id, set_selected_ids, set_active_id } = props;
 	const doc = useDocument();
 	const document_node = doc.children[0] as Document;
 	const listed_cards = useMemo(() => document_node.children.filter(isCard), [document_node]);
@@ -128,10 +128,10 @@ export async function save_card_image(doc: DocumentEditor, active_id: number) {
 	} else {
 		name = "Card";
 	}
-	const canvas = await html2canvas(editor_elem);
+	const png = await domToPng(editor_elem);
 	const link = document.createElement("a");
 	link.download = `${name}.png`;
-	link.href = canvas.toDataURL();
+	link.href = png;
 	link.click();
 }
 

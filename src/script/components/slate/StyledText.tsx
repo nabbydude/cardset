@@ -13,7 +13,7 @@ export function StyledTextElement(props: RenderLeafProps<StyledText>) {
 			{...props.attributes}
 			style={{
 				fontWeight: props.leaf.bold ? "bold" : "normal",
-				fontStyle: props.leaf.italic ? "italic" : "normal",
+				fontStyle: props.leaf.italic ? "var(--italic-style)" : "var(--normal-style)",
 			}}
 		>
 			{props.children}

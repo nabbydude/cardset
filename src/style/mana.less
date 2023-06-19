@@ -1,23 +1,55 @@
 html {
-	--generic-mana-color: #cbc6c1;
+	--generic-mana-background-color:   #cbc6c1;
+	--colorless-mana-background-color: #ccc2c0;
+	--white-mana-background-color:     #fffbd5;
+	--blue-mana-background-color:      #aae0fa;
+	--black-mana-background-color:     #cbc2bf;
+	--red-mana-background-color:       #f9aa8f;
+	--green-mana-background-color:     #9bd3ae;
 }
 
-span.mana {
-	display: inline-block;
-	background-color: var(--generic-mana-color);
-	width: 17px;
-	height: 17px;
+span.mana_pip {
+	display: inline-grid;
+	grid-auto-flow: column;
+	align-items: center;
+	width: calc(0.115 * var(--in));
+	height: calc(0.115 * var(--in));
 	text-align: center;
-	margin: 1.5px;
-	padding-right: 0.5px;
+	margin: calc(0.01 * var(--in));
 	box-sizing: border-box;
 	border-radius: 50% 50%;
-	box-shadow: -0.4px 1.5px black;
+	box-shadow: calc(-0.002  * var(--in)) calc(0.01  * var(--in)) black;
 	line-height: 1;
+	vertical-align: text-top;
+	font-weight: bold;
+	letter-spacing: 0;
+	>span {
+		grid-area: 1 / 1 / 2 / 2;
 
-	user-select: all;
+		&[data-slate-node="text"] {
+			display: grid;
+			grid-auto-flow: column;
+			align-items: center;
+			margin-top: calc(-0.5 * var(--pt));;
+			height: calc(10.5 * var(--pt));
+			overflow: hidden;
+		}
+	}
 
-	&.generic {
-		background-color: var(--generic-mana-color);
+	.symbol {
+		width: 100%;
+		height: 100%;
+	}
+}
+
+.symbol {
+	display: grid;
+	grid-template: 1fr / 1fr;
+	img {
+		grid-area: 1 / 1 / 2 / 2;
+		width: 100%;
+	}
+	span {
+		grid-area: 1 / 1 / 2 / 2;
 	}
 }

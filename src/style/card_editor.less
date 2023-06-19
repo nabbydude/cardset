@@ -1,26 +1,31 @@
 @import "./colors.less";
 
 div.card_editor {
+	--in: 150px;
+	--pt: calc(var(--in) / 72);
+
 	--title-color: #000;
 	--text-color: #000;
 	--hover-color: rgba(0 255 255 / 0.5);
 	--flavor-bar-color: rgba(23 23 23 / 0.26);
 	--flavor-bar-gradient: linear-gradient(90deg, transparent 0%, var(--flavor-bar-color) 10% 90%, transparent 100%);
+	--normal-style: normal;
+	--italic-style: italic;
 	color: var(--text-color);
 
 
-	width: 375px;
-	height: 523px;
+	width: calc(2.5 * var(--in));
+	height: calc(3.5 * var(--in));
 	position: relative;
 
 	&.empty {
 		background-color: var(--accent-background-color);
 		--text-color: var(--main-outline-color);
-		border-radius: 16px;
+		border-radius: calc(0.125 * var(--in));
 		display: grid;
 		align-items: center;
 		justify-items: center;
-		font-size: 1.5rem;
+		font-size: calc(0.25 * var(--in));
 		font-weight: bold;
 	}
 
@@ -28,91 +33,82 @@ div.card_editor {
 		position: absolute;
 		width: 100%;
 		height: 100%;
-		border-radius: 16px;
+		border-radius: calc(0.1 * var(--in));
+	}
+
+	.title_bar {
+		position: absolute;
+		display: grid;
+		box-sizing: border-box;
+		left:   calc(0.15  * var(--in));
+		right:  calc(0.15  * var(--in));
+		color: var(--title-color);
+		>:first-child {
+			border-top-left-radius: calc(0.042 * var(--in)) 50%;
+			border-bottom-left-radius: calc(0.042 * var(--in)) 50%;
+		}
+		>:last-child {
+			border-top-right-radius: calc(0.042 * var(--in)) 50%;
+			border-bottom-right-radius: calc(0.042 * var(--in)) 50%;
+		}
 	}
 
 	div.name_line {
 		position: absolute;
-		left:   22px;
-		top:    25px;
-		right:  22px;
-		height: 32px;
-		box-sizing: border-box;
-		display: grid;
+		top:    calc(0.175 * var(--in));
+		height: calc(0.2   * var(--in));
 		grid-template-columns: 1fr auto;
-		color: var(--title-color);
 		>.name {
 			box-sizing: border-box;
 			margin: 0;
-			padding: 2px 0px 4px 10px;
+			padding: 0 0 calc(0.0125 * var(--in)) calc(0.0625 * var(--in));
 			display: grid;
 			align-items: center;
-			font: bold 16pt "Beleren";
-			-webkit-text-stroke: var(--title-color) 0.2px;
-			overflow: hidden auto;
+			font: bold calc(0.15 * var(--in)) "Beleren";
+			-webkit-text-stroke: var(--title-color) calc(var(--in) / 750);
+			overflow: hidden;
 		}
 		>.cost {
-			min-width: 40px;
-			padding: 4px 5.6px 5px 2px;
+			min-width: calc(0.2 * var(--in));
+			padding: calc(0.025 * var(--in)) calc(0.0625 * var(--in)) 0 calc(0.0125 * var(--in));
 			text-align: right;
 		}
-		>:first-child {
-			border-top-left-radius: 7px 50%;
-			border-bottom-left-radius: 7px 50%;
-		}
-		>:last-child {
-			border-top-right-radius: 7px 50%;
-			border-bottom-right-radius: 7px 50%;
-		}
 		div.cost {
-			font: 14pt "MPlantin";
+			font: calc(0.125 * var(--in)) "MPlantin";
 		}
 	}
 
 	img.image {
 		position: absolute;
-		left: 29px;
-		top:  59px;
-		width: 316px;
-		height: 231px;
+		left:   calc(0.2  * var(--in));
+		top:    calc(0.4  * var(--in));
+		width:  calc(2.1  * var(--in));
+		height: calc(1.54 * var(--in));
 	}
 
 	div.type_line {
-		position: absolute;
-		left:   22px;
-		top:    294px;
-		right:  22px;
-		height: 30px;
-		box-sizing: border-box;
-		display: grid;
+		top:    calc(1.96 * var(--in));
+		height: calc(0.2 * var(--in));
 		grid-template-columns: 1fr auto;
-		color: var(--title-color);
 		>.type {
 			box-sizing: border-box;
 			margin: 0;
-			padding: 4px 10px 5px;
+			padding: calc(0.0125 * var(--in)) 0 0 calc(0.0625 * var(--in));
 			display: grid;
 			align-items: center;
-			font: bold 13pt "Beleren";
+			font: bold calc(0.115 * var(--in)) "Beleren";
 			-webkit-text-stroke: var(--title-color) 0.2px;
-			overflow: hidden auto;
+			overflow: hidden;
 		}
 		>.set_symbol {
-			min-width: 32px;
-		}
-		>:first-child {
-			border-top-left-radius: 6px 50%;
-			border-bottom-left-radius: 6px 50%;
-		}
-		>:last-child {
-			border-top-right-radius: 6px 50%;
-			border-bottom-right-radius: 6px 50%;
+			min-width: calc(0.25 * var(--in));
 		}
 	}
+
 	div[contenteditable="true"] {
 		&:hover {
 			background-color: var(--hover-color);
-			// outline: 2px solid rgba(127 127 127 / 0.5);
+			outline: 2px solid rgba(127 127 127 / 0.5);
 		}
 		&:focus {
 			background-color: transparent;
@@ -123,30 +119,27 @@ div.card_editor {
 
 	div.card_text {
 		position: absolute;
-		left: 28px;
-		top: 327px;
-		right: 29px;
-		bottom: 40px;
+		left:   calc(0.2  * var(--in));
+		top:    calc(2.175  * var(--in));
+		right:  calc(0.2  * var(--in));
+		height: calc(1.0625 * var(--in));
 		margin: 0;
-		padding-bottom: 4px;
+		padding-bottom: calc(0.025 * var(--in));
 		box-sizing: border-box;
 		align-content: center;
-		font: 14pt "MPlantin";
+		font: calc(0.125 * var(--in)) "MPlantin";
 		color: var(--text-color);
 		line-height: 1.05;
 		display: grid;
 		grid-auto-rows: auto;
-		// display: flex;
-		// flex-direction: column;
-		// justify-content: center;
 		overflow: hidden auto;
 		overflow-wrap: break-word;
 
 		.section {
 			z-index: 10;
-			padding: 0.4em 6px 0.4em 7px;
+			padding: 0.4em calc(0.04 * var(--in)) 0.4em calc(0.04 * var(--in));
 			&:last-of-type {
-				margin-bottom: -4px;
+				margin-bottom: calc(-0.025 * var(--in));
 			}
 			&:hover {
 				background-color: transparent;
@@ -154,37 +147,44 @@ div.card_editor {
 			.atom {
 				background-color: var(--faded-grey);
 			}
+			&[data-name="flavor_text"] {
+				--normal-style: italic;
+				--italic-style: normal;
+			}
 		}
 		.hr {
-			margin: 0 12px -1px;
-			height: 1px;
+			margin: 0 calc(0.08 * var(--in)) calc(-0.00675 * var(--in));
+			height: calc(0.00675 * var(--in));
 			background-image: var(--flavor-bar-gradient);
 			border: none;
 			&.selected {
 				outline: 2px solid var(--focused-outline-color);
 			}
-			div {
-				width: 100%;
-			}
 		}
 	}
 	img.pt_box {
 		position: absolute;
-		right:  21px;
-		bottom: 15px;
-		width:  81px;
-		height: 42px;
+		right:  calc(0.14 * var(--in));
+		bottom: calc(0.1  * var(--in));
+		width:  calc(0.54 * var(--in));
+		height: calc(0.28 * var(--in));
 	}
 	div.pt {
 		position: absolute;
-		right:  25px;
-		bottom: 27px;
-		width:  67px;
-		height: 27px;
+		right:  calc(0.1675 * var(--in));
+		bottom: calc(0.18   * var(--in));
+		width:  calc(0.4475 * var(--in));
+		height: calc(0.18   * var(--in));
 		border-radius: 5px / 50%;
 		box-sizing: border-box;
-		padding-top: 1px;
-		font: bold 16pt "Beleren";
+		padding-top: calc(-0.00675 * var(--in));
+		font: bold calc(0.25 * var(--pt)) "Beleren";
 		text-align: center;
+	}
+	img.tester {
+		position: absolute;
+		inset: 0;
+		opacity: 0.2;
+		pointer-events: none;
 	}
 }

@@ -1,5 +1,5 @@
 import React from "react";
-import { Ancestor, BaseEditor, BaseElement, BaseText, createEditor, Descendant, Editor, Element, Node, NodeEntry, Path, Text, Transforms } from "slate";
+import { Ancestor, BaseEditor, createEditor, Descendant, Editor, Element, Node, Operation, Path, Point, Text, Transforms } from "slate";
 import { HistoryEditor, withHistory } from "slate-history";
 import { ReactEditor, RenderElementProps as BaseRenderElementProps, RenderLeafProps as BaseRenderLeafProps, withReact } from "slate-react";
 import { Card } from "./components/slate/Card";
@@ -11,11 +11,11 @@ import { ViewEditor, MultiEditor, withView, withMulti, withHistoryShim } from ".
 import { Document } from "./components/slate/Document";
 import { PlainText, PlainTextElement } from "./components/slate/PlainText";
 import { Absence } from "./components/slate/Absence";
-import { Image } from "./components/slate/Image";
+import { Image, ImageElement, isImage } from "./components/slate/Image";
 import { Section, SectionElement } from "./components/slate/Section";
 import { HorizontalRule, HorizontalRuleElement, isHorizontalRule } from "./components/slate/HorizontalRule";
-
-
+import { isManaPip, ManaPip, ManaPipElement } from "./components/slate/ManaPip";
+import { isSymbol, Symbol, SymbolElement } from "./components/slate/Symbol";
 
 ///////////
 // Types //
@@ -29,7 +29,8 @@ declare module "slate" {
 			| (Document | Card | Field | Section)
 			| HorizontalRule
 			| (Paragraph | CodeBlock)
-			| Image
+			| (Image | Symbol)
+			| ManaPip
 		),
 		Text: StyledText | PlainText,
 	}
@@ -37,8 +38,8 @@ declare module "slate" {
 
 export type EditorWithVersion<T extends BaseEditor> = { editor: T, v: number }
 
-export type ChildOf<N extends Ancestor> = N["children"] extends (infer C)[] ? C : never;
-export type DescendantOf<N extends Ancestor> = ChildOf<N> | (ChildOf<N> extends Ancestor ? DescendantOf<ChildOf<N>> : never)
+// export type ChildOf<N extends Ancestor> = N["children"] extends (infer C)[] ? C : never;
+// export type DescendantOf<N extends Ancestor, Before extends Ancestor = never> = ChildOf<N> | (ChildOf<N> extends Before ? never : (ChildOf<N> extends Ancestor ? DescendantOf<ChildOf<N>, N | Before> : never))
 
 export type DocumentEditor = BaseEditor & ReactEditor & HistoryEditor & MultiEditor;
 
@@ -68,6 +69,19 @@ export function create_document_editor(initial_value: [Document]): DocumentEdito
 export function create_card_field_editor() {
 	const editor = withHistoryShim(withView(withReact(createEditor())));
 	editor.isVoid = isVoid;
+	editor.isInline = isInline;
+	editor.isElementReadOnly = isAtomic;
+
+	const { normalizeNode } = editor;
+	editor.normalizeNode = (entry, options) => {
+		const [node, path] = entry
+
+		if (isManaPip(node) && editor.isEmpty(node)) {
+			editor.removeNodes({ at: path });
+		}
+
+		normalizeNode(entry);
+	}
 	return editor;
 }
 
@@ -124,13 +138,6 @@ export const CustomEditor = {
 		return !!match;
 	},
 
-	isCodeBlockActive(editor: Editor) {
-		const [match] = Editor.nodes(editor, {
-			match: n => !Editor.isEditor(n) && !("text" in n) && Editor.isBlock(editor, n) && n.type === "CodeBlock",
-		});
-		return !!match;
-	},
-
 	toggleBoldMark(editor: Editor) {
 		const isActive = CustomEditor.isBoldMarkActive(editor);
 		Transforms.setNodes(
@@ -148,28 +155,20 @@ export const CustomEditor = {
 			{ match: n => Text.isText(n), split: true }
 		);
 	},
-
-	toggleCodeBlock(editor: Editor) {
-		const isActive = CustomEditor.isCodeBlockActive(editor);
-		Transforms.setNodes(
-			editor,
-			{ type: isActive ? "Paragraph" : "CodeBlock" },
-			{ match: n => !Editor.isEditor(n) && !("text" in n) && Editor.isBlock(editor, n) }
-		);
-	},
 }
-
 
 export function renderElement(props: RenderElementProps) {
 	switch (props.element.type) {
-		case "Section": return <SectionElement {...props as RenderElementProps<Section>}/>;
+		case "Section":        return <SectionElement        {...props as RenderElementProps<Section>}/>;
 		case "HorizontalRule": return <HorizontalRuleElement {...props as RenderElementProps<HorizontalRule>}/>;
-		case "CodeBlock": return <CodeBlockElement {...props as RenderElementProps<CodeBlock>}/>;
+		case "CodeBlock":      return <CodeBlockElement      {...props as RenderElementProps<CodeBlock>}/>;
+		case "ManaPip":        return <ManaPipElement        {...props as RenderElementProps<ManaPip>}/>;
+		case "Image":          return <ImageElement          {...props as RenderElementProps<Image>}/>;
+		case "Symbol":         return <SymbolElement         {...props as RenderElementProps<Symbol>}/>;
+		case "Paragraph":      return <ParagraphElement      {...props as RenderElementProps<Paragraph>}/>;
 		default: {
-		// case "Paragraph": {
 			return <ParagraphElement {...props}/>;
 		}
-		
 	}
 }
 
@@ -178,6 +177,110 @@ export function renderLeaf(props: RenderLeafProps) {
 	return <PlainTextElement {...props} />
 }
 
-export function isVoid(element: Element) {
-	return isHorizontalRule(element);
+export function isVoid(el: Element) {
+	return (
+		isHorizontalRule(el) ||
+		isImage(el)
+	);
+}
+
+export function isInline(el: Element) {
+	return isManaPip(el) || isSymbol(el);
+}
+
+/**
+ * returns true if the component acts like a void in the editor (ie cant be edited within) but still contains markup content
+ */
+export function isAtomic(el: Element) {
+	return (
+		isManaPip(el) && el.children.length === 3 && (el.children[0] as Text).text === "" && (el.children[1] as Element).type === "Symbol" && (el.children[2] as Text).text === ""
+	);
+}
+
+
+// where the cursor stops when on the edge of a node
+// unused for now. isElementReadOnly is making everything work out so far but I might want this or something like it to make the cursor visual more consistent
+export type CursorStop = "inside" | "outside" | "both" | "either";
+export function cursorStopOnEdge(el: Ancestor): CursorStop {
+	if (isManaPip(el)) return "outside";
+	return "either";
+}
+
+export interface NudgeOptions {
+	direction?: "forward" | "backward",
+}
+
+export function cursorNudge(editor: Editor, point: Point, options: NudgeOptions = {}): Point {
+	const { direction = "forward" } = options;
+	let p: Point | undefined = point;
+
+	const is_start = Editor.isStart(editor, p, p.path);
+	const is_end = Editor.isEnd(editor, p, p.path);
+	if (is_start && (!is_end || direction === "backward")) {
+		// nudge backward
+		while (Editor.isStart(editor, p, p.path)) {
+			const parent = Node.parent(editor, p.path);
+			const index_in_parent = p.path[p.path.length - 1];
+			if (index_in_parent === 0) {
+				// first child, go up
+				if (!(Element.isElement(parent) && Editor.isInline(editor, parent))) return p;
+				const cursor_stop = cursorStopOnEdge(parent);
+				if (cursor_stop !== "outside") return p;
+				const new_point = Editor.before(editor, p, { unit: "offset" });
+				if (!new_point) return p;
+				p = new_point;
+				continue;
+			} else {
+				// dive in to previous node
+				const new_point = Editor.before(editor, p, { unit: "offset" }) as Point;
+				const next_node = Node.get(editor, new_point.path);
+				if (Text.isText(next_node)) return p; // previous node is butting text, return old point to move as little as possible
+				const cursor_stop = cursorStopOnEdge(next_node);
+				if (cursor_stop !== "inside") return p;
+				p = new_point;
+				continue;
+			}
+		}
+	} else if (is_end) {
+		// nudge forward
+		while (Editor.isEnd(editor, p, p.path)) {
+			const parent = Node.parent(editor, p.path);
+			const index_in_parent = p.path[p.path.length - 1];
+			if (index_in_parent === parent.children.length - 1) {
+				// last child, go up
+				if (!(Element.isElement(parent) && Editor.isInline(editor, parent))) return p;
+				const cursor_stop = cursorStopOnEdge(parent);
+				if (cursor_stop !== "outside") return p;
+				const new_point = Editor.after(editor, p, { unit: "offset" });
+				if (!new_point) return p;
+				p = new_point;
+			} else {
+				// dive in to next node
+				const new_point = Editor.after(editor, p, { unit: "offset" }) as Point;
+				const new_node = Node.parent(editor, new_point.path);
+				if (Path.isParent(p.path, new_point.path)) return p; // old and new point share the same parent, they are sibling text nodes
+				const cursor_stop = cursorStopOnEdge(new_node);
+				if (cursor_stop !== "inside") return p;
+				p = new_point;
+			}
+		}
+	}
+
+	return p;
+}
+
+export function cursorNudgeSelection(editor: Editor, options: NudgeOptions = {}) {
+	const { selection } = editor;
+	if (!selection) return;
+	const { focus, anchor } = selection;
+	const new_focus = cursorNudge(editor, focus, options);
+	const new_anchor = cursorNudge(editor, anchor, options);
+	const set_focus = !Point.equals(focus, new_focus);
+	const set_anchor = !Point.equals(anchor, new_anchor);
+	if (set_focus || set_anchor) {
+		Transforms.setSelection(editor, {
+			focus: set_focus ? new_focus : undefined,
+			anchor: set_anchor ? new_anchor : undefined,
+		});
+	}
 }

@@ -2,7 +2,7 @@ import React from "react";
 import { BaseElement, Element } from "slate";
 import { RenderElementProps } from "slate-react";
 import { Field } from "./Field";
-import { frame_urls } from "../../card_frame";
+import { frame_urls } from "../../color_assets";
 
 export interface Card extends BaseElement {
 	type: "Card",

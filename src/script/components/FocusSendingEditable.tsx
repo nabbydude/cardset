@@ -1,4 +1,4 @@
-import React, { ForwardedRef, forwardRef, useCallback, useContext } from "react";
+import React, { useCallback, useContext } from "react";
 import { Editable, ReactEditor, useSlate } from "slate-react";
 import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
 
@@ -18,5 +18,5 @@ export function FocusSendingEditable(props: EditableProps) {
 		if (onBlur) onBlur(e);
 	}, [onBlur]);
 
-	return <Editable onFocus={newOnFocus} onBlur={newOnBlur} {...rest}/>
+	return <Editable onFocus={newOnFocus} onBlur={newOnBlur} {...rest}/>;
 }

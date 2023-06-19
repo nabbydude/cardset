@@ -1,23 +1,28 @@
-import React, { KeyboardEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import React, { KeyboardEvent, MouseEvent, SyntheticEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useState } from "react";
 import { Editor, Node, Path } from "slate";
 import { ReactEditor, Slate } from "slate-react";
 import { FocusSendingEditable } from "./FocusSendingEditable";
 import { MultiEditor } from "../multi_slate";
 import { create_card_field_editor, CustomEditor, first_matching_path, renderElement, renderLeaf } from "../slate";
-import { useDocument, useDocumentWithV } from "./contexts/DocumentContext";
+import { useDocument } from "./contexts/DocumentContext";
 import { Card } from "./slate/Card";
-import { get_fill_size } from "../util";
+import { as_scaling_pt, get_fill_size } from "../util";
+import { EditableProps } from "slate-react/dist/components/editable";
 
-export interface TextFieldProps {
+export interface TextFieldProps extends EditableProps {
 	card_path: Path,
 	field: string,
 	min_font_size: number,
 	max_font_size: number,
+
+	onEditableDOMBeforeInput?: (e: InputEvent, editor: ReactEditor) => void,
+	onEditableClick?: (e: MouseEvent, editor: ReactEditor) => void,
+	onEditableKeyDown?: (e: KeyboardEvent, editor: ReactEditor) => void,
 }
 
 export function TextField(props: TextFieldProps) {
-	const { card_path, field, min_font_size, max_font_size } = props;
+	const { card_path, field, min_font_size, max_font_size, onEditableDOMBeforeInput, onEditableClick, onEditableKeyDown, ...rest } = props;
 	const doc = useDocument();
 	const [editor] = useState(create_card_field_editor);
 	const card = Node.get(doc, card_path) as Card;
@@ -32,15 +37,24 @@ export function TextField(props: TextFieldProps) {
 	useLayoutEffect(() => {
 		const el = ReactEditor.toDOMNode(editor, editor);
 		const size = get_fill_size(el, min_font_size, max_font_size, 0.5);
-		el.style.fontSize = `${size}pt`;
+		el.style.fontSize = as_scaling_pt(size);
 	});
+
 	return (
-		<Slate editor={editor} value={editor.children}>
+		<Slate editor={editor} initialValue={editor.children}>
 			<FocusSendingEditable
 				className={field}
 				renderElement={renderElement}
 				renderLeaf={renderLeaf}
-				onKeyDown={useCallback((e: KeyboardEvent) => onKeyDown(e, editor), [editor])}
+				onKeyDown={useCallback((e: KeyboardEvent) => { onEditableKeyDown?.(e, editor); if(!e.defaultPrevented) onKeyDown(e, editor); }, [editor, onEditableKeyDown])}
+				onClick={useCallback((e: MouseEvent) => onEditableClick?.(e, editor), [editor, onEditableClick])}
+				onDOMBeforeInput={useCallback((e: InputEvent) => onEditableDOMBeforeInput?.(e, editor), [editor, onEditableDOMBeforeInput])}
+				disableDefaultStyles={true}
+				style={{
+					whiteSpace: "pre-wrap",
+					wordWrap: "break-word",
+				}}
+				{...rest}
 			/>
 		</Slate>
 	)

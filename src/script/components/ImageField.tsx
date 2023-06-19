@@ -5,7 +5,7 @@ import { first_matching_element, first_matching_path, } from "../slate";
 import { useDocument } from "./contexts/DocumentContext";
 import { Card } from "./slate/Card";
 import { Image, isImage } from "./slate/Image";
-import { frame_urls } from "../card_frame";
+import { frame_urls } from "../color_assets";
 
 export interface ImageFieldProps {
 	card_path: Path,

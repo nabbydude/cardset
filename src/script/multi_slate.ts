@@ -46,7 +46,6 @@ export function withMulti<T extends BaseEditor>(editor: T): T & MultiEditor {
 						const path = ref.current;
 						if (!path) continue;
 
-						
 						CustomEditor.withoutEverNormalizing(view as Editor, () => {
 							if (e.selection && Path.isDescendant(e.selection.anchor.path, path) && Path.isDescendant(e.selection.focus.path, path)) {
 								// if something is selected and its fully contained in this view.

@@ -67,11 +67,11 @@
   "dependencies": {
     "@parcel/config-default": "^2.8.3",
     "@saeris/typeface-beleren-bold": "^1.0.1",
-    "html2canvas": "^1.4.1",
+    "modern-screenshot": "^4.4.26",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "slate": "^0.91.4",
-    "slate-history": "^0.86.0",
-    "slate-react": "^0.88.2"
+    "slate": "^0.94.1",
+    "slate-history": "^0.93.0",
+    "slate-react": "^0.97.0"
   }
 }
