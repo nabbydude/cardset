@@ -19,17 +19,11 @@ export function CardEditor(props: CardEditorProps) {
 	const [scaled_inch, set_scaled_inch] = useState(150);
 	const scale_cb = useCallback((e: ChangeEvent<HTMLInputElement>) => set_scaled_inch(Number(e.target.value)), [set_scaled_inch]);
 
-	if (!card) return (<div className="card_editor empty">No card focused</div>);
-
-	const frame_field = first_matching_element(card, { type: "Field", name: "frame" });
-	const frame_value = frame_field ? to_plaintext(frame_field.children) : "none";
-
-	return (
-		<div className="card_editor_wrapper">
-			<div style={{ display: "grid", gridTemplateColumns: "6ch 1fr", width: "180px" }}>
-				<input type="number" min="75" max="300" step="1" value={scaled_inch} onChange={scale_cb}/>
-				<input type="range" min="75" max="300" step="1" value={scaled_inch} onChange={scale_cb}/>
-			</div>
+	let editor;
+	if (card) {
+		const frame_field = first_matching_element(card, { type: "Field", name: "frame" });
+		const frame_value = frame_field ? to_plaintext(frame_field.children) : "none";
+		editor = (
 			<div className="card_editor" style={{ "--in": `${scaled_inch}px` } as CSSProperties}>
 				<CardFrame frame={{ image: frame_value }}/>
 				<div className="title_bar name_line">
@@ -47,6 +41,18 @@ export function CardEditor(props: CardEditorProps) {
 				<PowerToughnessBackground card_path={path} field={"pt"}/>
 				<TextField card_path={path} field={"pt"} min_font_size={5} max_font_size={10.5}/>
 			</div>
+		);
+	} else {
+		editor = <div className="card_editor empty" style={{ "--in": `${scaled_inch}px` } as CSSProperties}>No card focused</div>;
+	}
+
+	return (
+		<div className="card_editor_wrapper">
+			<div style={{ display: "grid", gridTemplateColumns: "6ch 1fr", width: "180px" }}>
+				<input type="number" min="75" max="300" step="1" value={scaled_inch} onChange={scale_cb}/>
+				<input type="range" min="75" max="300" step="1" value={scaled_inch} onChange={scale_cb}/>
+			</div>
+			{editor}
 		</div>
 	);
 }

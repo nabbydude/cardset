@@ -12,17 +12,20 @@ span.mana_pip {
 	display: inline-grid;
 	grid-auto-flow: column;
 	align-items: center;
-	width: calc(0.115 * var(--in));
-	height: calc(0.115 * var(--in));
+	width: 0.92em;
+	height: 0.92em;
 	text-align: center;
-	margin: calc(0.01 * var(--in));
+	margin: 0.08em;
 	box-sizing: border-box;
 	border-radius: 50% 50%;
-	box-shadow: calc(-0.002  * var(--in)) calc(0.01  * var(--in)) black;
+	box-shadow: -0.016em 0.08em black;
 	line-height: 1;
 	vertical-align: text-top;
 	font-weight: bold;
 	letter-spacing: 0;
+	color: black;
+	font-family: "MPlantin";
+
 	>span {
 		grid-area: 1 / 1 / 2 / 2;
 
@@ -30,8 +33,9 @@ span.mana_pip {
 			display: grid;
 			grid-auto-flow: column;
 			align-items: center;
-			margin-top: calc(-0.5 * var(--pt));;
-			height: calc(10.5 * var(--pt));
+			align-content: center;
+			margin-top: -0.08em;
+			height: 1.16em;
 			overflow: hidden;
 		}
 	}

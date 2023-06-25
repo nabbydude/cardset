@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Ancestor, BaseEditor, createEditor, Descendant, Editor, Element, Node, Operation, Path, Point, Text, Transforms } from "slate";
 import { HistoryEditor, withHistory } from "slate-history";
 import { ReactEditor, RenderElementProps as BaseRenderElementProps, RenderLeafProps as BaseRenderLeafProps, withReact } from "slate-react";
@@ -61,13 +61,17 @@ export function empty(): [Absence] {
 }
 
 export function create_document_editor(initial_value: [Document]): DocumentEditor {
-	const editor = withReact(withMulti(withHistory(createEditor())));
+	const editor = withReact(withMulti(withHistory(createEditor() as BaseEditor)));
+	editor.isVoid = isVoid;
+	editor.isInline = isInline;
+	editor.isElementReadOnly = isAtomic;
+
 	editor.children = initial_value;
 	return editor;
 }
 
 export function create_card_field_editor() {
-	const editor = withHistoryShim(withView(withReact(createEditor())));
+	const editor = withHistoryShim(withView(withReact(createEditor() as BaseEditor)));
 	editor.isVoid = isVoid;
 	editor.isInline = isInline;
 	editor.isElementReadOnly = isAtomic;
@@ -82,6 +86,8 @@ export function create_card_field_editor() {
 
 		normalizeNode(entry);
 	}
+
+	editor.children = empty();
 	return editor;
 }
 
@@ -283,4 +289,28 @@ export function cursorNudgeSelection(editor: Editor, options: NudgeOptions = {})
 			anchor: set_anchor ? new_anchor : undefined,
 		});
 	}
+}
+
+export function useViewOfMatchingNode(editor: ViewEditor, parent_editor: MultiEditor, search_path: Path, partial: Partial<Element>) {
+	const node = Node.get(parent_editor, search_path);
+	const old_parent_editor = editor.viewParent.editor;
+	const old_parent_path = editor.viewParent.path;
+	useEffect(() => {
+		return () => MultiEditor.unsetView(editor);
+	}, []);
+	const already_valid = (
+		parent_editor === old_parent_editor &&
+		old_parent_path &&
+		old_parent_path.current &&
+		Path.isDescendant(old_parent_path.current, search_path) &&
+		Element.matches(Node.get(old_parent_editor, old_parent_path.current) as Element, partial)
+	);
+	if (already_valid) return;
+	const matching_path = first_matching_path(node, partial);
+	if (!matching_path) {
+		MultiEditor.unsetView(editor);
+		return;
+	}
+	const full_path = search_path.concat(matching_path);
+	MultiEditor.setView(editor, parent_editor, full_path);
 }

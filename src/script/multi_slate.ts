@@ -1,6 +1,6 @@
 import { BaseEditor, Editor, Node, Operation, Path, PathRef, Transforms } from "slate"
 import { HistoryEditor } from "slate-history";
-import { CustomEditor } from "./slate";
+import { CustomEditor, empty } from "./slate";
 
 export const SENDING = new WeakMap<MultiEditor | ViewEditor, boolean | undefined>();
 
@@ -171,14 +171,18 @@ export const MultiEditor = {
 		editor.viewParent.path = ref;
 		const children = [...Node.children(parent as Editor, path)].map(([node]) => node);
 		MultiEditor.withoutSendingTo(parent, () => {
-			editor.children = [];
-			Transforms.insertNodes(editor as Editor, children, { at: [0] });
+			editor.children = children;
 		});
 		parent.views.set(editor, ref);
 	},
 
 	unsetView(editor: ViewEditor) {
-		if (editor.viewParent.editor) editor.viewParent.editor.views.delete(editor);
+		if (editor.viewParent.editor) {
+			editor.viewParent.editor.views.delete(editor);
+			MultiEditor.withoutSendingTo(editor.viewParent.editor, () => {
+				editor.children = empty();
+			});
+		}
 		if (editor.viewParent.path) editor.viewParent.path.unref();
 		editor.viewParent.editor = undefined;
 		editor.viewParent.path = undefined;

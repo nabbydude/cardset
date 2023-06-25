@@ -1,11 +1,14 @@
-import React, { MouseEventHandler, useCallback } from "react";
+import React, { MouseEventHandler, useCallback, useState } from "react";
 
-import { first_matching_entry, first_matching_path, to_single_line_plaintext } from "../slate";
+import { create_card_field_editor, first_matching_entry, first_matching_path, renderElement, renderLeaf, to_single_line_plaintext, useViewOfMatchingNode } from "../slate";
 import { Card } from "./slate/Card";
 import { useContextMenu } from "./contexts/ContextMenuContext";
 import { useDocument } from "./contexts/DocumentContext";
-import { Editor, Transforms } from "slate";
+import { Editor, NodeEntry, Path, Transforms, path } from "slate";
 import { Node } from "slate";
+import { Slate } from "slate-react";
+import { FocusSendingEditable } from "./FocusSendingEditable";
+import { EditableProps } from "slate-react/dist/components/editable";
 
 
 
@@ -16,7 +19,7 @@ export interface list_column {
 
 export interface CardListProps {
 	columns: list_column[],
-	cards: Card[],
+	card_entries: NodeEntry<Card>[],
 	selected_ids: Set<number>, // ids of selected cards
 	active_id?: number,
 	set_selected_ids: (cards_or_func: Set<number> | ((old: Set<number>) => Set<number>)) => void,
@@ -24,7 +27,7 @@ export interface CardListProps {
 }
 
 export function CardList(props: CardListProps) {
-	const {columns, cards, selected_ids, active_id, set_selected_ids, set_active_id } = props;
+	const {columns, card_entries, selected_ids, active_id, set_selected_ids, set_active_id } = props;
 	return (
 		<table className="card_list">
 			<thead>
@@ -33,14 +36,14 @@ export function CardList(props: CardListProps) {
 				</tr>
 			</thead>
 			<tbody>
-				{cards.map(card => (<CardRow key={card.id} card={card} columns={columns} selected={selected_ids.has(card.id)} active={active_id === card.id} set_selected_ids={set_selected_ids} set_active_id={set_active_id}/>))}
+				{card_entries.map(([card, path]) => (<CardRow key={card.id} card_path={path} columns={columns} selected={selected_ids.has(card.id)} active={active_id === card.id} set_selected_ids={set_selected_ids} set_active_id={set_active_id}/>))}
 			</tbody>
 		</table>
 	);
 }
 
 export interface CardRowProps {
-	card: Card,
+	card_path: Path,
 	columns: list_column[],
 	selected: boolean;
 	active: boolean;
@@ -49,8 +52,9 @@ export interface CardRowProps {
 }
 
 export function CardRow(props: CardRowProps) {
-	const { card, columns, selected, active, set_selected_ids, set_active_id } = props;
-
+	const { card_path, columns, selected, active, set_selected_ids, set_active_id } = props;
+	const doc = useDocument();
+	const card = Node.get(doc, card_path) as Card;
 	const context_menu = useContextMenu();
 
 	const onMouseDown = useCallback((e => {
@@ -83,20 +87,37 @@ export function CardRow(props: CardRowProps) {
 	if (active) classList.push("active");
 	return (
 		<tr onMouseDown={onMouseDown} className={classList.join(" ")} onContextMenu={onContextMenu}>
-			{columns.map(({ field }) => (<CardCell key={field} card={card} field={field}/>))}
+			{columns.map(({ field }) => (<CardCell key={field} card_path={card_path} field={field}/>))}
 		</tr>
 	);
 }
 
-export interface CardCellProps {
-	card: Card,
+export interface CardCellProps extends EditableProps {
+	card_path: Path,
 	field: string,
 }
 
 export function CardCell(props: CardCellProps) {
-	const { card, field } = props;
-	const [markup] = first_matching_entry(card, { type: "Field", name: field }) ?? [];
+	const { card_path, field, ...rest } = props;
+	const doc = useDocument();
+	const [editor] = useState(create_card_field_editor);
+	useViewOfMatchingNode(editor, doc, card_path, { type: "Field", name: field });
+
 	return (
-		<td>{markup ? to_single_line_plaintext([markup]) : undefined}</td>
+		<Slate editor={editor} initialValue={editor.children}>
+			<FocusSendingEditable
+				as="td"
+				className={field}
+				renderElement={renderElement}
+				renderLeaf={renderLeaf}
+				disableDefaultStyles={true}
+				style={{
+					whiteSpace: "pre-wrap",
+					wordWrap: "break-word",
+				}}
+				readOnly={true}
+				{...rest}
+			/>
+		</Slate>
 	);
 }
