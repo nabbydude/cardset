@@ -46,7 +46,7 @@ export function create_test_card(name: string = "Test Card", color: keyof typeof
 			] },
 
 			{ type: "Field", name: "pt",          children: [{ type: "Paragraph", children: [{ text: "2/2",              bold: false, italic: false }] }] },
-			{ type: "Field", name: "image",       children: [{ type: "Image", src: null, children: [{ text: "" }] }] },
+			{ type: "Field", name: "image",       children: [{ type: "Image", src: undefined, children: [{ text: "" }] }] },
 		]
 	};
 }

@@ -61,6 +61,35 @@ export function withMulti<T extends BaseEditor>(editor: T): T & MultiEditor {
 					}
 					break;
 				}
+				case "move_node": {
+					for (const [view, ref] of e.views) {
+						if (MultiEditor.isSending(view)) continue;
+						const path = ref.current;
+						if (!path) continue;
+
+						const desc_old = Path.isDescendant(op.path, path);
+						const desc_new = Path.isDescendant(op.newPath, path);
+						if (desc_old) {
+							if (desc_new) {
+								// move
+								CustomEditor.withoutEverNormalizing(view as Editor, () => {
+									view.apply({ ...op, path: Path.relative(op.path, path), newPath: Path.relative(op.newPath, path) });
+								});
+							} else {
+								// remove
+								throw Error("inter-view move_node not currently supported")
+							}
+						} else {
+							if (desc_new) {
+								// insert
+								throw Error("inter-view move_node not currently supported")
+							} else {
+								continue;
+							}
+						}
+					}
+					break;
+				}
 				default: {
 					for (const [view, ref] of e.views) {
 						if (MultiEditor.isSending(view)) continue;
@@ -110,21 +139,18 @@ export function withView<T extends BaseEditor>(editor: T): T & ViewEditor {
 						}
 						break;
 					}
+					case "move_node": {
+						parent.apply({ ...op, path: path.concat(op.path), newPath: path.concat(op.newPath) });
+						break;
+					}
 					default: {
-						parent.apply({ ...op, path: path.concat(op.path), newPath: "newPath" in op ? path.concat(op.newPath) : undefined } as Operation);
+						parent.apply({ ...op, path: path.concat(op.path) });
 					}
 				}
 			});
 		});
 	};
 
-	return e;
-}
-
-export function withHistoryShim<T extends ViewEditor>(editor: T): T & HistoryShimEditor {
-	const e = editor as T & HistoryShimEditor;
-	e.undo = () => (e.viewParent.editor as HistoryEditor | undefined)?.undo();
-	e.redo = () => (e.viewParent.editor as HistoryEditor | undefined)?.redo();
 	return e;
 }
 
@@ -174,6 +200,7 @@ export const MultiEditor = {
 			editor.children = children;
 		});
 		parent.views.set(editor, ref);
+		editor.deselect();
 	},
 
 	unsetView(editor: ViewEditor) {

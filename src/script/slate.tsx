@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Ancestor, BaseEditor, createEditor, Descendant, Editor, Element, Node, Operation, Path, Point, Text, Transforms } from "slate";
+import React, { useEffect } from "react";
+import { Ancestor, BaseEditor, createEditor, Descendant, Editor, Element, Node, Path, Point, Text, Transforms } from "slate";
 import { HistoryEditor, withHistory } from "slate-history";
 import { ReactEditor, RenderElementProps as BaseRenderElementProps, RenderLeafProps as BaseRenderLeafProps, withReact } from "slate-react";
 import { Card } from "./components/slate/Card";
@@ -7,7 +7,7 @@ import { CodeBlock, CodeBlockElement } from "./components/slate/CodeBlock";
 import { Field } from "./components/slate/Field";
 import { Paragraph, ParagraphElement } from "./components/slate/Paragraph";
 import { isStyledText, StyledText, StyledTextElement } from "./components/slate/StyledText";
-import { ViewEditor, MultiEditor, withView, withMulti, withHistoryShim } from "./multi_slate";
+import { ViewEditor, MultiEditor, withView, withMulti } from "./multi_slate";
 import { Document } from "./components/slate/Document";
 import { PlainText, PlainTextElement } from "./components/slate/PlainText";
 import { Absence } from "./components/slate/Absence";
@@ -71,7 +71,7 @@ export function create_document_editor(initial_value: [Document]): DocumentEdito
 }
 
 export function create_card_field_editor() {
-	const editor = withHistoryShim(withView(withReact(createEditor() as BaseEditor)));
+	const editor = withView(withReact(createEditor() as BaseEditor));
 	editor.isVoid = isVoid;
 	editor.isInline = isInline;
 	editor.isElementReadOnly = isAtomic;

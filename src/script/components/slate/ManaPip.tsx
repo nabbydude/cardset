@@ -12,7 +12,7 @@ export interface ManaPip extends BaseElement {
 
 export function ManaPipElement(props: RenderElementProps<ManaPip>) {
 		// Its bad practice to use mutable state here but we only use it to store the ref in a place where the layout effect can see, we don't need to update when it changes (in fact we specifically want to avoid it)
-	const [ref_box] = useState<{ ref: HTMLSpanElement | null }>({ ref: null });
+	const [ref_box] = useState<{ ref: HTMLSpanElement | undefined }>({ ref: undefined });
 	
 	const ref_handle = useCallback((new_ref: HTMLSpanElement) => {
 		// props passes us down a callback-style ref so we have to use one here and pass it along

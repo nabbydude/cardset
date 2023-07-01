@@ -1,10 +1,10 @@
 import React, { MouseEventHandler, useCallback, useState } from "react";
 
-import { create_card_field_editor, first_matching_entry, first_matching_path, renderElement, renderLeaf, to_single_line_plaintext, useViewOfMatchingNode } from "../slate";
+import { create_card_field_editor, first_matching_path, renderElement, renderLeaf, useViewOfMatchingNode } from "../slate";
 import { Card } from "./slate/Card";
 import { useContextMenu } from "./contexts/ContextMenuContext";
 import { useDocument } from "./contexts/DocumentContext";
-import { Editor, NodeEntry, Path, Transforms, path } from "slate";
+import { NodeEntry, Path, Transforms } from "slate";
 import { Node } from "slate";
 import { Slate } from "slate-react";
 import { FocusSendingEditable } from "./FocusSendingEditable";
@@ -59,7 +59,7 @@ export function CardRow(props: CardRowProps) {
 
 	const onMouseDown = useCallback((e => {
 		if (e.ctrlKey) {
-				set_selected_ids(old => new Set(old.delete(card.id) ? old : old.add(card.id)));
+			set_selected_ids(old => new Set(old.delete(card.id) ? old : old.add(card.id)));
 		} else {
 			set_selected_ids(new Set([card.id]));
 		}

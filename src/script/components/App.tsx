@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useMemo, useState } from "react";
+import React, { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { CardEditor } from "./CardEditor";
 import { Header } from "./Header";
 import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
@@ -6,13 +6,15 @@ import { ReactEditor, Slate, useSlateWithV } from "slate-react";
 import { CardList, list_column } from "./CardList";
 import { DocumentEditor, EditorWithVersion, create_document_editor, first_matching_element, to_single_line_plaintext } from "../slate";
 import { Card, create_test_card, isCard } from "./slate/Card";
-import { Document } from "./slate/Document";
+import { Document, isDocument } from "./slate/Document";
 import { DocumentContext, useDocument } from "./contexts/DocumentContext";
 import { Field } from "./slate/Field";
 import { ContextMenu, context_menu_data } from "./ContextMenu";
 import { ContextMenuContext } from "./contexts/ContextMenuContext";
 import { Node, NodeEntry, Transforms } from "slate";
 import { domToPng } from "modern-screenshot";
+import { ImageStoreContext, image_entry } from "./contexts/ImageStoreContext";
+import { load_set, save_set } from "../save_load";
 
 const starting_document: [Document] = [
 	{
@@ -39,30 +41,49 @@ export function get_App() {
 export function App() {
 	const [active_id, set_active_id] = useState(0);
 	const [selected_ids, set_selected_ids] = useState(new Set<number>());
-	const [doc] = useState(() => create_document_editor(starting_document));
+	const [doc, set_doc] = useState<DocumentEditor | undefined>(() => create_document_editor(starting_document));
 	const [contextMenu, setContextMenu] = useState<context_menu_data>();
 	const [focused_editor, set_focused_editor] = useState<ReactEditor>();
 	const focused_editor_value = useMemo(() => [focused_editor, set_focused_editor] as const, [focused_editor, set_focused_editor]);
+	const [image_store, set_image_store] = useState(new Map<number, image_entry>());
+	const image_store_value = useMemo(() => [image_store, set_image_store] as const, [image_store, set_image_store]);
+
+	const save_active_card_image = useCallback(() => save_card_image(doc!, active_id), [doc, active_id]);
+	const save_this_set = useCallback(() => save_set(doc!, image_store), [doc, image_store]);
+	const load_this_set = useCallback(() => load_set(set_doc, set_image_store), [set_doc, set_image_store]);
+	// const load_this_set = useCallback(() => set_doc(() => create_document_editor(starting_document)), [set_doc]);
+
 	return (
 		<ContextMenuContext.Provider value={setContextMenu}>
-			<Slate editor={doc} initialValue={doc.children}>
-				<FocusedEditorContext.Provider value={focused_editor_value}>
-					<DocumentWrapper>
-						<Header save_active_card_image={useCallback(() => save_card_image(doc, active_id), [doc, active_id])}/>
-						<div id="content">
-							<CardEditor card_id={active_id}/>
-							<MainCardList
-								columns={list_columns}
-								selected_ids={selected_ids}
-								set_selected_ids={set_selected_ids}
-								active_id={active_id}
-								set_active_id={set_active_id}
-							/>
-						</div>
-						{contextMenu ? <ContextMenu position={contextMenu.position} options={contextMenu.options}/> : undefined}
-					</DocumentWrapper>
-				</FocusedEditorContext.Provider>
-			</Slate>
+			<ImageStoreContext.Provider value={image_store_value}>
+				{doc ? (
+					<Slate editor={doc} initialValue={doc.children}>
+						<FocusedEditorContext.Provider value={focused_editor_value}>
+							<DocumentWrapper>
+								<Header
+									save_active_card_image={save_active_card_image}
+									save_set={save_this_set}
+									load_set={load_this_set}
+								/>
+								<div id="content">
+									<CardEditor card_id={active_id}/>
+									<MainCardList
+										columns={list_columns}
+										selected_ids={selected_ids}
+										set_selected_ids={set_selected_ids}
+										active_id={active_id}
+										set_active_id={set_active_id}
+									/>
+								</div>
+								{contextMenu ? <ContextMenu position={contextMenu.position} options={contextMenu.options}/> : undefined}
+							</DocumentWrapper>
+						</FocusedEditorContext.Provider>
+					</Slate>
+				) : (
+					<div>Loading...</div>
+				)}
+				
+			</ImageStoreContext.Provider>
 		</ContextMenuContext.Provider>
 	);
 }
@@ -72,9 +93,24 @@ export interface DocumentWrapperProps {
 }
 
 export function DocumentWrapper(props: DocumentWrapperProps) {
-	const doc = useSlateWithV() as unknown as EditorWithVersion<DocumentEditor>;
+	const doc_with_v = useSlateWithV() as unknown as EditorWithVersion<DocumentEditor>;
+
+	useEffect(() => {
+		const handler = (e: KeyboardEvent) => {
+			if (!e.ctrlKey) return;
+			if (e.code !== "KeyZ") return;
+			if (e.shiftKey) {
+				doc_with_v.editor.redo();
+			} else {
+				doc_with_v.editor.undo();
+			}
+		};
+		window.addEventListener("keydown", handler);
+		return () => window.removeEventListener("keydown", handler);
+	}, [doc_with_v.editor]);
+
 	return (
-		<DocumentContext.Provider value={doc}>
+		<DocumentContext.Provider value={doc_with_v}>
 			{props.children}
 		</DocumentContext.Provider>
 	);
