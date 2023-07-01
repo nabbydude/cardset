@@ -70,14 +70,9 @@ export async function load_set(set_doc: React.Dispatch<React.SetStateAction<Docu
 	const input = document.createElement("input");
 	input.type = "file";
 	const change = new Promise<Event>((resolve) => input.addEventListener("change", resolve, { once: true }));
-	const click = new Promise<Event>((resolve) => input.addEventListener("click", resolve, { once: true }));
 	input.click();
-	const event = await Promise.race([change, click]);
-	if (event.type === "click") {
-		console.log("Loading Canceled");
-		return;
-	}
-	
+	const event = await change;
+
 
 	const file = input.files?.[0];
 	if (!file) throw Error("No file found to load");
