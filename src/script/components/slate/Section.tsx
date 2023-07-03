@@ -12,9 +12,9 @@ export function SectionElement(props: RenderElementProps<Section>) {
 		<div {...props.attributes} className="section" data-name={props.element.name}>
 			{props.children}
 		</div>
-	)
+	);
 }
 
-export function isSection(value: any): value is Section {
+export function isSection(value: unknown): value is Section {
 	return Element.isElement(value) && value.type === "Section" && (typeof value.name === "string");
 }

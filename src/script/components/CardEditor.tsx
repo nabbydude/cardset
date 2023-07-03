@@ -1,5 +1,5 @@
 import React, { CSSProperties, ChangeEvent, useCallback, useMemo, useState } from "react";
-import { first_matching_element, first_matching_entry, to_plaintext } from "../slate";
+import { firstMatchingElement, firstMatchingEntry, toPlaintext } from "../slate";
 import { TextField } from "./TextField";
 import { CardFrame } from "./CardFrame";
 import { PowerToughnessBackground } from "./PowerToughnessBackground";
@@ -9,48 +9,48 @@ import { ImageField } from "./ImageField";
 import { ManaTextField } from "./ManaTextField";
 
 export interface CardEditorProps {
-	card_id: number;
+	cardId: number;
 }
 
 export function CardEditor(props: CardEditorProps) {
-	const { card_id } = props;
+	const { cardId } = props;
 	const { doc, v } = useDocumentWithV();
-	const [card, path] = useMemo(() => first_matching_entry<Card>(doc, { type: "Card", id: card_id }) ?? [undefined, undefined], [doc, v, card_id]);
-	const [scaled_inch, set_scaled_inch] = useState(150);
-	const scale_cb = useCallback((e: ChangeEvent<HTMLInputElement>) => set_scaled_inch(Number(e.target.value)), [set_scaled_inch]);
+	const [card, path] = useMemo(() => firstMatchingEntry<Card>(doc, { type: "Card", id: cardId }) ?? [undefined, undefined], [doc, v, cardId]);
+	const [scaledInch, setScaledInch] = useState(150);
+	const scaleCb = useCallback((e: ChangeEvent<HTMLInputElement>) => setScaledInch(Number(e.target.value)), [setScaledInch]);
 
 	let editor;
 	if (card) {
-		const frame_field = first_matching_element(card, { type: "Field", name: "frame" });
-		const frame_value = frame_field ? to_plaintext(frame_field.children) : "none";
+		const frameField = firstMatchingElement(card, { type: "Field", name: "frame" });
+		const frameValue = frameField ? toPlaintext(frameField.children) : "none";
 		editor = (
-			<div className="card_editor" style={{ "--in": `${scaled_inch}px` } as CSSProperties}>
-				<CardFrame frame={{ image: frame_value }}/>
-				<div className="title_bar name_line">
-					<TextField card_path={path} field={"name"} min_font_size={5} max_font_size={10.5}/>
-					<ManaTextField card_path={path} field={"cost"} min_font_size={4} max_font_size={9}/>
+			<div className="card-editor" style={{ "--in": `${scaledInch}px` } as CSSProperties}>
+				<CardFrame frame={{ image: frameValue }}/>
+				<div className="title-bar name-line">
+					<TextField cardPath={path} field={"name"} minFontSize={5} maxFontSize={10.5}/>
+					<ManaTextField cardPath={path} field={"cost"} minFontSize={4} maxFontSize={9}/>
 				</div>
 
-				<ImageField card_path={path} field={"image"}/>
-				<div className="title_bar type_line">
-					<TextField card_path={path} field={"type"} min_font_size={4} max_font_size={8.5}/>
+				<ImageField cardPath={path} field={"image"}/>
+				<div className="title-bar type-line">
+					<TextField cardPath={path} field={"type"} minFontSize={4} maxFontSize={8.5}/>
 
-					<div className="set_symbol"></div>
+					<div className="set-symbol"></div>
 				</div>
-				<TextField card_path={path} field={"card_text"} min_font_size={4} max_font_size={9}/>
-				<PowerToughnessBackground card_path={path} field={"pt"}/>
-				<TextField card_path={path} field={"pt"} min_font_size={5} max_font_size={10.5}/>
+				<TextField cardPath={path} field={"cardText"} minFontSize={4} maxFontSize={9}/>
+				<PowerToughnessBackground cardPath={path} field={"pt"}/>
+				<TextField cardPath={path} field={"pt"} minFontSize={5} maxFontSize={10.5}/>
 			</div>
 		);
 	} else {
-		editor = <div className="card_editor empty" style={{ "--in": `${scaled_inch}px` } as CSSProperties}>No card focused</div>;
+		editor = <div className="card-editor empty" style={{ "--in": `${scaledInch}px` } as CSSProperties}>No card focused</div>;
 	}
 
 	return (
-		<div className="card_editor_wrapper">
+		<div className="card-editor-wrapper">
 			<div style={{ display: "grid", gridTemplateColumns: "6ch 1fr", width: "180px" }}>
-				<input type="number" min="75" max="300" step="1" value={scaled_inch} onChange={scale_cb}/>
-				<input type="range" min="75" max="300" step="1" value={scaled_inch} onChange={scale_cb}/>
+				<input type="number" min="75" max="300" step="1" value={scaledInch} onChange={scaleCb}/>
+				<input type="range" min="75" max="300" step="1" value={scaledInch} onChange={scaleCb}/>
 			</div>
 			{editor}
 		</div>

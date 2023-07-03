@@ -20,6 +20,6 @@ export function HorizontalRuleElement(props: RenderElementProps<HorizontalRule>)
 	);
 }
 
-export function isHorizontalRule(value: any): value is HorizontalRule {
+export function isHorizontalRule(value: unknown): value is HorizontalRule {
 	return Element.isElement(value) && value.type === "HorizontalRule";
 }

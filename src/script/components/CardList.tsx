@@ -1,6 +1,6 @@
 import React, { MouseEventHandler, useCallback, useState } from "react";
 
-import { create_card_field_editor, first_matching_path, renderElement, renderLeaf, useViewOfMatchingNode } from "../slate";
+import { createCardFieldEditor, firstMatchingPath, renderElement, renderLeaf, useViewOfMatchingNode } from "../slate";
 import { Card } from "./slate/Card";
 import { useContextMenu } from "./contexts/ContextMenuContext";
 import { useDocument } from "./contexts/DocumentContext";
@@ -12,102 +12,102 @@ import { EditableProps } from "slate-react/dist/components/editable";
 
 
 
-export interface list_column {
+export interface listColumn {
 	field: string,
 	name: string,
 }
 
 export interface CardListProps {
-	columns: list_column[],
-	card_entries: NodeEntry<Card>[],
-	selected_ids: Set<number>, // ids of selected cards
-	active_id?: number,
-	set_selected_ids: (cards_or_func: Set<number> | ((old: Set<number>) => Set<number>)) => void,
-	set_active_id: (card: number) => void,
+	columns: listColumn[],
+	cardEntries: NodeEntry<Card>[],
+	selectedIds: Set<number>, // ids of selected cards
+	activeId?: number,
+	setSelectedIds: (cardsOrFunc: Set<number> | ((old: Set<number>) => Set<number>)) => void,
+	setActiveId: (card: number) => void,
 }
 
 export function CardList(props: CardListProps) {
-	const {columns, card_entries, selected_ids, active_id, set_selected_ids, set_active_id } = props;
+	const {columns, cardEntries, selectedIds, activeId, setSelectedIds, setActiveId } = props;
 	return (
-		<table className="card_list">
+		<table className="card-list">
 			<thead>
 				<tr>
-					{columns.map(({ field, name }) => (<th key={field} className={field}>{name}</th>))}
+					{columns.map(({ field, name }) => (<th key={field}>{name}</th>))}
 				</tr>
 			</thead>
 			<tbody>
-				{card_entries.map(([card, path]) => (<CardRow key={card.id} card_path={path} columns={columns} selected={selected_ids.has(card.id)} active={active_id === card.id} set_selected_ids={set_selected_ids} set_active_id={set_active_id}/>))}
+				{cardEntries.map(([card, path]) => (<CardRow key={card.id} cardPath={path} columns={columns} selected={selectedIds.has(card.id)} active={activeId === card.id} setSelectedIds={setSelectedIds} setActiveId={setActiveId}/>))}
 			</tbody>
 		</table>
 	);
 }
 
 export interface CardRowProps {
-	card_path: Path,
-	columns: list_column[],
+	cardPath: Path,
+	columns: listColumn[],
 	selected: boolean;
 	active: boolean;
-	set_selected_ids: (cards_or_func: Set<number> | ((old: Set<number>) => Set<number>)) => void,
-	set_active_id: (card: number) => void,
+	setSelectedIds: (cardsOrFunc: Set<number> | ((old: Set<number>) => Set<number>)) => void,
+	setActiveId: (card: number) => void,
 }
 
 export function CardRow(props: CardRowProps) {
-	const { card_path, columns, selected, active, set_selected_ids, set_active_id } = props;
+	const { cardPath, columns, selected, active, setSelectedIds, setActiveId } = props;
 	const doc = useDocument();
-	const card = Node.get(doc, card_path) as Card;
-	const context_menu = useContextMenu();
+	const card = Node.get(doc, cardPath) as Card;
+	const contextMenu = useContextMenu();
 
 	const onMouseDown = useCallback((e => {
 		if (e.ctrlKey) {
-			set_selected_ids(old => new Set(old.delete(card.id) ? old : old.add(card.id)));
+			setSelectedIds(old => new Set(old.delete(card.id) ? old : old.add(card.id)));
 		} else {
-			set_selected_ids(new Set([card.id]));
+			setSelectedIds(new Set([card.id]));
 		}
-		set_active_id(card.id);
-	}) as MouseEventHandler<HTMLTableRowElement>, [set_selected_ids, set_active_id]);
+		setActiveId(card.id);
+	}) as MouseEventHandler<HTMLTableRowElement>, [setSelectedIds, setActiveId]);
 
 	const onContextMenu = useCallback((e => {
-		context_menu({
+		contextMenu({
 			position: [e.pageX, e.pageY],
 			options: [
 				{
 					name: "Delete",
 					handler: (e, doc) => {
-						const path = first_matching_path(doc, { type: "Card", id: card.id });
+						const path = firstMatchingPath(doc, { type: "Card", id: card.id });
 						Transforms.delete(doc, { at: path });
 					},
 				}
 			],
 		});
 		e.preventDefault();
-	}) as MouseEventHandler<HTMLTableRowElement>, [set_selected_ids, set_active_id]);
+	}) as MouseEventHandler<HTMLTableRowElement>, [setSelectedIds, setActiveId]);
 
 	const classList = [];
 	if (selected) classList.push("selected");
 	if (active) classList.push("active");
 	return (
 		<tr onMouseDown={onMouseDown} className={classList.join(" ")} onContextMenu={onContextMenu}>
-			{columns.map(({ field }) => (<CardCell key={field} card_path={card_path} field={field}/>))}
+			{columns.map(({ field }) => (<CardCell key={field} cardPath={cardPath} field={field}/>))}
 		</tr>
 	);
 }
 
 export interface CardCellProps extends EditableProps {
-	card_path: Path,
+	cardPath: Path,
 	field: string,
 }
 
 export function CardCell(props: CardCellProps) {
-	const { card_path, field, ...rest } = props;
+	const { cardPath, field, ...rest } = props;
 	const doc = useDocument();
-	const [editor] = useState(create_card_field_editor);
-	useViewOfMatchingNode(editor, doc, card_path, { type: "Field", name: field });
+	const [editor] = useState(createCardFieldEditor);
+	useViewOfMatchingNode(editor, doc, cardPath, { type: "Field", name: field });
 
 	return (
 		<Slate editor={editor} initialValue={editor.children}>
 			<FocusSendingEditable
 				as="td"
-				className={field}
+				// className={field}
 				renderElement={renderElement}
 				renderLeaf={renderLeaf}
 				disableDefaultStyles={true}

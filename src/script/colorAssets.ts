@@ -1,8 +1,8 @@
-export interface card_frame {
+export interface cardFrame {
 	image: string;
 }
 
-export const color_names_by_letter = {
+export const colorNamesByLetter = {
 	W: "white",
 	U: "blue",
 	B: "black",
@@ -11,7 +11,7 @@ export const color_names_by_letter = {
 	C: "colorless",
 } as const;
 
-export const frame_urls = {
+export const frameUrls = {
 	white: (new URL("/assets/card/white.jpg", import.meta.url)).toString(),
 	blue: (new URL("/assets/card/blue.jpg", import.meta.url)).toString(),
 	black: (new URL("/assets/card/black.jpg", import.meta.url)).toString(),
@@ -19,7 +19,7 @@ export const frame_urls = {
 	green: (new URL("/assets/card/green.jpg", import.meta.url)).toString(),
 };
 
-export const symbol_urls = {
+export const iconUrls = {
 	white: (new URL("/assets/mana/white.svg", import.meta.url)).toString(),
 	blue: (new URL("/assets/mana/blue.svg", import.meta.url)).toString(),
 	black: (new URL("/assets/mana/black.svg", import.meta.url)).toString(),

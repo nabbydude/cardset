@@ -3,76 +3,76 @@ import { CardEditor } from "./CardEditor";
 import { Header } from "./Header";
 import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
 import { ReactEditor, Slate, useSlateWithV } from "slate-react";
-import { CardList, list_column } from "./CardList";
-import { DocumentEditor, EditorWithVersion, create_document_editor, first_matching_element, to_single_line_plaintext } from "../slate";
-import { Card, create_test_card, isCard } from "./slate/Card";
-import { Document, isDocument } from "./slate/Document";
+import { CardList, listColumn } from "./CardList";
+import { DocumentEditor, EditorWithVersion, createDocumentEditor, firstMatchingElement, toSingleLinePlaintext } from "../slate";
+import { Card, createTestCard, isCard } from "./slate/Card";
+import { Document } from "./slate/Document";
 import { DocumentContext, useDocument } from "./contexts/DocumentContext";
 import { Field } from "./slate/Field";
-import { ContextMenu, context_menu_data } from "./ContextMenu";
+import { ContextMenu, contextMenuData } from "./ContextMenu";
 import { ContextMenuContext } from "./contexts/ContextMenuContext";
 import { Node, NodeEntry, Transforms } from "slate";
 import { domToPng } from "modern-screenshot";
-import { ImageStoreContext, image_entry } from "./contexts/ImageStoreContext";
-import { load_set, save_set } from "../save_load";
+import { ImageStoreContext, imageEntry } from "./contexts/ImageStoreContext";
+import { loadSet, saveSet } from "../saveLoad";
 
-const starting_document: [Document] = [
+const startingDocument: [Document] = [
 	{
 		type: "Document",
 		name: "Untitled",
 		children: [
-			create_test_card("Test Card 1", "red"),
-			create_test_card("Test Card 2", "blue"),
-			create_test_card("Test Card 3", "green"),
+			createTestCard("Test Card 1", "red"),
+			createTestCard("Test Card 2", "blue"),
+			createTestCard("Test Card 3", "green"),
 		],
 	},
 ];
 
-const list_columns = [
+const listColumns = [
 	{ field: "name", name: "Name", width: 100 },
 	{ field: "cost", name: "Cost", width: 100 },
 	{ field: "type", name: "Type", width: 100 },
 ];
 
-export function get_App() {
+export function getApp() {
 	return <App/>;
 }
 
 export function App() {
-	const [active_id, set_active_id] = useState(0);
-	const [selected_ids, set_selected_ids] = useState(new Set<number>());
-	const [doc, set_doc] = useState<DocumentEditor | undefined>(() => create_document_editor(starting_document));
-	const [contextMenu, setContextMenu] = useState<context_menu_data>();
-	const [focused_editor, set_focused_editor] = useState<ReactEditor>();
-	const focused_editor_value = useMemo(() => [focused_editor, set_focused_editor] as const, [focused_editor, set_focused_editor]);
-	const [image_store, set_image_store] = useState(new Map<number, image_entry>());
-	const image_store_value = useMemo(() => [image_store, set_image_store] as const, [image_store, set_image_store]);
+	const [activeId, setActiveId] = useState(0);
+	const [selectedIds, setSelectedIds] = useState(new Set<number>());
+	const [doc, setDoc] = useState<DocumentEditor | undefined>(() => createDocumentEditor(startingDocument));
+	const [contextMenu, setContextMenu] = useState<contextMenuData>();
+	const [focusedEditor, setFocusedEditor] = useState<ReactEditor>();
+	const focusedEditorValue = useMemo(() => [focusedEditor, setFocusedEditor] as const, [focusedEditor, setFocusedEditor]);
+	const [imageStore, setImageStore] = useState(new Map<number, imageEntry>());
+	const imageStoreValue = useMemo(() => [imageStore, setImageStore] as const, [imageStore, setImageStore]);
 
-	const save_active_card_image = useCallback(() => save_card_image(doc!, active_id), [doc, active_id]);
-	const save_this_set = useCallback(() => save_set(doc!, image_store), [doc, image_store]);
-	const load_this_set = useCallback(() => load_set(set_doc, set_image_store), [set_doc, set_image_store]);
-	// const load_this_set = useCallback(() => set_doc(() => create_document_editor(starting_document)), [set_doc]);
+	const saveActiveCardImage = useCallback(() => saveCardImage(doc!, activeId), [doc, activeId]);
+	const saveThisSet = useCallback(() => saveSet(doc!, imageStore), [doc, imageStore]);
+	const loadThisSet = useCallback(() => loadSet(setDoc, setImageStore), [setDoc, setImageStore]);
+	// const loadThisSet = useCallback(() => setDoc(() => createDocumentEditor(startingDocument)), [setDoc]);
 
 	return (
 		<ContextMenuContext.Provider value={setContextMenu}>
-			<ImageStoreContext.Provider value={image_store_value}>
+			<ImageStoreContext.Provider value={imageStoreValue}>
 				{doc ? (
 					<Slate editor={doc} initialValue={doc.children}>
-						<FocusedEditorContext.Provider value={focused_editor_value}>
+						<FocusedEditorContext.Provider value={focusedEditorValue}>
 							<DocumentWrapper>
 								<Header
-									save_active_card_image={save_active_card_image}
-									save_set={save_this_set}
-									load_set={load_this_set}
+									saveActiveCardImage={saveActiveCardImage}
+									saveSet={saveThisSet}
+									loadSet={loadThisSet}
 								/>
 								<div id="content">
-									<CardEditor card_id={active_id}/>
+									<CardEditor cardId={activeId}/>
 									<MainCardList
-										columns={list_columns}
-										selected_ids={selected_ids}
-										set_selected_ids={set_selected_ids}
-										active_id={active_id}
-										set_active_id={set_active_id}
+										columns={listColumns}
+										selectedIds={selectedIds}
+										setSelectedIds={setSelectedIds}
+										activeId={activeId}
+										setActiveId={setActiveId}
 									/>
 								</div>
 								{contextMenu ? <ContextMenu position={contextMenu.position} options={contextMenu.options}/> : undefined}
@@ -93,78 +93,78 @@ export interface DocumentWrapperProps {
 }
 
 export function DocumentWrapper(props: DocumentWrapperProps) {
-	const doc_with_v = useSlateWithV() as unknown as EditorWithVersion<DocumentEditor>;
+	const docWithV = useSlateWithV() as unknown as EditorWithVersion<DocumentEditor>;
 
 	useEffect(() => {
 		const handler = (e: KeyboardEvent) => {
 			if (!e.ctrlKey) return;
 			if (e.code !== "KeyZ") return;
 			if (e.shiftKey) {
-				doc_with_v.editor.redo();
+				docWithV.editor.redo();
 			} else {
-				doc_with_v.editor.undo();
+				docWithV.editor.undo();
 			}
 		};
 		window.addEventListener("keydown", handler);
 		return () => window.removeEventListener("keydown", handler);
-	}, [doc_with_v.editor]);
+	}, [docWithV.editor]);
 
 	return (
-		<DocumentContext.Provider value={doc_with_v}>
+		<DocumentContext.Provider value={docWithV}>
 			{props.children}
 		</DocumentContext.Provider>
 	);
 }
 
 export interface MainCardListProps {
-	columns: list_column[],
-	selected_ids: Set<number>, // ids of selected cards
-	active_id?: number,
-	set_selected_ids: (cards_or_func: Set<number> | ((old: Set<number>) => Set<number>)) => void,
-	set_active_id: (card: number) => void,
+	columns: listColumn[],
+	selectedIds: Set<number>, // ids of selected cards
+	activeId?: number,
+	setSelectedIds: (cardsOrFunc: Set<number> | ((old: Set<number>) => Set<number>)) => void,
+	setActiveId: (card: number) => void,
 }
 
 export function MainCardList(props: MainCardListProps) {
-	const { columns, selected_ids, active_id, set_selected_ids, set_active_id } = props;
+	const { columns, selectedIds, activeId, setSelectedIds, setActiveId } = props;
 	const doc = useDocument();
-	const listed_card_entries = [...Node.children(doc, [0])].filter(([card]) => isCard(card)) as NodeEntry<Card>[];
+	const listedCardEntries = [...Node.children(doc, [0])].filter(([card]) => isCard(card)) as NodeEntry<Card>[];
 
 	return (
-		<div id="main_card_list_container">
-			<button onClick={useCallback(() => add_new_card_to_doc(doc), [doc])}>New Card</button>
+		<div id="mainCardListContainer">
+			<button onClick={useCallback(() => addNewCardToDoc(doc), [doc])}>New Card</button>
 			<CardList
 				columns={columns}
-				card_entries={listed_card_entries}
-				selected_ids={selected_ids}
-				set_selected_ids={set_selected_ids}
-				active_id={active_id}
-				set_active_id={set_active_id}
+				cardEntries={listedCardEntries}
+				selectedIds={selectedIds}
+				setSelectedIds={setSelectedIds}
+				activeId={activeId}
+				setActiveId={setActiveId}
 			/>
 		</div>
 	);
 }
 
-export async function save_card_image(doc: DocumentEditor, active_id: number) {
-	const editor_elem = document.querySelector("div.card_editor") as HTMLDivElement | null;
-	if (!editor_elem) {
+export async function saveCardImage(doc: DocumentEditor, activeId: number) {
+	const editorElem = document.querySelector("div.card-editor") as HTMLDivElement | null;
+	if (!editorElem) {
 		console.warn("No active card editor!");
 		return;
 	}
-	const card = first_matching_element<Card>(doc, { type: "Card", id: active_id });
+	const card = firstMatchingElement<Card>(doc, { type: "Card", id: activeId });
 	let name: string;
 	if (card) {
-		const name_node = first_matching_element<Field>(card, { type: "Field", name: "name" });
-		if (name_node) name = to_single_line_plaintext(name_node.children);
+		const nameNode = firstMatchingElement<Field>(card, { type: "Field", name: "name" });
+		if (nameNode) name = toSingleLinePlaintext(nameNode.children);
 	}
 	name ||= "Card";
-	const png = await domToPng(editor_elem);
+	const png = await domToPng(editorElem);
 	const link = document.createElement("a");
 	link.download = `${name}.png`;
 	link.href = png;
 	link.click();
 }
 
-export function add_new_card_to_doc(doc: DocumentEditor) {
-	const document_node = doc.children[0] as Document;
-	Transforms.insertNodes(doc, create_test_card("New Card", "white"), { at: [0, document_node.children.length] });
+export function addNewCardToDoc(doc: DocumentEditor) {
+	const documentNode = doc.children[0] as Document;
+	Transforms.insertNodes(doc, createTestCard("New Card", "white"), { at: [0, documentNode.children.length] });
 }

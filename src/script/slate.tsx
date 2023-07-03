@@ -7,7 +7,7 @@ import { CodeBlock, CodeBlockElement } from "./components/slate/CodeBlock";
 import { Field } from "./components/slate/Field";
 import { Paragraph, ParagraphElement } from "./components/slate/Paragraph";
 import { isStyledText, StyledText, StyledTextElement } from "./components/slate/StyledText";
-import { ViewEditor, MultiEditor, withView, withMulti } from "./multi_slate";
+import { ViewEditor, MultiEditor, withView, withMulti } from "./multiSlate";
 import { Document } from "./components/slate/Document";
 import { PlainText, PlainTextElement } from "./components/slate/PlainText";
 import { Absence } from "./components/slate/Absence";
@@ -15,7 +15,7 @@ import { Image, ImageElement, isImage } from "./components/slate/Image";
 import { Section, SectionElement } from "./components/slate/Section";
 import { HorizontalRule, HorizontalRuleElement, isHorizontalRule } from "./components/slate/HorizontalRule";
 import { isManaPip, ManaPip, ManaPipElement } from "./components/slate/ManaPip";
-import { isSymbol, Symbol, SymbolElement } from "./components/slate/Symbol";
+import { isIcon, Icon, IconElement } from "./components/slate/Icon";
 
 ///////////
 // Types //
@@ -29,7 +29,7 @@ declare module "slate" {
 			| (Document | Card | Field | Section)
 			| HorizontalRule
 			| (Paragraph | CodeBlock)
-			| (Image | Symbol)
+			| (Image | Icon)
 			| ManaPip
 		),
 		Text: StyledText | PlainText,
@@ -60,57 +60,57 @@ export function empty(): [Absence] {
 	return [{ type: "Absence", children: [{ text: "" }] }];
 }
 
-export function create_document_editor(initial_value: [Document]): DocumentEditor {
+export function createDocumentEditor(initialValue: [Document]): DocumentEditor {
 	const editor = withReact(withMulti(withHistory(createEditor() as BaseEditor)));
 	editor.isVoid = isVoid;
 	editor.isInline = isInline;
 	editor.isElementReadOnly = isAtomic;
 
-	editor.children = initial_value;
+	editor.children = initialValue;
 	return editor;
 }
 
-export function create_card_field_editor() {
+export function createCardFieldEditor() {
 	const editor = withView(withReact(createEditor() as BaseEditor));
 	editor.isVoid = isVoid;
 	editor.isInline = isInline;
 	editor.isElementReadOnly = isAtomic;
 
 	const { normalizeNode } = editor;
-	editor.normalizeNode = (entry, options) => {
-		const [node, path] = entry
+	editor.normalizeNode = (entry) => {
+		const [node, path] = entry;
 
 		if (isManaPip(node) && editor.isEmpty(node)) {
 			editor.removeNodes({ at: path });
 		}
 
 		normalizeNode(entry);
-	}
+	};
 
 	editor.children = empty();
 	return editor;
 }
 
-export function to_plaintext(nodes: Descendant[]) {
+export function toPlaintext(nodes: Descendant[]) {
 	return nodes.map(n => Node.string(n)).join("\n");
 }
-export function to_single_line_plaintext(nodes: Descendant[]) {
+export function toSingleLinePlaintext(nodes: Descendant[]) {
 	return nodes.map(n => Node.string(n)).join(" ");
 }
 
-export function first_matching_entry<T extends Element>(root: Node, partial: Partial<T>): [T, Path] | undefined {
+export function firstMatchingEntry<T extends Element>(root: Node, partial: Partial<T>): [T, Path] | undefined {
 	for (const entry of Node.elements(root)) {
 		if (Element.matches(entry[0], partial)) return entry as [T, Path];
 	}
 	return undefined;
 }
 
-export function first_matching_element<T extends Element>(root: Node, partial: Partial<T>): T | undefined {
-	return (first_matching_entry(root, partial) ?? [undefined])[0];
+export function firstMatchingElement<T extends Element>(root: Node, partial: Partial<T>): T | undefined {
+	return (firstMatchingEntry(root, partial) ?? [undefined])[0];
 }
 
-export function first_matching_path(root: Node, partial: Partial<Element>): Path | undefined {
-	return (first_matching_entry(root, partial) ?? [undefined, undefined])[1];
+export function firstMatchingPath(root: Node, partial: Partial<Element>): Path | undefined {
+	return (firstMatchingEntry(root, partial) ?? [undefined, undefined])[1];
 }
 
 // should we move this somewhere better?
@@ -161,7 +161,7 @@ export const CustomEditor = {
 			{ match: n => Text.isText(n), split: true }
 		);
 	},
-}
+};
 
 export function renderElement(props: RenderElementProps) {
 	switch (props.element.type) {
@@ -170,7 +170,7 @@ export function renderElement(props: RenderElementProps) {
 		case "CodeBlock":      return <CodeBlockElement      {...props as RenderElementProps<CodeBlock>}/>;
 		case "ManaPip":        return <ManaPipElement        {...props as RenderElementProps<ManaPip>}/>;
 		case "Image":          return <ImageElement          {...props as RenderElementProps<Image>}/>;
-		case "Symbol":         return <SymbolElement         {...props as RenderElementProps<Symbol>}/>;
+		case "Icon":           return <IconElement           {...props as RenderElementProps<Icon>}/>;
 		case "Paragraph":      return <ParagraphElement      {...props as RenderElementProps<Paragraph>}/>;
 		default: {
 			return <ParagraphElement {...props}/>;
@@ -179,8 +179,8 @@ export function renderElement(props: RenderElementProps) {
 }
 
 export function renderLeaf(props: RenderLeafProps) {
-	if (isStyledText(props.leaf)) return <StyledTextElement {...props as RenderLeafProps<StyledText>} />
-	return <PlainTextElement {...props} />
+	if (isStyledText(props.leaf)) return <StyledTextElement {...props as RenderLeafProps<StyledText>} />;
+	return <PlainTextElement {...props} />;
 }
 
 export function isVoid(el: Element) {
@@ -191,7 +191,7 @@ export function isVoid(el: Element) {
 }
 
 export function isInline(el: Element) {
-	return isManaPip(el) || isSymbol(el);
+	return isManaPip(el) || isIcon(el);
 }
 
 /**
@@ -199,7 +199,7 @@ export function isInline(el: Element) {
  */
 export function isAtomic(el: Element) {
 	return (
-		isManaPip(el) && el.children.length === 3 && (el.children[0] as Text).text === "" && (el.children[1] as Element).type === "Symbol" && (el.children[2] as Text).text === ""
+		isManaPip(el) && el.children.length === 3 && (el.children[0] as Text).text === "" && (el.children[1] as Element).type === "Icon" && (el.children[2] as Text).text === ""
 	);
 }
 
@@ -220,54 +220,54 @@ export function cursorNudge(editor: Editor, point: Point, options: NudgeOptions 
 	const { direction = "forward" } = options;
 	let p: Point | undefined = point;
 
-	const is_start = Editor.isStart(editor, p, p.path);
-	const is_end = Editor.isEnd(editor, p, p.path);
-	if (is_start && (!is_end || direction === "backward")) {
+	const isStart = Editor.isStart(editor, p, p.path);
+	const isEnd = Editor.isEnd(editor, p, p.path);
+	if (isStart && (!isEnd || direction === "backward")) {
 		// nudge backward
 		while (Editor.isStart(editor, p, p.path)) {
 			const parent = Node.parent(editor, p.path);
-			const index_in_parent = p.path[p.path.length - 1];
-			if (index_in_parent === 0) {
+			const indexInParent = p.path[p.path.length - 1];
+			if (indexInParent === 0) {
 				// first child, go up
 				if (!(Element.isElement(parent) && Editor.isInline(editor, parent))) return p;
-				const cursor_stop = cursorStopOnEdge(parent);
-				if (cursor_stop !== "outside") return p;
-				const new_point = Editor.before(editor, p, { unit: "offset" });
-				if (!new_point) return p;
-				p = new_point;
+				const cursorStop = cursorStopOnEdge(parent);
+				if (cursorStop !== "outside") return p;
+				const newPoint = Editor.before(editor, p, { unit: "offset" });
+				if (!newPoint) return p;
+				p = newPoint;
 				continue;
 			} else {
 				// dive in to previous node
-				const new_point = Editor.before(editor, p, { unit: "offset" }) as Point;
-				const next_node = Node.get(editor, new_point.path);
-				if (Text.isText(next_node)) return p; // previous node is butting text, return old point to move as little as possible
-				const cursor_stop = cursorStopOnEdge(next_node);
-				if (cursor_stop !== "inside") return p;
-				p = new_point;
+				const newPoint = Editor.before(editor, p, { unit: "offset" }) as Point;
+				const nextNode = Node.get(editor, newPoint.path);
+				if (Text.isText(nextNode)) return p; // previous node is butting text, return old point to move as little as possible
+				const cursorStop = cursorStopOnEdge(nextNode);
+				if (cursorStop !== "inside") return p;
+				p = newPoint;
 				continue;
 			}
 		}
-	} else if (is_end) {
+	} else if (isEnd) {
 		// nudge forward
 		while (Editor.isEnd(editor, p, p.path)) {
 			const parent = Node.parent(editor, p.path);
-			const index_in_parent = p.path[p.path.length - 1];
-			if (index_in_parent === parent.children.length - 1) {
+			const indexInParent = p.path[p.path.length - 1];
+			if (indexInParent === parent.children.length - 1) {
 				// last child, go up
 				if (!(Element.isElement(parent) && Editor.isInline(editor, parent))) return p;
-				const cursor_stop = cursorStopOnEdge(parent);
-				if (cursor_stop !== "outside") return p;
-				const new_point = Editor.after(editor, p, { unit: "offset" });
-				if (!new_point) return p;
-				p = new_point;
+				const cursorStop = cursorStopOnEdge(parent);
+				if (cursorStop !== "outside") return p;
+				const newPoint = Editor.after(editor, p, { unit: "offset" });
+				if (!newPoint) return p;
+				p = newPoint;
 			} else {
 				// dive in to next node
-				const new_point = Editor.after(editor, p, { unit: "offset" }) as Point;
-				const new_node = Node.parent(editor, new_point.path);
-				if (Path.isParent(p.path, new_point.path)) return p; // old and new point share the same parent, they are sibling text nodes
-				const cursor_stop = cursorStopOnEdge(new_node);
-				if (cursor_stop !== "inside") return p;
-				p = new_point;
+				const newPoint = Editor.after(editor, p, { unit: "offset" }) as Point;
+				const newNode = Node.parent(editor, newPoint.path);
+				if (Path.isParent(p.path, newPoint.path)) return p; // old and new point share the same parent, they are sibling text nodes
+				const cursorStop = cursorStopOnEdge(newNode);
+				if (cursorStop !== "inside") return p;
+				p = newPoint;
 			}
 		}
 	}
@@ -279,38 +279,38 @@ export function cursorNudgeSelection(editor: Editor, options: NudgeOptions = {})
 	const { selection } = editor;
 	if (!selection) return;
 	const { focus, anchor } = selection;
-	const new_focus = cursorNudge(editor, focus, options);
-	const new_anchor = cursorNudge(editor, anchor, options);
-	const set_focus = !Point.equals(focus, new_focus);
-	const set_anchor = !Point.equals(anchor, new_anchor);
-	if (set_focus || set_anchor) {
+	const newFocus = cursorNudge(editor, focus, options);
+	const newAnchor = cursorNudge(editor, anchor, options);
+	const setFocus = !Point.equals(focus, newFocus);
+	const setAnchor = !Point.equals(anchor, newAnchor);
+	if (setFocus || setAnchor) {
 		Transforms.setSelection(editor, {
-			focus: set_focus ? new_focus : undefined,
-			anchor: set_anchor ? new_anchor : undefined,
+			focus: setFocus ? newFocus : undefined,
+			anchor: setAnchor ? newAnchor : undefined,
 		});
 	}
 }
 
-export function useViewOfMatchingNode(editor: ViewEditor, parent_editor: MultiEditor, search_path: Path, partial: Partial<Element>) {
-	const node = Node.get(parent_editor, search_path);
-	const old_parent_editor = editor.viewParent.editor;
-	const old_parent_path = editor.viewParent.path;
+export function useViewOfMatchingNode(editor: ViewEditor, parentEditor: MultiEditor, searchPath: Path, partial: Partial<Element>) {
+	const node = Node.get(parentEditor, searchPath);
+	const oldParentEditor = editor.viewParent.editor;
+	const oldParentPath = editor.viewParent.path;
 	useEffect(() => {
 		return () => MultiEditor.unsetView(editor);
 	}, []);
-	const already_valid = (
-		parent_editor === old_parent_editor &&
-		old_parent_path &&
-		old_parent_path.current &&
-		Path.isDescendant(old_parent_path.current, search_path) &&
-		Element.matches(Node.get(old_parent_editor, old_parent_path.current) as Element, partial)
+	const alreadyValid = (
+		parentEditor === oldParentEditor &&
+		oldParentPath &&
+		oldParentPath.current &&
+		Path.isDescendant(oldParentPath.current, searchPath) &&
+		Element.matches(Node.get(oldParentEditor, oldParentPath.current) as Element, partial)
 	);
-	if (already_valid) return;
-	const matching_path = first_matching_path(node, partial);
-	if (!matching_path) {
+	if (alreadyValid) return;
+	const matchingPath = firstMatchingPath(node, partial);
+	if (!matchingPath) {
 		MultiEditor.unsetView(editor);
 		return;
 	}
-	const full_path = search_path.concat(matching_path);
-	MultiEditor.setView(editor, parent_editor, full_path);
+	const fullPath = searchPath.concat(matchingPath);
+	MultiEditor.setView(editor, parentEditor, fullPath);
 }

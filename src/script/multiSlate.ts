@@ -1,5 +1,4 @@
-import { BaseEditor, Editor, Node, Operation, Path, PathRef, Transforms } from "slate"
-import { HistoryEditor } from "slate-history";
+import { BaseEditor, Editor, Node, Operation, Path, PathRef, Transforms } from "slate";
 import { CustomEditor, empty } from "./slate";
 
 export const SENDING = new WeakMap<MultiEditor | ViewEditor, boolean | undefined>();
@@ -40,7 +39,7 @@ export function withMulti<T extends BaseEditor>(editor: T): T & MultiEditor {
 			apply(op);
 			switch (op.type) {
 				case "set_selection": {
-					// since we apply above, might as well forego the actual arguments and use e.selection for consistency, this shouldnt have any issues unless there's some case where applying a set_selection doesn't actually set the selection to its arguments.
+					// since we apply above, might as well forego the actual arguments and use e.selection for consistency, this shouldnt have any issues unless there's some case where applying a setSelection doesn't actually set the selection to its arguments.
 					for (const [view, ref] of e.views) {
 						if (MultiEditor.isSending(view)) continue;
 						const path = ref.current;
@@ -67,22 +66,22 @@ export function withMulti<T extends BaseEditor>(editor: T): T & MultiEditor {
 						const path = ref.current;
 						if (!path) continue;
 
-						const desc_old = Path.isDescendant(op.path, path);
-						const desc_new = Path.isDescendant(op.newPath, path);
-						if (desc_old) {
-							if (desc_new) {
+						const descOld = Path.isDescendant(op.path, path);
+						const descNew = Path.isDescendant(op.newPath, path);
+						if (descOld) {
+							if (descNew) {
 								// move
 								CustomEditor.withoutEverNormalizing(view as Editor, () => {
 									view.apply({ ...op, path: Path.relative(op.path, path), newPath: Path.relative(op.newPath, path) });
 								});
 							} else {
 								// remove
-								throw Error("inter-view move_node not currently supported")
+								throw Error("inter-view moveNode not currently supported");
 							}
 						} else {
-							if (desc_new) {
+							if (descNew) {
 								// insert
-								throw Error("inter-view move_node not currently supported")
+								throw Error("inter-view moveNode not currently supported");
 							} else {
 								continue;
 							}
@@ -128,7 +127,7 @@ export function withView<T extends BaseEditor>(editor: T): T & ViewEditor {
 			CustomEditor.withoutEverNormalizing(parent as Editor, () => {
 				switch (op.type) {
 					case "set_selection": {
-						// since we apply above, might as well forego the actual arguments and use e.selection for consistency, this shouldnt have any issues unless there's some case where applying a set_selection doesn't actually set the selection to its arguments.
+						// since we apply above, might as well forego the actual arguments and use e.selection for consistency, this shouldnt have any issues unless there's some case where applying a setSelection doesn't actually set the selection to its arguments.
 						if (e.selection) {
 							Transforms.setSelection(parent as Editor, {
 								anchor: { path: path.concat(e.selection.anchor.path), offset: e.selection.anchor.offset },
@@ -158,15 +157,15 @@ export const MultiEditor = {
 	/**
 	 * Check if a value is a `MultiEditor` object.
 	 */
-	isMultiEditor(value: any): value is MultiEditor {
-		return value.views instanceof Map && Editor.isEditor(value);
+	isMultiEditor(value: unknown): value is MultiEditor {
+		return !!value && (value as MultiEditor).views instanceof Map && Editor.isEditor(value);
 	},
 
 	/**
 	 * Check if a value is a `ViewEditor` object.
 	 */
-	isViewEditor(value: any): value is ViewEditor {
-		return value.viewParent && Editor.isEditor(value);
+	isViewEditor(value: unknown): value is ViewEditor {
+		return !!value && (value as ViewEditor).viewParent && Editor.isEditor(value);
 	},
 
 	/**
@@ -214,4 +213,4 @@ export const MultiEditor = {
 		editor.viewParent.editor = undefined;
 		editor.viewParent.path = undefined;
 	},
-}
+};

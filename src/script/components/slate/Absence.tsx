@@ -8,7 +8,7 @@ export interface Absence extends BaseElement {
 	children: PlainText[],
 }
 
-export function isAbsence(value: any): value is Absence {
+export function isAbsence(value: unknown): value is Absence {
 	return Element.isElement(value) && value.type === "Absence";
 }
 

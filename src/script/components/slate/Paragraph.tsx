@@ -13,5 +13,5 @@ export function ParagraphElement(props: RenderElementProps) {
 		<p {...props.attributes}>
 			{props.children}
 		</p>
-	)
+	);
 }

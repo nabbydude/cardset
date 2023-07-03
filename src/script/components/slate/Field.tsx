@@ -12,9 +12,9 @@ export function FieldElement(props: RenderElementProps) {
 		<div {...props.attributes}>
 			{props.children}
 		</div>
-	)
+	);
 }
 
-export function isField(value: any): value is Field {
+export function isField(value: unknown): value is Field {
 	return Element.isElement(value) && value.type === "Field" && (typeof value.name === "string");
 }

@@ -3,16 +3,16 @@ import { useState } from "react";
 import { Editor, Path } from "slate";
 import { ReactEditor, Slate } from "slate-react";
 import { FocusSendingEditable } from "./FocusSendingEditable";
-import { create_card_field_editor, CustomEditor, renderElement, renderLeaf, useViewOfMatchingNode } from "../slate";
+import { createCardFieldEditor, CustomEditor, renderElement, renderLeaf, useViewOfMatchingNode } from "../slate";
 import { useDocument } from "./contexts/DocumentContext";
-import { as_scaling_pt, get_fill_size } from "../util";
+import { asScalingPt, getFillSize } from "../util";
 import { EditableProps } from "slate-react/dist/components/editable";
 
 export interface TextFieldProps extends EditableProps {
-	card_path: Path,
+	cardPath: Path,
 	field: string,
-	min_font_size: number,
-	max_font_size: number,
+	minFontSize: number,
+	maxFontSize: number,
 
 	onEditableDOMBeforeInput?: (e: InputEvent, editor: ReactEditor) => void,
 	onEditableClick?: (e: MouseEvent, editor: ReactEditor) => void,
@@ -20,15 +20,15 @@ export interface TextFieldProps extends EditableProps {
 }
 
 export function TextField(props: TextFieldProps) {
-	const { card_path, field, min_font_size, max_font_size, onEditableDOMBeforeInput, onEditableClick, onEditableKeyDown, ...rest } = props;
+	const { cardPath, field, minFontSize, maxFontSize, onEditableDOMBeforeInput, onEditableClick, onEditableKeyDown, ...rest } = props;
 	const doc = useDocument();
-	const [editor] = useState(create_card_field_editor);
-	useViewOfMatchingNode(editor, doc, card_path, { type: "Field", name: field });
+	const [editor] = useState(createCardFieldEditor);
+	useViewOfMatchingNode(editor, doc, cardPath, { type: "Field", name: field });
 
 	useLayoutEffect(() => {
 		const el = ReactEditor.toDOMNode(editor, editor);
-		const size = get_fill_size(el, min_font_size, max_font_size, 0.5);
-		el.style.fontSize = as_scaling_pt(size);
+		const size = getFillSize(el, minFontSize, maxFontSize, 0.5);
+		el.style.fontSize = asScalingPt(size);
 	});
 
 	return (
@@ -48,7 +48,7 @@ export function TextField(props: TextFieldProps) {
 				{...rest}
 			/>
 		</Slate>
-	)
+	);
 }
 
 function onKeyDown(e: KeyboardEvent, editor: Editor) {

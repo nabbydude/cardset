@@ -1,6 +1,6 @@
 @import "./colors.less";
 
-div.card_editor {
+div.card-editor {
 	--in: 150px;
 	--pt: calc(var(--in) / 72);
 
@@ -36,7 +36,7 @@ div.card_editor {
 		border-radius: calc(0.1 * var(--in));
 	}
 
-	.title_bar {
+	.title-bar {
 		position: absolute;
 		display: grid;
 		box-sizing: border-box;
@@ -53,7 +53,7 @@ div.card_editor {
 		}
 	}
 
-	div.name_line {
+	div.name-line {
 		position: absolute;
 		top:    calc(0.175 * var(--in));
 		height: calc(0.2   * var(--in));
@@ -86,7 +86,7 @@ div.card_editor {
 		height: calc(1.54 * var(--in));
 	}
 
-	div.type_line {
+	div.type-line {
 		top:    calc(1.96 * var(--in));
 		height: calc(0.2 * var(--in));
 		grid-template-columns: 1fr auto;
@@ -100,7 +100,7 @@ div.card_editor {
 			-webkit-text-stroke: var(--title-color) 0.2px;
 			overflow: hidden;
 		}
-		>.set_symbol {
+		>.set-symbol {
 			min-width: calc(0.25 * var(--in));
 		}
 	}
@@ -117,7 +117,7 @@ div.card_editor {
 		}
 	}
 
-	div.card_text {
+	div.card-text {
 		position: absolute;
 		left:   calc(0.2  * var(--in));
 		top:    calc(2.175  * var(--in));
@@ -147,7 +147,7 @@ div.card_editor {
 			.atom {
 				background-color: var(--faded-grey);
 			}
-			&[data-name="flavor_text"] {
+			&[data-name="flavorText"] {
 				--normal-style: italic;
 				--italic-style: normal;
 			}
@@ -162,7 +162,7 @@ div.card_editor {
 			}
 		}
 	}
-	img.pt_box {
+	img.pt-box {
 		position: absolute;
 		right:  calc(0.14 * var(--in));
 		bottom: calc(0.1  * var(--in));

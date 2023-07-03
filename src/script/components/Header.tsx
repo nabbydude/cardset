@@ -2,21 +2,21 @@ import React from "react";
 import { Toolbar } from "./Toolbar";
 
 export interface HeaderProps {
-	save_active_card_image: () => void,
-	save_set: () => void,
-	load_set: () => void,
+	saveActiveCardImage: () => void,
+	saveSet: () => void,
+	loadSet: () => void,
 }
 
 
 export function Header(props: HeaderProps) {
-	const { save_active_card_image, save_set, load_set } = props;
+	const { saveActiveCardImage, saveSet, loadSet } = props;
 	return (
 		<div id="header">
 			<h1>Cardset</h1>
 			<Toolbar
-				save_active_card_image={save_active_card_image}
-				save_set={save_set}
-				load_set={load_set}
+				saveActiveCardImage={saveActiveCardImage}
+				saveSet={saveSet}
+				loadSet={loadSet}
 			/>
 		</div>
 	);

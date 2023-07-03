@@ -1,51 +1,50 @@
 import { Dispatch, SetStateAction, useContext } from "react";
-import { createContext } from "react"
-import { ReactEditor } from "slate-react";
+import { createContext } from "react";
 
-export interface image_entry {
+export interface imageEntry {
 	data: Blob,
 	url: string,
 }
 
-export interface image_store_handle {
-	get: (key: number) => image_entry | undefined,
+export interface imageStoreHandle {
+	get: (key: number) => imageEntry | undefined,
 	set: (key: number, value: Blob) => void,
 	delete: (key: number) => void,
 	clear: () => void,
 	replace: (pairs: [number, Blob][]) => void,
 }
 
-export const ImageStoreContext = createContext<readonly [Map<number, image_entry>, Dispatch<SetStateAction<Map<number, image_entry>>>]>([new Map(), () => {}]);
+export const ImageStoreContext = createContext<readonly [Map<number, imageEntry>, Dispatch<SetStateAction<Map<number, imageEntry>>>]>([new Map(), () => {}]);
 
-export function useImageStore(): image_store_handle {
-	const [image_store, set_image_store] = useContext(ImageStoreContext);
+export function useImageStore(): imageStoreHandle {
+	const [imageStore, setImageStore] = useContext(ImageStoreContext);
 	return {
-		get: (key: number) => image_store.get(key),
-		set: (key: number, data: Blob) => set_image_store(store => {
+		get: (key: number) => imageStore.get(key),
+		set: (key: number, data: Blob) => setImageStore(store => {
 			const old = store.get(key);
 			if (old) URL.revokeObjectURL(old.url);
 			const out = new Map(store);
 			out.set(key, { data, url: URL.createObjectURL(data) });
 			return out;
 		}),
-		delete: (key: number) => set_image_store(store => {
+		delete: (key: number) => setImageStore(store => {
 			const old = store.get(key);
 			if (old) URL.revokeObjectURL(old.url);
 			const out = new Map(store);
 			out.delete(key);
 			return out;
 		}),
-		clear: () => set_image_store(store => {
-			for (const [k, v] of store) {
+		clear: () => setImageStore(store => {
+			for (const [, v] of store) {
 				URL.revokeObjectURL(v.url);
 			}
 			return new Map();
 		}),
-		replace: (pairs: [number, Blob][]) => set_image_store(store => {
-			for (const [k, v] of store) {
+		replace: (pairs: [number, Blob][]) => setImageStore(store => {
+			for (const [, v] of store) {
 				URL.revokeObjectURL(v.url);
 			}
 			return new Map(pairs.map(([k, data]) => [k, { data, url: URL.createObjectURL(data) }]));
 		}),
-	}
+	};
 }

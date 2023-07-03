@@ -1,8 +1,8 @@
 import { Dispatch, SetStateAction, createContext, useContext } from "react";
-import { context_menu_data } from "../ContextMenu";
+import { contextMenuData } from "../ContextMenu";
 
-export const ContextMenuContext = createContext<Dispatch<SetStateAction<context_menu_data | undefined>>>(() => {});
+export const ContextMenuContext = createContext<Dispatch<SetStateAction<contextMenuData | undefined>>>(() => {});
 
-export function useContextMenu(): Dispatch<SetStateAction<context_menu_data | undefined>> {
+export function useContextMenu(): Dispatch<SetStateAction<contextMenuData | undefined>> {
 	return useContext(ContextMenuContext);
 }

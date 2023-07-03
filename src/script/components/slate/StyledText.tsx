@@ -18,9 +18,9 @@ export function StyledTextElement(props: RenderLeafProps<StyledText>) {
 		>
 			{props.children}
 		</span>
-	)
+	);
 }
 
-export function isStyledText(value: any): value is StyledText {
+export function isStyledText(value: unknown): value is StyledText {
 	return Text.isText(value) && "bold" in value && "italic" in value;
 }

@@ -1,4 +1,3 @@
-import React from "react";
 import { BaseElement, Element } from "slate";
 
 export interface Document extends BaseElement {
@@ -6,6 +5,6 @@ export interface Document extends BaseElement {
 	name: string,
 }
 
-export function isDocument(value: any): value is Document {
+export function isDocument(value: unknown): value is Document {
 	return Element.isElement(value) && value.type === "Document" && (typeof value.name === "string");
 }

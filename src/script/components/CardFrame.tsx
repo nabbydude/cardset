@@ -1,8 +1,8 @@
 import React from "react";
-import { card_frame } from "../color_assets";
+import { cardFrame } from "../colorAssets";
 
 export interface CardFrameProps {
-	frame: card_frame;
+	frame: cardFrame;
 }
 
 export function CardFrame(props: CardFrameProps) {
