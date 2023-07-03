@@ -3,7 +3,6 @@ import { Ancestor, BaseEditor, createEditor, Descendant, Editor, Element, Node, 
 import { HistoryEditor, withHistory } from "slate-history";
 import { ReactEditor, RenderElementProps as BaseRenderElementProps, RenderLeafProps as BaseRenderLeafProps, withReact } from "slate-react";
 import { Card } from "./components/slate/Card";
-import { CodeBlock, CodeBlockElement } from "./components/slate/CodeBlock";
 import { Field } from "./components/slate/Field";
 import { Paragraph, ParagraphElement } from "./components/slate/Paragraph";
 import { isStyledText, StyledText, StyledTextElement } from "./components/slate/StyledText";
@@ -28,7 +27,7 @@ declare module "slate" {
 			| Absence
 			| (Document | Card | Field | Section)
 			| HorizontalRule
-			| (Paragraph | CodeBlock)
+			| Paragraph
 			| (Image | Icon)
 			| ManaPip
 		),
@@ -167,7 +166,6 @@ export function renderElement(props: RenderElementProps) {
 	switch (props.element.type) {
 		case "Section":        return <SectionElement        {...props as RenderElementProps<Section>}/>;
 		case "HorizontalRule": return <HorizontalRuleElement {...props as RenderElementProps<HorizontalRule>}/>;
-		case "CodeBlock":      return <CodeBlockElement      {...props as RenderElementProps<CodeBlock>}/>;
 		case "ManaPip":        return <ManaPipElement        {...props as RenderElementProps<ManaPip>}/>;
 		case "Image":          return <ImageElement          {...props as RenderElementProps<Image>}/>;
 		case "Icon":           return <IconElement           {...props as RenderElementProps<Icon>}/>;
