@@ -58,7 +58,7 @@ div.card-editor {
 		top:    calc(0.175 * var(--in));
 		height: calc(0.2   * var(--in));
 		grid-template-columns: 1fr auto;
-		>.name {
+		>.field[data-field-name="name"] {
 			box-sizing: border-box;
 			margin: 0;
 			padding: 0 0 calc(0.0125 * var(--in)) calc(0.0625 * var(--in));
@@ -68,12 +68,10 @@ div.card-editor {
 			-webkit-text-stroke: var(--title-color) calc(var(--in) / 750);
 			overflow: hidden;
 		}
-		>.cost {
+		>.field[data-field-name="cost"] {
 			min-width: calc(0.2 * var(--in));
 			padding: calc(0.025 * var(--in)) calc(0.0625 * var(--in)) 0 calc(0.0125 * var(--in));
 			text-align: right;
-		}
-		div.cost {
 			font: calc(0.125 * var(--in)) "MPlantin";
 		}
 	}
@@ -90,7 +88,7 @@ div.card-editor {
 		top:    calc(1.96 * var(--in));
 		height: calc(0.2 * var(--in));
 		grid-template-columns: 1fr auto;
-		>.type {
+		>.field[data-field-name="type"] {
 			box-sizing: border-box;
 			margin: 0;
 			padding: calc(0.0125 * var(--in)) 0 0 calc(0.0625 * var(--in));
@@ -107,8 +105,9 @@ div.card-editor {
 
 	div[contenteditable="true"] {
 		&:hover {
-			background-color: var(--hover-color);
-			outline: 2px solid rgba(127 127 127 / 0.5);
+			// background-color: var(--hover-color);
+			outline-offset: -1px;
+			outline: 2px solid var(--focused-outline-color);
 		}
 		&:focus {
 			background-color: transparent;
@@ -117,7 +116,7 @@ div.card-editor {
 		}
 	}
 
-	div.card-text {
+	div.field[data-field-name="cardText"] {
 		position: absolute;
 		left:   calc(0.2  * var(--in));
 		top:    calc(2.175  * var(--in));
@@ -169,13 +168,13 @@ div.card-editor {
 		width:  calc(0.54 * var(--in));
 		height: calc(0.28 * var(--in));
 	}
-	div.pt {
+	div.field[data-field-name="pt"] {
 		position: absolute;
 		right:  calc(0.1675 * var(--in));
 		bottom: calc(0.18   * var(--in));
 		width:  calc(0.4475 * var(--in));
 		height: calc(0.18   * var(--in));
-		border-radius: 5px / 50%;
+		border-radius: calc(2.4 * var(--pt)) / 50%;
 		box-sizing: border-box;
 		padding-top: calc(-0.00675 * var(--in));
 		font: bold calc(0.25 * var(--pt)) "Beleren";

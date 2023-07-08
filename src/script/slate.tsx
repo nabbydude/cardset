@@ -105,11 +105,11 @@ export function firstMatchingEntry<T extends Element>(root: Node, partial: Parti
 }
 
 export function firstMatchingElement<T extends Element>(root: Node, partial: Partial<T>): T | undefined {
-	return (firstMatchingEntry(root, partial) ?? [undefined])[0];
+	return firstMatchingEntry(root, partial)?.[0];
 }
 
 export function firstMatchingPath(root: Node, partial: Partial<Element>): Path | undefined {
-	return (firstMatchingEntry(root, partial) ?? [undefined, undefined])[1];
+	return firstMatchingEntry(root, partial)?.[1];
 }
 
 // should we move this somewhere better?

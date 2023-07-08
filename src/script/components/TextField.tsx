@@ -34,7 +34,8 @@ export function TextField(props: TextFieldProps) {
 	return (
 		<Slate editor={editor} initialValue={editor.children}>
 			<FocusSendingEditable
-				className={field}
+				className="field"
+				data-field-name={field}
 				renderElement={renderElement}
 				renderLeaf={renderLeaf}
 				onKeyDown={useCallback((e: KeyboardEvent) => { onEditableKeyDown?.(e, editor); if(!e.defaultPrevented) onKeyDown(e, editor); }, [editor, onEditableKeyDown])}
