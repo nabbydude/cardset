@@ -1,7 +1,6 @@
 import React, { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { CardEditor } from "./CardEditor";
 import { Header } from "./Header";
-import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
 import { ReactEditor, Slate, useSlateWithV } from "slate-react";
 import { CardList, listColumn } from "./CardList";
 import { DocumentEditor, EditorWithVersion, createDocumentEditor, firstMatchingElement, toSingleLinePlaintext } from "../slate";
@@ -11,10 +10,12 @@ import { DocumentContext, useDocument } from "./contexts/DocumentContext";
 import { Field } from "./slate/Field";
 import { ContextMenu, contextMenuData } from "./ContextMenu";
 import { ContextMenuContext } from "./contexts/ContextMenuContext";
-import { Node, NodeEntry, Transforms } from "slate";
+import { Editor, Node, NodeEntry, Range, Transforms } from "slate";
 import { domToPng } from "modern-screenshot";
 import { ImageStoreContext, imageEntry } from "./contexts/ImageStoreContext";
 import { loadSet, saveSet } from "../saveLoad";
+import { SelectionTransforms } from "slate/dist/interfaces/transforms/selection";
+import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
 
 const startingDocument: [Document] = [
 	{
@@ -51,7 +52,30 @@ export function App() {
 	const saveActiveCardImage = useCallback(() => saveCardImage(doc!, activeId), [doc, activeId]);
 	const saveThisSet = useCallback(() => saveSet(doc!, imageStore), [doc, imageStore]);
 	const loadThisSet = useCallback(() => loadSet(setDoc, setImageStore), [setDoc, setImageStore]);
-	// const loadThisSet = useCallback(() => setDoc(() => createDocumentEditor(startingDocument)), [setDoc]);
+
+	useEffect(() => {
+		if (!doc) return;
+		const handler = (e: KeyboardEvent) => {
+			if (!e.ctrlKey) return;
+			if (e.code !== "KeyZ") return;
+			let selection;
+			if (e.shiftKey) {
+				if (doc.history.redos.length > 0) selection = doc.history.redos[doc.history.redos.length - 1]?.selectionBefore;
+				if (selection) doc.select(selection); // undo/redo use setSelection which noops if there's no existing selection, so we force it here
+				doc.redo();
+			} else {
+				if (doc.history.undos.length > 0) selection = doc.history.undos[doc.history.undos.length - 1]?.selectionBefore;
+				doc.undo();
+				if (selection) doc.select(selection); // undo/redo use setSelection which noops if there's no existing selection, so we force it here
+			}
+			if (selection) {
+				const cardEntry = doc.above<Card>({ at: selection, match: node => isCard(node) });
+				if (cardEntry) setActiveId(cardEntry[0].id);
+			}
+		};
+		window.addEventListener("keydown", handler);
+		return () => window.removeEventListener("keydown", handler);
+	}, [doc]);
 
 	return (
 		<ContextMenuContext.Provider value={setContextMenu}>
@@ -94,20 +118,6 @@ export interface DocumentWrapperProps {
 
 export function DocumentWrapper(props: DocumentWrapperProps) {
 	const docWithV = useSlateWithV() as unknown as EditorWithVersion<DocumentEditor>;
-
-	useEffect(() => {
-		const handler = (e: KeyboardEvent) => {
-			if (!e.ctrlKey) return;
-			if (e.code !== "KeyZ") return;
-			if (e.shiftKey) {
-				docWithV.editor.redo();
-			} else {
-				docWithV.editor.undo();
-			}
-		};
-		window.addEventListener("keydown", handler);
-		return () => window.removeEventListener("keydown", handler);
-	}, [docWithV.editor]);
 
 	return (
 		<DocumentContext.Provider value={docWithV}>

@@ -1,6 +1,6 @@
 import React, { MouseEventHandler, useCallback, useState } from "react";
 
-import { createCardFieldEditor, firstMatchingPath, renderElement, renderLeaf, useViewOfMatchingNode } from "../slate";
+import { EditableProps, createCardFieldEditor, firstMatchingPath, renderElement, renderLeaf, useViewOfMatchingNode } from "../slate";
 import { Card } from "./slate/Card";
 import { useContextMenu } from "./contexts/ContextMenuContext";
 import { useDocument } from "./contexts/DocumentContext";
@@ -8,9 +8,6 @@ import { NodeEntry, Path, Transforms } from "slate";
 import { Node } from "slate";
 import { Slate } from "slate-react";
 import { FocusSendingEditable } from "./FocusSendingEditable";
-import { EditableProps } from "slate-react/dist/components/editable";
-
-
 
 export interface listColumn {
 	field: string,
@@ -27,7 +24,7 @@ export interface CardListProps {
 }
 
 export function CardList(props: CardListProps) {
-	const {columns, cardEntries, selectedIds, activeId, setSelectedIds, setActiveId } = props;
+	const { columns, cardEntries, selectedIds, activeId, setSelectedIds, setActiveId } = props;
 	return (
 		<table className="card-list">
 			<thead>

@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useLayoutEffect } from "react";
 import { Ancestor, BaseEditor, createEditor, Descendant, Editor, Element, Node, Path, Point, Text, Transforms } from "slate";
 import { HistoryEditor, withHistory } from "slate-history";
-import { ReactEditor, RenderElementProps as BaseRenderElementProps, RenderLeafProps as BaseRenderLeafProps, withReact } from "slate-react";
+import { ReactEditor, RenderElementProps as BaseRenderElementProps, RenderLeafProps as BaseRenderLeafProps, withReact, Editable } from "slate-react";
 import { Card } from "./components/slate/Card";
 import { Field } from "./components/slate/Field";
 import { Paragraph, ParagraphElement } from "./components/slate/Paragraph";
@@ -50,6 +50,8 @@ export interface RenderLeafProps<T extends Text = Text> extends BaseRenderLeafPr
 	leaf: T;
 	text: T;
 }
+
+export type EditableProps = Parameters<typeof Editable>[0];
 
 //////////
 // Code //
@@ -289,7 +291,7 @@ export function cursorNudgeSelection(editor: Editor, options: NudgeOptions = {})
 	}
 }
 
-export function useViewOfMatchingNode(editor: ViewEditor, parentEditor: MultiEditor, searchPath: Path, partial: Partial<Element>) {
+export function useViewOfMatchingNode(editor: ViewEditor & ReactEditor, parentEditor: MultiEditor, searchPath: Path, partial: Partial<Element>) {
 	const node = Node.get(parentEditor, searchPath);
 	const oldParentEditor = editor.viewParent.editor;
 	const oldParentPath = editor.viewParent.path;
@@ -303,12 +305,17 @@ export function useViewOfMatchingNode(editor: ViewEditor, parentEditor: MultiEdi
 		Path.isDescendant(oldParentPath.current, searchPath) &&
 		Element.matches(Node.get(oldParentEditor, oldParentPath.current) as Element, partial)
 	);
-	if (alreadyValid) return;
-	const matchingPath = firstMatchingPath(node, partial);
-	if (!matchingPath) {
-		MultiEditor.unsetView(editor);
-		return;
+	if (!alreadyValid) {
+		const matchingPath = firstMatchingPath(node, partial);
+		if (matchingPath) {
+			const fullPath = searchPath.concat(matchingPath);
+			MultiEditor.setView(editor, parentEditor, fullPath);
+		} else {
+			MultiEditor.unsetView(editor);
+		}
 	}
-	const fullPath = searchPath.concat(matchingPath);
-	MultiEditor.setView(editor, parentEditor, fullPath);
+	// this is all the way down here to match against its dependencies properly
+	useLayoutEffect(() => {
+		if (editor.selection) ReactEditor.toDOMNode(editor, editor).focus();
+	}, [editor.viewParent.editor, editor.viewParent.path]);
 }

@@ -1,8 +1,7 @@
 import React, { useCallback, useContext } from "react";
 import { Editable, ReactEditor, useSlate } from "slate-react";
 import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
-
-type EditableProps = Parameters<typeof Editable>[0];
+import { EditableProps } from "../slate";
 
 export function FocusSendingEditable(props: EditableProps) {
 	const { onFocus, onBlur, ...rest } = props;

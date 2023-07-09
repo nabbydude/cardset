@@ -49,12 +49,13 @@ export function withMulti<T extends BaseEditor>(editor: T): T & MultiEditor {
 							if (e.selection && Path.isDescendant(e.selection.anchor.path, path) && Path.isDescendant(e.selection.focus.path, path)) {
 								// if something is selected and its fully contained in this view.
 								// we dont currently handle partial overlaps.
-								Transforms.setSelection(view as Editor, {
+								view.select({
 									anchor: { path: Path.relative(e.selection.anchor.path, path), offset: e.selection.anchor.offset },
 									focus:  { path: Path.relative(e.selection.focus.path,  path), offset: e.selection.focus.offset  },
 								});
 							} else {
-								Transforms.deselect(view as Editor);
+								// commented out because this causes things to randomly deselect sometimes (like when holding down a key) and I'm not sure why, but I don't think I need this, at least right now
+								// view.deselect();
 							}
 						});
 					}
@@ -127,14 +128,16 @@ export function withView<T extends BaseEditor>(editor: T): T & ViewEditor {
 			CustomEditor.withoutEverNormalizing(parent as Editor, () => {
 				switch (op.type) {
 					case "set_selection": {
+						console.log(e.selection, parent.selection);
+						
 						// since we apply above, might as well forego the actual arguments and use e.selection for consistency, this shouldnt have any issues unless there's some case where applying a setSelection doesn't actually set the selection to its arguments.
 						if (e.selection) {
-							Transforms.setSelection(parent as Editor, {
+							parent.select({
 								anchor: { path: path.concat(e.selection.anchor.path), offset: e.selection.anchor.offset },
 								focus:  { path: path.concat(e.selection.focus.path),  offset: e.selection.focus.offset  },
 							});
 						} else {
-							Transforms.deselect(parent as Editor);
+							parent.deselect();
 						}
 						break;
 					}
@@ -199,7 +202,18 @@ export const MultiEditor = {
 			editor.children = children;
 		});
 		parent.views.set(editor, ref);
-		editor.deselect();
+		CustomEditor.withoutEverNormalizing(editor, () => {
+			if (parent.selection && Path.isDescendant(parent.selection.anchor.path, path) && Path.isDescendant(parent.selection.focus.path, path)) {
+				// if something is selected and its fully contained in this view.
+				// we dont currently handle partial overlaps.
+				editor.select({
+					anchor: { path: Path.relative(parent.selection.anchor.path, path), offset: parent.selection.anchor.offset },
+					focus:  { path: Path.relative(parent.selection.focus.path,  path), offset: parent.selection.focus.offset  },
+				});
+			} else {
+				editor.deselect();
+			}
+		});
 	},
 
 	unsetView(editor: ViewEditor) {

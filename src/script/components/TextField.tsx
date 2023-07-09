@@ -2,11 +2,10 @@ import React, { KeyboardEvent, MouseEvent, useCallback, useLayoutEffect } from "
 import { useState } from "react";
 import { Editor, Path } from "slate";
 import { ReactEditor, Slate } from "slate-react";
-import { FocusSendingEditable } from "./FocusSendingEditable";
-import { createCardFieldEditor, CustomEditor, renderElement, renderLeaf, useViewOfMatchingNode } from "../slate";
+import { createCardFieldEditor, CustomEditor, EditableProps, renderElement, renderLeaf, useViewOfMatchingNode } from "../slate";
 import { useDocument } from "./contexts/DocumentContext";
 import { asScalingPt, getFillSize } from "../util";
-import { EditableProps } from "slate-react/dist/components/editable";
+import { FocusSendingEditable } from "./FocusSendingEditable";
 
 export interface TextFieldProps extends EditableProps {
 	cardPath: Path,
@@ -22,7 +21,15 @@ export interface TextFieldProps extends EditableProps {
 export function TextField(props: TextFieldProps) {
 	const { cardPath, field, minFontSize, maxFontSize, onEditableDOMBeforeInput, onEditableClick, onEditableKeyDown, ...rest } = props;
 	const doc = useDocument();
-	const [editor] = useState(createCardFieldEditor);
+	const [editor] = useState(() => {
+		const e = createCardFieldEditor();
+		// for debugging
+		// todo: implement this properly, you lazy bum
+		(e as any).meta ??= {};
+		(e as any).meta.cardPath = cardPath;
+		(e as any).meta.field = field;
+		return e;
+	});
 	useViewOfMatchingNode(editor, doc, cardPath, { type: "Field", name: field });
 
 	useLayoutEffect(() => {
