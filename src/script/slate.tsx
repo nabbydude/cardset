@@ -43,12 +43,12 @@ export type EditorWithVersion<T extends BaseEditor> = { editor: T, v: number }
 export type DocumentEditor = BaseEditor & ReactEditor & HistoryEditor & MultiEditor;
 
 export interface RenderElementProps<T extends Element = Element> extends BaseRenderElementProps {
-	element: T;
+	element: T,
 }
 
 export interface RenderLeafProps<T extends Text = Text> extends BaseRenderLeafProps {
-	leaf: T;
-	text: T;
+	leaf: T,
+	text: T,
 }
 
 export type EditableProps = Parameters<typeof Editable>[0];
@@ -95,6 +95,7 @@ export function createCardFieldEditor() {
 export function toPlaintext(nodes: Descendant[]) {
 	return nodes.map(n => Node.string(n)).join("\n");
 }
+
 export function toSingleLinePlaintext(nodes: Descendant[]) {
 	return nodes.map(n => Node.string(n)).join(" ");
 }
@@ -172,9 +173,8 @@ export function renderElement(props: RenderElementProps) {
 		case "Image":          return <ImageElement          {...props as RenderElementProps<Image>}/>;
 		case "Icon":           return <IconElement           {...props as RenderElementProps<Icon>}/>;
 		case "Paragraph":      return <ParagraphElement      {...props as RenderElementProps<Paragraph>}/>;
-		default: {
-			return <ParagraphElement {...props}/>;
-		}
+
+		default:               return <ParagraphElement      {...props as RenderElementProps<Paragraph>}/>;
 	}
 }
 

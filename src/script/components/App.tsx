@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import React, { ReactNode, useCallback, useMemo, useState } from "react";
 import { CardEditor } from "./CardEditor";
 import { Header } from "./Header";
 import { ReactEditor, Slate, useSlateWithV } from "slate-react";
@@ -10,12 +10,12 @@ import { DocumentContext, useDocument } from "./contexts/DocumentContext";
 import { Field } from "./slate/Field";
 import { ContextMenu, contextMenuData } from "./ContextMenu";
 import { ContextMenuContext } from "./contexts/ContextMenuContext";
-import { Editor, Node, NodeEntry, Range, Transforms } from "slate";
+import { Node, NodeEntry, Transforms } from "slate";
 import { domToPng } from "modern-screenshot";
 import { ImageStoreContext, imageEntry } from "./contexts/ImageStoreContext";
 import { loadSet, saveSet } from "../saveLoad";
-import { SelectionTransforms } from "slate/dist/interfaces/transforms/selection";
 import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
+import { HistoryWrapper } from "./contexts/HistoryContext";
 
 const startingDocument: [Document] = [
 	{
@@ -40,7 +40,7 @@ export function getApp() {
 }
 
 export function App() {
-	const [activeId, setActiveId] = useState(0);
+	const [activeId, setActiveId] = useState<number | undefined>();
 	const [selectedIds, setSelectedIds] = useState(new Set<number>());
 	const [doc, setDoc] = useState<DocumentEditor | undefined>(() => createDocumentEditor(startingDocument));
 	const [contextMenu, setContextMenu] = useState<contextMenuData>();
@@ -53,30 +53,6 @@ export function App() {
 	const saveThisSet = useCallback(() => saveSet(doc!, imageStore), [doc, imageStore]);
 	const loadThisSet = useCallback(() => loadSet(setDoc, setImageStore), [setDoc, setImageStore]);
 
-	useEffect(() => {
-		if (!doc) return;
-		const handler = (e: KeyboardEvent) => {
-			if (!e.ctrlKey) return;
-			if (e.code !== "KeyZ") return;
-			let selection;
-			if (e.shiftKey) {
-				if (doc.history.redos.length > 0) selection = doc.history.redos[doc.history.redos.length - 1]?.selectionBefore;
-				if (selection) doc.select(selection); // undo/redo use setSelection which noops if there's no existing selection, so we force it here
-				doc.redo();
-			} else {
-				if (doc.history.undos.length > 0) selection = doc.history.undos[doc.history.undos.length - 1]?.selectionBefore;
-				doc.undo();
-				if (selection) doc.select(selection); // undo/redo use setSelection which noops if there's no existing selection, so we force it here
-			}
-			if (selection) {
-				const cardEntry = doc.above<Card>({ at: selection, match: node => isCard(node) });
-				if (cardEntry) setActiveId(cardEntry[0].id);
-			}
-		};
-		window.addEventListener("keydown", handler);
-		return () => window.removeEventListener("keydown", handler);
-	}, [doc]);
-
 	return (
 		<ContextMenuContext.Provider value={setContextMenu}>
 			<ImageStoreContext.Provider value={imageStoreValue}>
@@ -84,22 +60,24 @@ export function App() {
 					<Slate editor={doc} initialValue={doc.children}>
 						<FocusedEditorContext.Provider value={focusedEditorValue}>
 							<DocumentWrapper>
-								<Header
-									saveActiveCardImage={saveActiveCardImage}
-									saveSet={saveThisSet}
-									loadSet={loadThisSet}
-								/>
-								<div id="content">
-									<CardEditor cardId={activeId}/>
-									<MainCardList
-										columns={listColumns}
-										selectedIds={selectedIds}
-										setSelectedIds={setSelectedIds}
-										activeId={activeId}
-										setActiveId={setActiveId}
+								<HistoryWrapper setActiveId={setActiveId}>
+									<Header
+										saveActiveCardImage={saveActiveCardImage}
+										saveSet={saveThisSet}
+										loadSet={loadThisSet}
 									/>
-								</div>
-								{contextMenu ? <ContextMenu position={contextMenu.position} options={contextMenu.options}/> : undefined}
+									<div id="content">
+										<CardEditor cardId={activeId}/>
+										<MainCardList
+											columns={listColumns}
+											selectedIds={selectedIds}
+											setSelectedIds={setSelectedIds}
+											activeId={activeId}
+											setActiveId={setActiveId}
+										/>
+									</div>
+									{contextMenu ? <ContextMenu position={contextMenu.position} options={contextMenu.options}/> : undefined}
+								</HistoryWrapper>
 							</DocumentWrapper>
 						</FocusedEditorContext.Provider>
 					</Slate>
@@ -113,7 +91,7 @@ export function App() {
 }
 
 export interface DocumentWrapperProps {
-	children: ReactNode[],
+	children: ReactNode,
 }
 
 export function DocumentWrapper(props: DocumentWrapperProps) {
@@ -154,7 +132,11 @@ export function MainCardList(props: MainCardListProps) {
 	);
 }
 
-export async function saveCardImage(doc: DocumentEditor, activeId: number) {
+export async function saveCardImage(doc: DocumentEditor, activeId: number | undefined) {
+	if (!activeId) {
+		console.warn("No active card id!");
+		return;
+	}
 	const editorElem = document.querySelector("div.card-editor") as HTMLDivElement | null;
 	if (!editorElem) {
 		console.warn("No active card editor!");

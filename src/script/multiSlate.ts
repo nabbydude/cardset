@@ -1,4 +1,4 @@
-import { BaseEditor, Editor, Node, Operation, Path, PathRef, Transforms } from "slate";
+import { BaseEditor, Editor, Node, Operation, Path, PathRef } from "slate";
 import { CustomEditor, empty } from "./slate";
 
 export const SENDING = new WeakMap<MultiEditor | ViewEditor, boolean | undefined>();

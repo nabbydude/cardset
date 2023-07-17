@@ -4,6 +4,9 @@ dependencies:
   '@parcel/config-default':
     specifier: ^2.8.3
     version: 2.8.3(@parcel/core@2.8.3)
+  '@primer/octicons-react':
+    specifier: ^19.4.0
+    version: 19.4.0(react@18.2.0)
   '@saeris/typeface-beleren-bold':
     specifier: ^1.0.1
     version: 1.0.1
@@ -1023,6 +1026,15 @@ packages:
       '@parcel/utils': 2.8.3
       chrome-trace-event: 1.0.3
       nullthrows: 1.1.1
+
+  /@primer/octicons-react@19.4.0(react@18.2.0):
+    resolution: {integrity: sha512-6zFbvbQYQdGd9cIgNscnofSe0LkV28PvcL4mWPoKFV1u7Mdn3MlOjgawzuA2oXB18LLkMadTJ4Ky77FybUlrBg==}
+    engines: {node: '>=8'}
+    peerDependencies:
+      react: '>=16.3'
+    dependencies:
+      react: 18.2.0
+    dev: false
 
   /@saeris/typeface-beleren-bold@1.0.1:
     resolution: {integrity: sha512-pkYFtfTqAg1c+EReLKLbhcoCkOoPbyC4hfP1pAjsCtVquelXZKb+jvee++jr3QLgTNABGk9Crr6ZLqZq08CP4A==}

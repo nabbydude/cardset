@@ -33,19 +33,19 @@ export function createTestCard(name: string = "Test Card", color: keyof typeof f
 		type: "Card",
 		id: newCardId(),
 		children: [
-			{ type: "Field", name: "name",        children: [{ type: "Paragraph", children: [{ text: name,               bold: false, italic: false }] }] },
-			{ type: "Field", name: "frame",       children: [{ type: "Paragraph", children: [{ text: frameUrls[color],  bold: false, italic: false }] }] },
-			{ type: "Field", name: "cost",        children: [{ type: "Paragraph", children: [{ text: "",                 bold: false, italic: false }] }] },
-			{ type: "Field", name: "type",        children: [{ type: "Paragraph", children: [{ text: "Legendary Test",   bold: false, italic: false }] }] },
+			{ type: "Field", name: "name",  children: [{ type: "Paragraph", children: [{ text: name,             bold: false, italic: false }] }] },
+			{ type: "Field", name: "frame", children: [{ type: "Paragraph", children: [{ text: frameUrls[color], bold: false, italic: false }] }] },
+			{ type: "Field", name: "cost",  children: [{ type: "Paragraph", children: [{ text: "",               bold: false, italic: false }] }] },
+			{ type: "Field", name: "type",  children: [{ type: "Paragraph", children: [{ text: "Legendary Test", bold: false, italic: false }] }] },
 
-			{ type: "Field", name: "cardText",   children: [
+			{ type: "Field", name: "cardText", children: [
 				{ type: "Section", name: "rulesText", children: [{ type: "Paragraph", children: [{ text: "Rules are rules.", bold: false, italic: false }] }] },
 				{ type: "HorizontalRule", children: [{ text: "" }] },
 				{ type: "Section", name: "flavorText", children: [{ type: "Paragraph", children: [{ text: "Flavor is nice.", bold: false, italic: false }] }] },
 			] },
 
-			{ type: "Field", name: "pt",          children: [{ type: "Paragraph", children: [{ text: "2/2",              bold: false, italic: false }] }] },
-			{ type: "Field", name: "image",       children: [{ type: "Image", src: undefined, children: [{ text: "" }] }] },
+			{ type: "Field", name: "pt",    children: [{ type: "Paragraph", children: [{ text: "2/2", bold: false, italic: false }] }] },
+			{ type: "Field", name: "image", children: [{ type: "Image", src: undefined, children: [{ text: "" }] }] },
 		]
 	};
 }

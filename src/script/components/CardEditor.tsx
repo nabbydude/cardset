@@ -9,7 +9,7 @@ import { ImageField } from "./ImageField";
 import { ManaTextField } from "./ManaTextField";
 
 export interface CardEditorProps {
-	cardId: number;
+	cardId: number | undefined;
 }
 
 export function CardEditor(props: CardEditorProps) {
