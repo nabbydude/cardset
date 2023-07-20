@@ -4,7 +4,21 @@ A tool for custom card design and management for TCGs and other card games.
 
 Cardset is a single-page web-app that treats sets of card like a rich text document, and allows for image exporting or cards, leveraging React, SlateJS, and modern-screenshot.
 
-## Getting Started
+## Usage
+
+You can try Cardset at <https://nabbydude.github.io/cardset/>
+
+As of writing you can:
+
+- Focus a field to edit text
+- Style text with bold and italics
+- Undo/Redo all actions
+- Drag-and-drop an image file to add as a card illustration
+- Add and delete cards
+- Export the current card to an image file
+- Save and load sets (:warning: saving and loading between updates is currently not supported and currently updates are frequent and without warning. This feature is just for testing. :warning:)
+
+## Development
 
 How to set up a cardset dev environment.
 
@@ -40,16 +54,11 @@ Run a local server in watch mode:
 pnpm dev
 ```
 
-### Usage
-
-Focus a field to edit the text, drag and drop an image file to add an a card illustration, click "Save Card Image" to export current card to an image file.
-
 ## Contributing and Roadmap
 
 I plan on working on this in my off-hours adding features as I go, no concrete roadmap but some basic features in my sights to contend with leading contemporaries:
 
 * Editable/sortable card list
-* Saving/loading sets
 * More rich text features and field types
 	* Symbols in text
 	* Automatic snippets
