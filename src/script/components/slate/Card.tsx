@@ -2,7 +2,7 @@ import React from "react";
 import { BaseElement, Element } from "slate";
 import { RenderElementProps } from "slate-react";
 import { Field } from "./Field";
-import { frameUrls } from "../../colorAssets";
+import { frameUrls, ptBoxUrls } from "../../colorAssets";
 
 export interface Card extends BaseElement {
 	type: "Card",
@@ -28,13 +28,13 @@ export function newCardId(): number {
 	return lastCardId;
 }
 
-export function createTestCard(name: string = "Test Card", color: keyof typeof frameUrls = "red"): Card {
+export function createTestCard(name: string = "Test Card", color: keyof typeof frameUrls & keyof typeof ptBoxUrls = "red"): Card {
 	return {
 		type: "Card",
 		id: newCardId(),
 		children: [
 			{ type: "Field", name: "name",  children: [{ type: "Paragraph", children: [{ text: name,             bold: false, italic: false }] }] },
-			{ type: "Field", name: "frame", children: [{ type: "Paragraph", children: [{ text: frameUrls[color], bold: false, italic: false }] }] },
+			{ type: "Field", name: "frame", children: [{ type: "Image", src: frameUrls[color], children: [{ text: "" }] }] },
 			{ type: "Field", name: "cost",  children: [{ type: "Paragraph", children: [{ text: "",               bold: false, italic: false }] }] },
 			{ type: "Field", name: "type",  children: [{ type: "Paragraph", children: [{ text: "Legendary Test", bold: false, italic: false }] }] },
 
@@ -44,7 +44,8 @@ export function createTestCard(name: string = "Test Card", color: keyof typeof f
 				{ type: "Section", name: "flavorText", children: [{ type: "Paragraph", children: [{ text: "Flavor is nice.", bold: false, italic: false }] }] },
 			] },
 
-			{ type: "Field", name: "pt",    children: [{ type: "Paragraph", children: [{ text: "2/2", bold: false, italic: false }] }] },
+			{ type: "Field", name: "pt", children: [{ type: "Paragraph", children: [{ text: "2/2", bold: false, italic: false }] }] },
+			{ type: "Field", name: "pt_box", children: [{ type: "Image", src: ptBoxUrls[color], children: [{ text: "" }] }] },
 			{ type: "Field", name: "image", children: [{ type: "Image", src: undefined, children: [{ text: "" }] }] },
 		]
 	};

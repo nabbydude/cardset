@@ -1,5 +1,5 @@
 import React, { CSSProperties, ChangeEvent, useCallback, useMemo, useState } from "react";
-import { firstMatchingElement, firstMatchingEntry, toPlaintext } from "../slate";
+import { firstMatchingEntry } from "../slate";
 import { TextField } from "./TextField";
 import { CardFrame } from "./CardFrame";
 import { PowerToughnessBackground } from "./PowerToughnessBackground";
@@ -17,7 +17,8 @@ export interface CardEditorProps {
 export function CardEditor(props: CardEditorProps) {
 	const { cardId } = props;
 	const { doc, v } = useDocumentWithV();
-	const [card, path] = useMemo(() => firstMatchingEntry<Card>(doc, { type: "Card", id: cardId }) ?? [undefined, undefined], [doc, v, cardId]);
+	const cardEntry = useMemo(() => firstMatchingEntry<Card>(doc, { type: "Card", id: cardId }) ?? [undefined, undefined] as const, [doc, v, cardId]);
+	const [card, path] = cardEntry;
 	const [scaledInch, setScaledInch] = useState(150);
 
 	const scaleCb = useCallback((e: ChangeEvent<HTMLInputElement>) => setScaledInch(Number(e.target.value)), [setScaledInch]);
@@ -25,11 +26,9 @@ export function CardEditor(props: CardEditorProps) {
 
 	let editor;
 	if (card) {
-		const frameField = firstMatchingElement(card, { type: "Field", name: "frame" });
-		const frameValue = frameField ? toPlaintext(frameField.children) : "none";
 		editor = (
 			<div className="card-editor" style={{ "--in": `${scaledInch}px` } as CSSProperties}>
-				<CardFrame frame={{ image: frameValue }}/>
+				<CardFrame cardEntry={cardEntry} field={"frame"}/>
 				<div className="title-bar name-line">
 					<TextField cardPath={path} field={"name"} minFontSize={5} maxFontSize={10.5}/>
 					<ManaTextField cardPath={path} field={"cost"} minFontSize={4} maxFontSize={9}/>
@@ -42,12 +41,11 @@ export function CardEditor(props: CardEditorProps) {
 					<div className="set-symbol"></div>
 				</div>
 				<TextField cardPath={path} field={"cardText"} minFontSize={4} maxFontSize={9}/>
-				<PowerToughnessBackground cardPath={path} field={"pt"}/>
+				<PowerToughnessBackground cardEntry={cardEntry} field={"pt_box"} checkField={"pt"}/>
 				<TextField cardPath={path} field={"pt"} minFontSize={5} maxFontSize={10.5}/>
 			</div>
 		);
 	} else {
-		editor = <div className="card-editor empty" style={{ "--in": `${scaledInch}px` } as CSSProperties}>No card focused</div>;
 		editor = (
 			<NonIdealState
 				className="card-editor"
