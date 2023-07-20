@@ -1,0 +1,26 @@
+@import "/node_modules/@blueprintjs/core/lib/scss/variables";
+
+table.card-list {
+	width: 100%;
+	tr.selected td {
+		background-color: rgba($blue3, 0.6);
+	}
+
+	tr.active {
+		outline: 2px solid $blue4;
+		outline-offset: -1px;
+	}
+
+	&.bp5-interactive {
+		tbody tr.selected {
+			&:hover td {
+				background-color: rgba($blue4, 0.6);
+			}
+
+			&:active td {
+				background-color: rgba($blue4, 0.7);
+			}
+		}
+	}
+
+}

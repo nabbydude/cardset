@@ -19,7 +19,7 @@ export function HistoryWrapper(props: HistoryWrapperProps) {
 	const doc = useDocument();
 	const canUndo = doc.history.undos.length > 0;
 	const canRedo = doc.history.redos.length > 0;
-	const history = useMemo(() => (console.log("RAN"), {
+	const history = useMemo(() => ({
 		undo: canUndo ? () => {
 			const selection = doc.history.undos[doc.history.undos.length - 1]?.selectionBefore;
 			doc.undo();
@@ -39,7 +39,6 @@ export function HistoryWrapper(props: HistoryWrapperProps) {
 			}
 		} : undefined,
 	}), [doc, canUndo, canRedo]);
-	console.log(doc, canUndo, canRedo);
 
 	useEffect(() => {
 		if (!doc) return;

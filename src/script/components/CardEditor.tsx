@@ -7,6 +7,8 @@ import { Card } from "./slate/Card";
 import { useDocumentWithV } from "./contexts/DocumentContext";
 import { ImageField } from "./ImageField";
 import { ManaTextField } from "./ManaTextField";
+import { Button, NonIdealState } from "@blueprintjs/core";
+import { addNewCardToDoc } from "./App";
 
 export interface CardEditorProps {
 	cardId: number | undefined;
@@ -17,7 +19,9 @@ export function CardEditor(props: CardEditorProps) {
 	const { doc, v } = useDocumentWithV();
 	const [card, path] = useMemo(() => firstMatchingEntry<Card>(doc, { type: "Card", id: cardId }) ?? [undefined, undefined], [doc, v, cardId]);
 	const [scaledInch, setScaledInch] = useState(150);
+
 	const scaleCb = useCallback((e: ChangeEvent<HTMLInputElement>) => setScaledInch(Number(e.target.value)), [setScaledInch]);
+	const createCard = useCallback(() => addNewCardToDoc(doc), [doc]);
 
 	let editor;
 	if (card) {
@@ -44,6 +48,14 @@ export function CardEditor(props: CardEditorProps) {
 		);
 	} else {
 		editor = <div className="card-editor empty" style={{ "--in": `${scaledInch}px` } as CSSProperties}>No card focused</div>;
+		editor = (
+			<NonIdealState
+				className="card-editor"
+				title="No Card Focused"
+				description="Select a card from the list on the right or create a new one."
+				action={<Button icon="plus" onClick={createCard}>Create a card</Button>}
+			/>
+		);
 	}
 
 	return (

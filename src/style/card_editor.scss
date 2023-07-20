@@ -1,4 +1,4 @@
-@import "./colors.less";
+@import "/node_modules/@blueprintjs/core/lib/scss/variables";
 
 div.card-editor {
 	--in: 150px;
@@ -6,7 +6,6 @@ div.card-editor {
 
 	--title-color: #000;
 	--text-color: #000;
-	--hover-color: rgba(0 255 255 / 0.5);
 	--flavor-bar-color: rgba(23 23 23 / 0.26);
 	--flavor-bar-gradient: linear-gradient(90deg, transparent 0%, var(--flavor-bar-color) 10% 90%, transparent 100%);
 	--normal-style: normal;
@@ -17,17 +16,6 @@ div.card-editor {
 	width: calc(2.5 * var(--in));
 	height: calc(3.5 * var(--in));
 	position: relative;
-
-	&.empty {
-		background-color: var(--accent-background-color);
-		--text-color: var(--main-outline-color);
-		border-radius: calc(0.125 * var(--in));
-		display: grid;
-		align-items: center;
-		justify-items: center;
-		font-size: calc(0.25 * var(--in));
-		font-weight: bold;
-	}
 
 	img.frame {
 		position: absolute;
@@ -85,13 +73,14 @@ div.card-editor {
 	}
 
 	div.type-line {
-		top:    calc(1.96 * var(--in));
-		height: calc(0.2 * var(--in));
+		top:    calc(1.97 * var(--in));
+		height: calc(0.19 * var(--in));
+		box-sizing: border-box;
 		grid-template-columns: 1fr auto;
 		>.field[data-field-name="type"] {
 			box-sizing: border-box;
 			margin: 0;
-			padding: calc(0.0125 * var(--in)) 0 0 calc(0.0625 * var(--in));
+			padding: 0 0 0 calc(0.0625 * var(--in));
 			display: grid;
 			align-items: center;
 			font: bold calc(0.115 * var(--in)) "Beleren";
@@ -105,14 +94,14 @@ div.card-editor {
 
 	div[contenteditable="true"] {
 		&:hover {
-			// background-color: var(--hover-color);
+			outline: $pt-outline-color solid 2px;
 			outline-offset: -1px;
-			outline: 2px solid var(--focused-outline-color);
+			-moz-outline-radius: 6px;
 		}
 		&:focus {
-			background-color: transparent;
+			outline: $pt-outline-color solid 2px;
 			outline-offset: -1px;
-			outline: 2px solid var(--focused-outline-color);
+			-moz-outline-radius: 6px;
 		}
 	}
 
@@ -143,9 +132,9 @@ div.card-editor {
 			&:hover {
 				background-color: transparent;
 			}
-			.atom {
-				background-color: var(--faded-grey);
-			}
+			// .atom {
+			// 	background-color: var(--faded-grey);
+			// }
 			&[data-name="flavorText"] {
 				--normal-style: italic;
 				--italic-style: normal;

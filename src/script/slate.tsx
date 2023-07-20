@@ -291,7 +291,7 @@ export function cursorNudgeSelection(editor: Editor, options: NudgeOptions = {})
 	}
 }
 
-export function useViewOfMatchingNode(editor: ViewEditor & ReactEditor, parentEditor: MultiEditor, searchPath: Path, partial: Partial<Element>) {
+export function useViewOfMatchingNode(editor: ViewEditor & ReactEditor, parentEditor: MultiEditor, searchPath: Path, partial: Partial<Element>, readOnly: boolean = false) {
 	const node = Node.get(parentEditor, searchPath);
 	const oldParentEditor = editor.viewParent.editor;
 	const oldParentPath = editor.viewParent.path;
@@ -309,7 +309,7 @@ export function useViewOfMatchingNode(editor: ViewEditor & ReactEditor, parentEd
 		const matchingPath = firstMatchingPath(node, partial);
 		if (matchingPath) {
 			const fullPath = searchPath.concat(matchingPath);
-			MultiEditor.setView(editor, parentEditor, fullPath);
+			MultiEditor.setView(editor, parentEditor, fullPath, readOnly);
 		} else {
 			MultiEditor.unsetView(editor);
 		}

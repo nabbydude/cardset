@@ -19,9 +19,11 @@ export interface ViewEditor extends BaseEditor {
 export type ViewParentRef = {
 	editor: MultiEditor,
 	path: PathRef,
+	readOnly: boolean,
 } | {
 	editor: undefined,
 	path: undefined,
+	readOnly: unknown,
 }
 
 export interface HistoryShimEditor extends BaseEditor {
@@ -39,9 +41,13 @@ export function withMulti<T extends BaseEditor>(editor: T): T & MultiEditor {
 			apply(op);
 			switch (op.type) {
 				case "set_selection": {
+					// todo: mirroring selection like this causes issues with ReactEditor when multiple views of overlapping areas are involved. (only one thing can be selected on the dom and ReactEditor directly links that with editor state)
+					// for now we just mark certain editors as readOnly so we can have those around
+
 					// since we apply above, might as well forego the actual arguments and use e.selection for consistency, this shouldnt have any issues unless there's some case where applying a setSelection doesn't actually set the selection to its arguments.
 					for (const [view, ref] of e.views) {
 						if (MultiEditor.isSending(view)) continue;
+						if (view.viewParent.readOnly) continue; // see todo above
 						const path = ref.current;
 						if (!path) continue;
 
@@ -55,7 +61,7 @@ export function withMulti<T extends BaseEditor>(editor: T): T & MultiEditor {
 								});
 							} else {
 								// commented out because this causes things to randomly deselect sometimes (like when holding down a key) and I'm not sure why, but I don't think I need this, at least right now
-								// view.deselect();
+								view.deselect();
 							}
 						});
 					}
@@ -113,6 +119,7 @@ export function withView<T extends BaseEditor>(editor: T): T & ViewEditor {
 	e.viewParent = {
 		editor: undefined,
 		path: undefined,
+		readOnly: undefined,
 	};
 
 	const { apply } = e;
@@ -128,8 +135,10 @@ export function withView<T extends BaseEditor>(editor: T): T & ViewEditor {
 			CustomEditor.withoutEverNormalizing(parent as Editor, () => {
 				switch (op.type) {
 					case "set_selection": {
-						console.log(e.selection, parent.selection);
-						
+						// todo: mirroring selection like this causes issues with ReactEditor when multiple views of overlapping areas are involved. (only one thing can be selected on the dom and ReactEditor directly links that with editor state)
+						// for now we just mark certain editors as readOnly so we can have those around
+						if (e.viewParent.readOnly) return;
+
 						// since we apply above, might as well forego the actual arguments and use e.selection for consistency, this shouldnt have any issues unless there's some case where applying a setSelection doesn't actually set the selection to its arguments.
 						if (e.selection) {
 							parent.select({
@@ -191,18 +200,19 @@ export const MultiEditor = {
 	/**
 	 * Initialize or change a view editor's view to another parent and/or path
 	 */
-	setView(editor: ViewEditor, parent: MultiEditor, path: Path) {
+	setView(editor: ViewEditor, parent: MultiEditor, path: Path, readOnly: boolean = false) {
 		MultiEditor.unsetView(editor);
 
 		const ref = Editor.pathRef(parent as Editor, path);
 		editor.viewParent.editor = parent;
 		editor.viewParent.path = ref;
+		editor.viewParent.readOnly = readOnly;
 		const children = [...Node.children(parent as Editor, path)].map(([node]) => node);
 		MultiEditor.withoutSendingTo(parent, () => {
 			editor.children = children;
 		});
 		parent.views.set(editor, ref);
-		CustomEditor.withoutEverNormalizing(editor, () => {
+		MultiEditor.withoutSendingTo(parent, () => {
 			if (parent.selection && Path.isDescendant(parent.selection.anchor.path, path) && Path.isDescendant(parent.selection.focus.path, path)) {
 				// if something is selected and its fully contained in this view.
 				// we dont currently handle partial overlaps.

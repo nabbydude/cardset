@@ -1,0 +1,101 @@
+@import "/node_modules/normalize.css/normalize.css";
+@import "/node_modules/@blueprintjs/core/lib/css/blueprint.css";
+@import "/node_modules/@blueprintjs/icons/lib/css/blueprint-icons.css";
+
+@import "card_editor.scss";
+@import "card_list.scss";
+@import "mana.scss";
+
+body.bp5-dark {
+	background-color: #2f343c;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+
+// body {
+// 	background-color: var(--main-background-color);
+// 	color: var(--main-outline-color);
+// 	font: 1rem sans-serif;
+// 	margin: 0;
+// }
+
+// ::selection {
+// 	color: var(--main-outline-color);
+// 	background: var(--focused-outline-color);
+// }
+
+// h1 {
+// 	font-size: 2rem;
+// 	margin: 0;
+// }
+
+// h3, h4 {
+// 	font-size: 1.5rem;
+// 	margin: 0;
+// }
+
+// #header {
+// 	display: grid;
+// 	gap: 0.5rem;
+// 	padding: 0.5rem;
+// 	grid-auto-flow: column;
+// 	grid-auto-columns: auto;
+// 	justify-content: left;
+// 	align-items: center;
+// 	background-color: var(--accent-background-color);
+// }
+
+// #toolbar {
+// 	display: grid;
+// 	gap: 0.5rem;
+// 	padding: 0.5rem;
+// 	grid-auto-flow: column;
+// 	grid-auto-columns: auto;
+// 	align-items: center;
+// 	justify-content: left;
+// 	background-color: var(--accent-background-color);
+// }
+
+#content {
+	display: grid;
+	gap: 0.5rem;
+	padding: 0.5rem;
+	grid-auto-flow: column;
+	grid-template-columns: auto 1fr;
+	align-items: start;
+}
+
+// .select-menu {
+// 	display: grid;
+// 	position: absolute;
+// 	z-index: 90;
+// 	background-color: var(--accent-background-color);
+// 	img.icon {
+// 		width: 1.5rem;
+// 		height: 1.5rem;
+// 	}
+// 	>button {
+// 		padding: 0;
+// 		display: grid;
+// 		grid-template-columns: auto 1fr;
+// 	}
+// }
+
+// html, body {
+// 	height: 100%;
+// }
+
+// #app {
+// 	height: 100%;
+// 	display: grid;
+// 	grid-template-rows: auto auto 1fr;
+// }
+
+// p {
+// 	margin: 0 0 0.5em;
+// 	&:last-child {
+// 		margin: 0;
+// 	}
+// }

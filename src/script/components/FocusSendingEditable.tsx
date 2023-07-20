@@ -6,16 +6,17 @@ import { EditableProps } from "../slate";
 export function FocusSendingEditable(props: EditableProps) {
 	const { onFocus, onBlur, ...rest } = props;
 	const thisSlate = useSlate() as ReactEditor;
-	const [, setFocusedEditor] = useContext(FocusedEditorContext);
+	const { setFocusedEditor, setCachedFocusedEditor } = useContext(FocusedEditorContext);
 
 	const newOnFocus: React.FocusEventHandler<HTMLDivElement> = useCallback(e => {
 		setFocusedEditor(thisSlate);
+		setCachedFocusedEditor(thisSlate);
 		if (onFocus) onFocus(e);
-	}, [onFocus]);
+	}, [setFocusedEditor, setCachedFocusedEditor, onFocus]);
 	const newOnBlur: React.FocusEventHandler<HTMLDivElement> = useCallback(e => {
 		setFocusedEditor(undefined);
 		if (onBlur) onBlur(e);
-	}, [onBlur]);
+	}, [setFocusedEditor, onBlur]);
 
 	return <Editable onFocus={newOnFocus} onBlur={newOnBlur} {...rest}/>;
 }

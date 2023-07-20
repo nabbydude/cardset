@@ -8,13 +8,11 @@ import { Card, createTestCard, isCard } from "./slate/Card";
 import { Document } from "./slate/Document";
 import { DocumentContext, useDocument } from "./contexts/DocumentContext";
 import { Field } from "./slate/Field";
-import { ContextMenu, contextMenuData } from "./ContextMenu";
-import { ContextMenuContext } from "./contexts/ContextMenuContext";
-import { Node, NodeEntry, Transforms } from "slate";
+import { Node, NodeEntry, Text } from "slate";
 import { domToPng } from "modern-screenshot";
 import { ImageStoreContext, imageEntry } from "./contexts/ImageStoreContext";
 import { loadSet, saveSet } from "../saveLoad";
-import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
+import { FocusedEditorContext, FocusedEditorContextValue } from "./contexts/FocusedEditorContext";
 import { HistoryWrapper } from "./contexts/HistoryContext";
 
 const startingDocument: [Document] = [
@@ -29,10 +27,10 @@ const startingDocument: [Document] = [
 	},
 ];
 
-const listColumns = [
-	{ field: "name", name: "Name", width: 100 },
-	{ field: "cost", name: "Cost", width: 100 },
-	{ field: "type", name: "Type", width: 100 },
+const listColumns: listColumn[] = [
+	{ field: "name", header: "Name" },
+	{ field: "cost", header: "Cost" },
+	{ field: "type", header: "Type" },
 ];
 
 export function getApp() {
@@ -43,9 +41,9 @@ export function App() {
 	const [activeId, setActiveId] = useState<number | undefined>();
 	const [selectedIds, setSelectedIds] = useState(new Set<number>());
 	const [doc, setDoc] = useState<DocumentEditor | undefined>(() => createDocumentEditor(startingDocument));
-	const [contextMenu, setContextMenu] = useState<contextMenuData>();
 	const [focusedEditor, setFocusedEditor] = useState<ReactEditor>();
-	const focusedEditorValue = useMemo(() => [focusedEditor, setFocusedEditor] as const, [focusedEditor, setFocusedEditor]);
+	const [cachedFocusedEditor, setCachedFocusedEditor] = useState<ReactEditor>();
+	const focusedEditorValue = useMemo<FocusedEditorContextValue>(() => ({ focusedEditor, setFocusedEditor, cachedFocusedEditor, setCachedFocusedEditor }), [focusedEditor, setFocusedEditor, cachedFocusedEditor, setCachedFocusedEditor]);
 	const [imageStore, setImageStore] = useState(new Map<number, imageEntry>());
 	const imageStoreValue = useMemo(() => [imageStore, setImageStore] as const, [imageStore, setImageStore]);
 
@@ -54,39 +52,36 @@ export function App() {
 	const loadThisSet = useCallback(() => loadSet(setDoc, setImageStore), [setDoc, setImageStore]);
 
 	return (
-		<ContextMenuContext.Provider value={setContextMenu}>
-			<ImageStoreContext.Provider value={imageStoreValue}>
-				{doc ? (
-					<Slate editor={doc} initialValue={doc.children}>
-						<FocusedEditorContext.Provider value={focusedEditorValue}>
-							<DocumentWrapper>
-								<HistoryWrapper setActiveId={setActiveId}>
-									<Header
-										saveActiveCardImage={saveActiveCardImage}
-										saveSet={saveThisSet}
-										loadSet={loadThisSet}
+		<ImageStoreContext.Provider value={imageStoreValue}>
+			{doc ? (
+				<Slate editor={doc} initialValue={doc.children}>
+					<FocusedEditorContext.Provider value={focusedEditorValue}>
+						<DocumentWrapper>
+							<HistoryWrapper setActiveId={setActiveId}>
+								<Header
+									saveActiveCardImage={saveActiveCardImage}
+									saveSet={saveThisSet}
+									loadSet={loadThisSet}
+								/>
+								<div id="content">
+									<CardEditor cardId={activeId}/>
+									<MainCardList
+										columns={listColumns}
+										selectedIds={selectedIds}
+										setSelectedIds={setSelectedIds}
+										activeId={activeId}
+										setActiveId={setActiveId}
 									/>
-									<div id="content">
-										<CardEditor cardId={activeId}/>
-										<MainCardList
-											columns={listColumns}
-											selectedIds={selectedIds}
-											setSelectedIds={setSelectedIds}
-											activeId={activeId}
-											setActiveId={setActiveId}
-										/>
-									</div>
-									{contextMenu ? <ContextMenu position={contextMenu.position} options={contextMenu.options}/> : undefined}
-								</HistoryWrapper>
-							</DocumentWrapper>
-						</FocusedEditorContext.Provider>
-					</Slate>
-				) : (
-					<div>Loading...</div>
-				)}
-				
-			</ImageStoreContext.Provider>
-		</ContextMenuContext.Provider>
+								</div>
+							</HistoryWrapper>
+						</DocumentWrapper>
+					</FocusedEditorContext.Provider>
+				</Slate>
+			) : (
+				<div>Loading...</div>
+			)}
+			
+		</ImageStoreContext.Provider>
 	);
 }
 
@@ -158,5 +153,12 @@ export async function saveCardImage(doc: DocumentEditor, activeId: number | unde
 
 export function addNewCardToDoc(doc: DocumentEditor) {
 	const documentNode = doc.children[0] as Document;
-	Transforms.insertNodes(doc, createTestCard("New Card", "white"), { at: [0, documentNode.children.length] });
+	const child = documentNode.children[0];
+	doc.withoutNormalizing(() => {
+		if (documentNode.children.length === 1 && (child as Text).text === "") {
+			doc.insertNodes(createTestCard("New Card", "white"), { at: [0, 0] }); // if the list is empty an empty text node gets added when normalized. When normalized after adding, if the text node is first, the block is assumed to contain inlines only, and deletes the following block node, so we put at the start
+		} else {
+			doc.insertNodes(createTestCard("New Card", "white"), { at: [0, documentNode.children.length] });
+		}
+	});
 }
