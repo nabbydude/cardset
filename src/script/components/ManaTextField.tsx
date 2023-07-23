@@ -1,19 +1,21 @@
-import React, { useCallback } from "react";
+import React, { KeyboardEvent, useCallback } from "react";
 import { Editor, Node, Text, Transforms } from "slate";
 import { ReactEditor } from "slate-react";
 import { isManaPip } from "./slate/ManaPip";
 import { colorNamesByLetter, iconUrls } from "../colorAssets";
 import { TextField, TextFieldProps } from "./TextField";
+import { CardFieldEditor } from "../slate";
 
 // export interface ManaTextFieldProps extends TextFieldProps {
 
 // }
 
 export function ManaTextField(props: TextFieldProps) {
-	const { onEditableDOMBeforeInput, ...rest } = props;
+	const { onEditableDOMBeforeInput, onEditableKeyDown, ...rest } = props;
 	return (
 		<TextField
-			onEditableDOMBeforeInput={useCallback((e: InputEvent, editor: ReactEditor) => { if(onEditableDOMBeforeInput) onEditableDOMBeforeInput(e, editor); if(!e.defaultPrevented) onDOMBeforeInput(e, editor); }, [onEditableDOMBeforeInput])}
+			onEditableDOMBeforeInput={useCallback((e: InputEvent, editor: ReactEditor) => { onEditableDOMBeforeInput?.(e, editor); if(!e.defaultPrevented) onDOMBeforeInput(e, editor); }, [onEditableDOMBeforeInput])}
+			onEditableKeyDown={useCallback((e: KeyboardEvent, editor: ReactEditor) => { onEditableKeyDown?.(e, editor); if(!e.defaultPrevented) onKeyDown(e, editor); }, [onEditableDOMBeforeInput])}
 			{...rest}
 		/>
 	);
@@ -22,6 +24,13 @@ export function ManaTextField(props: TextFieldProps) {
 function onDOMBeforeInput(e: InputEvent, editor: ReactEditor) {
 	switch (e.inputType) {
 		case "insertText": return onInsertText(e, editor);
+	}
+}
+
+function onKeyDown(e: KeyboardEvent, editor: ReactEditor) {
+	switch (e.key) {
+		case "ArrowRight": (editor as CardFieldEditor).nudgeDirection = "forward"; break;
+		case "ArrowLeft": (editor as CardFieldEditor).nudgeDirection = "backward"; break;
 	}
 }
 
@@ -53,26 +62,18 @@ function onInsertText(e: InputEvent, editor: ReactEditor) {
 			type: "ManaPip",
 			color: "var(--generic-mana-background-color)",
 			children: [{ text: e.data }],
-		});
+		}, { select: true });
 	} else if (/[WUBRGC]/i.test(e.data)) {
 		const letter = e.data.toUpperCase() as keyof typeof colorNamesByLetter;
 		const color = colorNamesByLetter[letter];
-		Editor.insertNode(editor, {
+		Editor.insertFragment(editor, [{
 			type: "ManaPip",
 			color: `var(--${color}-mana-background-color)`,
 			children: [{ type: "Icon", src: iconUrls[color], alt: letter, children: [{ text: "" }] }],
-		});
-		// // move outside of node
-		// const newClosestPipEntry = Editor.above(editor, {
-		// 	match: node => isManaPip(node),
-		// 	at: editor.selection,
-		// });
-		// if (!newClosestPipEntry) {
-		// 	console.warn("Can't find pip we just created. Did it get normalized away? Failing gracefully");
-		// 	return;
-		// }
-		// const [, path] = newClosestPipEntry;
-		// const point = Editor.after(editor, path)!;
-		// Transforms.setSelection(editor, { focus: point, anchor: point });
+		}, {
+			text: "",
+			bold: false,
+			italic: false
+		}]);
 	}
 }

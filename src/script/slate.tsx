@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect } from "react";
-import { Ancestor, BaseEditor, createEditor, Descendant, Editor, Element, Node, Path, Point, Text, Transforms } from "slate";
+import { BaseEditor, createEditor, Descendant, Editor, Element, Node, NodeEntry, Path, Point, Text, Transforms } from "slate";
 import { HistoryEditor, withHistory } from "slate-history";
 import { ReactEditor, RenderElementProps as BaseRenderElementProps, RenderLeafProps as BaseRenderLeafProps, withReact, Editable } from "slate-react";
 import { Card } from "./components/slate/Card";
@@ -71,21 +71,33 @@ export function createDocumentEditor(initialValue: [Document]): DocumentEditor {
 	return editor;
 }
 
+export interface CardFieldEditor extends BaseEditor {
+	nudgeDirection?: "forward" | "backward"
+}
+
 export function createCardFieldEditor() {
-	const editor = withView(withReact(createEditor() as BaseEditor));
+	const editor = withView(withReact(createEditor() as BaseEditor)) as BaseEditor & ReactEditor & ViewEditor & CardFieldEditor;
 	editor.isVoid = isVoid;
 	editor.isInline = isInline;
 	editor.isElementReadOnly = isAtomic;
 
-	const { normalizeNode } = editor;
-	editor.normalizeNode = (entry) => {
+	const { normalize, normalizeNode } = editor;
+	editor.normalize = (options) => {
+		normalize(options);
+
+		CustomEditor.withoutEverNormalizing(editor, () => {
+			cursorNudgeSelection(editor, { direction: editor.nudgeDirection });
+			editor.nudgeDirection = undefined;
+		});
+	};
+	editor.normalizeNode = (entry, options) => {
 		const [node, path] = entry;
 
 		if (isManaPip(node) && editor.isEmpty(node)) {
 			editor.removeNodes({ at: path });
 		}
 
-		normalizeNode(entry);
+		normalizeNode(entry, options);
 	};
 
 	editor.children = empty();
@@ -186,6 +198,7 @@ export function renderLeaf(props: RenderLeafProps) {
 export function isVoid(el: Element) {
 	return (
 		isHorizontalRule(el) ||
+		isIcon(el) ||
 		isImage(el)
 	);
 }
@@ -199,16 +212,16 @@ export function isInline(el: Element) {
  */
 export function isAtomic(el: Element) {
 	return (
-		isManaPip(el) && el.children.length === 3 && (el.children[0] as Text).text === "" && (el.children[1] as Element).type === "Icon" && (el.children[2] as Text).text === ""
+		(isManaPip(el) && el.children.length === 3 && (el.children[0] as Text).text === "" && (el.children[1] as Element).type === "Icon" && (el.children[2] as Text).text === "")
 	);
 }
 
 
 // where the cursor stops when on the edge of a node
-// unused for now. isElementReadOnly is making everything work out so far but I might want this or something like it to make the cursor visual more consistent
-export type CursorStop = "inside" | "outside" | "both" | "either";
-export function cursorStopOnEdge(el: Ancestor): CursorStop {
-	if (isManaPip(el)) return "outside";
+export type CursorStop = "inside" | "outside" | "both" | "either"; // "both" not yet implemented and behaves the same as "either"
+export function cursorStopOnEdge(el: Element): CursorStop {
+	if (isVoid(el) || isAtomic(el)) return "outside";
+	if (isManaPip(el)) return "inside";
 	return "either";
 }
 
@@ -218,57 +231,50 @@ export interface NudgeOptions {
 
 export function cursorNudge(editor: Editor, point: Point, options: NudgeOptions = {}): Point {
 	const { direction = "forward" } = options;
-	let p: Point | undefined = point;
+	const readOnlyAncestorEntry = editor.above({ at: point.path, match: node => Element.isElement(node) && editor.isElementReadOnly(node), mode: "highest" });
+	const isStart = !!readOnlyAncestorEntry || editor.isStart(point, point.path);
+	const isEnd = !!readOnlyAncestorEntry || editor.isEnd(point, point.path);
 
-	const isStart = Editor.isStart(editor, p, p.path);
-	const isEnd = Editor.isEnd(editor, p, p.path);
+	let p: Point = point;
 	if (isStart && (!isEnd || direction === "backward")) {
+		if (readOnlyAncestorEntry) p = editor.start(readOnlyAncestorEntry[1]);
 		// nudge backward
-		while (Editor.isStart(editor, p, p.path)) {
-			const parent = Node.parent(editor, p.path);
+		while (editor.isStart(p, p.path)) {
+			const [parent] = editor.parent(p.path);
 			const indexInParent = p.path[p.path.length - 1];
 			if (indexInParent === 0) {
 				// first child, go up
-				if (!(Element.isElement(parent) && Editor.isInline(editor, parent))) return p;
-				const cursorStop = cursorStopOnEdge(parent);
-				if (cursorStop !== "outside") return p;
-				const newPoint = Editor.before(editor, p, { unit: "offset" });
-				if (!newPoint) return p;
-				p = newPoint;
-				continue;
+				if (!(Element.isElement(parent) && editor.isInline(parent))) return p;
+				if (cursorStopOnEdge(parent) !== "outside") return p;
 			} else {
 				// dive in to previous node
-				const newPoint = Editor.before(editor, p, { unit: "offset" }) as Point;
-				const nextNode = Node.get(editor, newPoint.path);
-				if (Text.isText(nextNode)) return p; // previous node is butting text, return old point to move as little as possible
-				const cursorStop = cursorStopOnEdge(nextNode);
-				if (cursorStop !== "inside") return p;
-				p = newPoint;
-				continue;
+				const [sibling] = editor.node(Path.previous(p.path)) as NodeEntry<Descendant>;
+				if (Text.isText(sibling)) return p; // previous node is butting text, return old point to move as little as possible
+				if (cursorStopOnEdge(sibling) !== "inside") return p;
 			}
+			const newPoint = editor.before(p, { unit: "offset" });
+			if (!newPoint) return p;
+			p = newPoint;
 		}
 	} else if (isEnd) {
+		if (readOnlyAncestorEntry) p = editor.end(readOnlyAncestorEntry[1]);
 		// nudge forward
-		while (Editor.isEnd(editor, p, p.path)) {
-			const parent = Node.parent(editor, p.path);
+		while (editor.isEnd(p, p.path)) {
+			const [parent] = editor.parent(p.path);
 			const indexInParent = p.path[p.path.length - 1];
 			if (indexInParent === parent.children.length - 1) {
 				// last child, go up
-				if (!(Element.isElement(parent) && Editor.isInline(editor, parent))) return p;
-				const cursorStop = cursorStopOnEdge(parent);
-				if (cursorStop !== "outside") return p;
-				const newPoint = Editor.after(editor, p, { unit: "offset" });
-				if (!newPoint) return p;
-				p = newPoint;
+				if (!(Element.isElement(parent) && editor.isInline(parent))) return p;
+				if (cursorStopOnEdge(parent) !== "outside") return p;
 			} else {
 				// dive in to next node
-				const newPoint = Editor.after(editor, p, { unit: "offset" }) as Point;
-				const newNode = Node.parent(editor, newPoint.path);
-				if (Path.isParent(p.path, newPoint.path)) return p; // old and new point share the same parent, they are sibling text nodes
-				const cursorStop = cursorStopOnEdge(newNode);
-				if (cursorStop !== "inside") return p;
-				p = newPoint;
+				const [sibling] = editor.node(Path.next(p.path)) as NodeEntry<Descendant>;
+				if (Text.isText(sibling)) return p; // previous node is butting text, return old point to move as little as possible
+				if (cursorStopOnEdge(sibling) !== "inside") return p;
 			}
+			const newPoint = editor.after(p, { unit: "offset" });
+			if (!newPoint) return p;
+			p = newPoint;
 		}
 	}
 

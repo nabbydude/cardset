@@ -146,7 +146,8 @@ div.card-editor {
 			background-image: var(--flavor-bar-gradient);
 			border: none;
 			&.selected {
-				outline: 2px solid var(--focused-outline-color);
+				outline: 2px solid $pt-outline-color;
+				outline-offset: -1px;
 			}
 		}
 	}
