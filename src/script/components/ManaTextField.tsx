@@ -1,9 +1,9 @@
 import React, { KeyboardEvent, useCallback } from "react";
-import { Editor, Node, Text, Transforms } from "slate";
+import { Editor } from "slate";
 import { ReactEditor } from "slate-react";
 import { isManaPip } from "./slate/ManaPip";
-import { colorNamesByLetter, iconUrls } from "../colorAssets";
-import { TextField, TextFieldProps } from "./TextField";
+import { colorNamesByLetter } from "../colorAssets";
+import { TextField, TextFieldProps, createGenericPip, createManaPipFromLetter } from "./TextField";
 import { CardFieldEditor } from "../slate";
 
 // export interface ManaTextFieldProps extends TextFieldProps {
@@ -36,44 +36,16 @@ function onKeyDown(e: KeyboardEvent, editor: ReactEditor) {
 
 function onInsertText(e: InputEvent, editor: ReactEditor) {
 	if (!(editor.selection && e.data)) return;
-	const closestPipEntry = Editor.above(editor, {
-		match: node => isManaPip(node),
-		at: editor.selection,
-	});
-	if (closestPipEntry) {
-		if (/[0-9]/.test(e.data)) return;
-		Transforms.splitNodes(editor, { match: (node) => isManaPip(node) });
-		const point = editor.start(editor.selection);
-		let closestNonPipEntry;
-		if (editor.isEnd(point, point.path)) {
-			closestNonPipEntry = editor.next({ at: editor.selection, match: (node, path) => Text.isText(node) && !isManaPip(Node.parent(editor, path)) });
-		} else {
-			closestNonPipEntry = editor.previous({ at: editor.selection, match: (node, path) => Text.isText(node) && !isManaPip(Node.parent(editor, path)) });
-		}
-		if (!closestNonPipEntry) throw Error("closestNonPipEntry not found. are we not in an inline? there should be one after normalizing");
-		const [, path] = closestNonPipEntry;
-		editor.select(editor.start(path));
-	}
+	const closestPipEntry = Editor.above(editor, { match: node => isManaPip(node) });
+	if (closestPipEntry && !/[WUBRGC]/i.test(e.data)) return; // type in the existing pip
 
 	e.preventDefault();
 
-	if (/[0-9]/.test(e.data)) {
-		Editor.insertNode(editor, {
-			type: "ManaPip",
-			color: "var(--generic-mana-background-color)",
-			children: [{ text: e.data }],
-		}, { select: true });
-	} else if (/[WUBRGC]/i.test(e.data)) {
-		const letter = e.data.toUpperCase() as keyof typeof colorNamesByLetter;
-		const color = colorNamesByLetter[letter];
-		Editor.insertFragment(editor, [{
-			type: "ManaPip",
-			color: `var(--${color}-mana-background-color)`,
-			children: [{ type: "Icon", src: iconUrls[color], alt: letter, children: [{ text: "" }] }],
-		}, {
-			text: "",
-			bold: false,
-			italic: false
-		}]);
+	let node;
+	if (/[WUBRGC]/i.test(e.data)) {
+		node = createManaPipFromLetter(e.data.toUpperCase() as keyof typeof colorNamesByLetter);
+	} else {
+		node = createGenericPip(e.data);
 	}
+	editor.insertNode(node, { match: closestPipEntry && ((n) => isManaPip(n)), select: true });
 }

@@ -15,6 +15,7 @@ import { Section, SectionElement } from "./components/slate/Section";
 import { HorizontalRule, HorizontalRuleElement, isHorizontalRule } from "./components/slate/HorizontalRule";
 import { isManaPip, ManaPip, ManaPipElement } from "./components/slate/ManaPip";
 import { isIcon, Icon, IconElement } from "./components/slate/Icon";
+import { doAutoReplace } from "./autoReplace";
 
 ///////////
 // Types //
@@ -72,7 +73,8 @@ export function createDocumentEditor(initialValue: [Document]): DocumentEditor {
 }
 
 export interface CardFieldEditor extends BaseEditor {
-	nudgeDirection?: "forward" | "backward"
+	nudgeDirection?: "forward" | "backward",
+	actionSource?: "user" | "history",
 }
 
 export function createCardFieldEditor() {
@@ -83,6 +85,7 @@ export function createCardFieldEditor() {
 
 	const { normalize, normalizeNode } = editor;
 	editor.normalize = (options) => {
+		if (!editor.isNormalizing()) return; // normalize gets called even when normalizing is disabled, so we have to manually check or our code below will get run
 		normalize(options);
 
 		CustomEditor.withoutEverNormalizing(editor, () => {
@@ -90,14 +93,25 @@ export function createCardFieldEditor() {
 			editor.nudgeDirection = undefined;
 		});
 	};
+
 	editor.normalizeNode = (entry, options) => {
 		const [node, path] = entry;
 
 		if (isManaPip(node) && editor.isEmpty(node)) {
 			editor.removeNodes({ at: path });
+			return;
 		}
 
 		normalizeNode(entry, options);
+	};
+
+	const { onChange } = editor;
+	editor.onChange = (options) => {
+		onChange(options);
+		if (editor.actionSource === "user" && editor.operations.find(v => v.type === "insert_text")) {
+			doAutoReplace(editor);
+		}
+		editor.actionSource = undefined;
 	};
 
 	editor.children = empty();
