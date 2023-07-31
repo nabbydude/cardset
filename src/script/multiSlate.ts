@@ -1,5 +1,7 @@
-import { BaseEditor, Editor, Node, Operation, Path, PathRef } from "slate";
-import { CustomEditor, empty } from "./slate";
+import { BaseEditor, Editor, Element, Node, Operation, Path, PathRef } from "slate";
+import { empty, firstMatchingPath, withoutEverNormalizing } from "./slate";
+import { ReactEditor } from "slate-react";
+import { useEffect, useLayoutEffect } from "react";
 
 export const SENDING = new WeakMap<MultiEditor | ViewEditor, boolean | undefined>();
 
@@ -51,7 +53,7 @@ export function withMulti<T extends BaseEditor>(editor: T): T & MultiEditor {
 						const path = ref.current;
 						if (!path) continue;
 
-						CustomEditor.withoutEverNormalizing(view as Editor, () => {
+						withoutEverNormalizing(view as Editor, () => {
 							if (e.selection && Path.isDescendant(e.selection.anchor.path, path) && Path.isDescendant(e.selection.focus.path, path)) {
 								// if something is selected and its fully contained in this view.
 								// we dont currently handle partial overlaps.
@@ -60,7 +62,6 @@ export function withMulti<T extends BaseEditor>(editor: T): T & MultiEditor {
 									focus:  { path: Path.relative(e.selection.focus.path,  path), offset: e.selection.focus.offset  },
 								});
 							} else {
-								// commented out because this causes things to randomly deselect sometimes (like when holding down a key) and I'm not sure why, but I don't think I need this, at least right now
 								view.deselect();
 							}
 						});
@@ -78,7 +79,7 @@ export function withMulti<T extends BaseEditor>(editor: T): T & MultiEditor {
 						if (descOld) {
 							if (descNew) {
 								// move
-								CustomEditor.withoutEverNormalizing(view as Editor, () => {
+								withoutEverNormalizing(view as Editor, () => {
 									view.apply({ ...op, path: Path.relative(op.path, path), newPath: Path.relative(op.newPath, path) });
 								});
 							} else {
@@ -102,7 +103,7 @@ export function withMulti<T extends BaseEditor>(editor: T): T & MultiEditor {
 						const path = ref.current;
 						if (!path) continue;
 						if (!Path.isDescendant(op.path, path)) continue;
-						CustomEditor.withoutEverNormalizing(view as Editor, () => {
+						withoutEverNormalizing(view as Editor, () => {
 							view.apply({ ...op, path: Path.relative(op.path, path) });
 						});
 					}
@@ -132,7 +133,7 @@ export function withView<T extends BaseEditor>(editor: T): T & ViewEditor {
 			const path = e.viewParent.path!.current;
 			if (!path) return;
 
-			CustomEditor.withoutEverNormalizing(parent as Editor, () => {
+			withoutEverNormalizing(parent as Editor, () => {
 				switch (op.type) {
 					case "set_selection": {
 						// todo: mirroring selection like this causes issues with ReactEditor when multiple views of overlapping areas are involved. (only one thing can be selected on the dom and ReactEditor directly links that with editor state)
@@ -238,3 +239,33 @@ export const MultiEditor = {
 		editor.viewParent.path = undefined;
 	},
 };
+
+
+export function useViewOfMatchingNode(editor: ViewEditor & ReactEditor, parentEditor: MultiEditor, searchPath: Path, partial: Partial<Element>, readOnly: boolean = false) {
+	const node = Node.get(parentEditor, searchPath);
+	const oldParentEditor = editor.viewParent.editor;
+	const oldParentPath = editor.viewParent.path;
+	useEffect(() => {
+		return () => MultiEditor.unsetView(editor);
+	}, []);
+	const alreadyValid = (
+		parentEditor === oldParentEditor &&
+		oldParentPath &&
+		oldParentPath.current &&
+		Path.isDescendant(oldParentPath.current, searchPath) &&
+		Element.matches(Node.get(oldParentEditor, oldParentPath.current) as Element, partial)
+	);
+	if (!alreadyValid) {
+		const matchingPath = firstMatchingPath(node, partial);
+		if (matchingPath) {
+			const fullPath = searchPath.concat(matchingPath);
+			MultiEditor.setView(editor, parentEditor, fullPath, readOnly);
+		} else {
+			MultiEditor.unsetView(editor);
+		}
+	}
+	// this is all the way down here to match against its dependencies properly
+	useLayoutEffect(() => {
+		if (editor.selection) ReactEditor.toDOMNode(editor, editor).focus();
+	}, [editor.viewParent.editor, editor.viewParent.path]);
+}

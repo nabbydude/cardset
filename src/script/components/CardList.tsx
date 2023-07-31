@@ -1,12 +1,13 @@
 import React, { MouseEventHandler, useCallback, useState } from "react";
 
-import { EditableProps, createCardFieldEditor, firstMatchingPath, renderElement, renderLeaf, useViewOfMatchingNode } from "../slate";
+import { EditableProps, createCardFieldEditor, firstMatchingPath, renderElement, renderLeaf } from "../slate";
 import { Card } from "./slate/Card";
 import { useDocument } from "./contexts/DocumentContext";
 import { NodeEntry, Path, Transforms } from "slate";
 import { Slate } from "slate-react";
 import { FocusSendingEditable } from "./FocusSendingEditable";
 import { ContextMenu, ContextMenuChildrenProps, HTMLTable, Menu, MenuItem } from "@blueprintjs/core";
+import { useViewOfMatchingNode } from "../multiSlate";
 
 export interface listColumn {
 	field: string,

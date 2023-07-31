@@ -3,8 +3,8 @@ import { Button, Navbar } from "@blueprintjs/core";
 import { useDocument } from "./contexts/DocumentContext";
 import { HistoryContext } from "./contexts/HistoryContext";
 import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
-import { CustomEditor } from "../slate";
 import { ReactEditor } from "slate-react";
+import { isMarkActive, toggleMark } from "../slate";
 
 export interface HeaderProps {
 	saveActiveCardImage: () => void,
@@ -33,8 +33,8 @@ export function Header(props: HeaderProps) {
 				<Button icon="undo" minimal={true} disabled={!history.undo} onClick={history.undo}/>
 				<Button icon="redo" minimal={true} disabled={!history.redo} onClick={history.redo}/>
 				<Navbar.Divider/>
-				<Button icon="bold"   minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && CustomEditor.isBoldMarkActive  (cachedFocusedEditor)} onClick={useCallback(() => { if (cachedFocusedEditor) { CustomEditor.toggleBoldMark  (cachedFocusedEditor); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
-				<Button icon="italic" minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && CustomEditor.isItalicMarkActive(cachedFocusedEditor)} onClick={useCallback(() => { if (cachedFocusedEditor) { CustomEditor.toggleItalicMark(cachedFocusedEditor); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
+				<Button icon="bold"   minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "bold"  )} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "bold"  ); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
+				<Button icon="italic" minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "italic")} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "italic"); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
 			</Navbar.Group>
 		</Navbar>
 	);

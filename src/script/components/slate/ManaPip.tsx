@@ -1,7 +1,7 @@
-import React, { useCallback, useLayoutEffect, useRef, useState } from "react";
+import React, { useCallback, useLayoutEffect, useRef } from "react";
 import { BaseElement, Element } from "slate";
 import { RenderElementProps } from "../../slate";
-import { asEm, getFillSize } from "../../util";
+import { asEm, getFillSize } from "../../autoScaleText";
 
 export interface ManaPip extends BaseElement {
 	type: "ManaPip",

@@ -1,4 +1,4 @@
-import React, { CSSProperties, ChangeEvent, useCallback, useMemo, useState } from "react";
+import React, { CSSProperties, useCallback, useMemo, useState } from "react";
 import { firstMatchingEntry } from "../slate";
 import { TextField } from "./TextField";
 import { CardFrame } from "./CardFrame";
@@ -7,7 +7,7 @@ import { Card } from "./slate/Card";
 import { useDocumentWithV } from "./contexts/DocumentContext";
 import { ImageField } from "./ImageField";
 import { ManaTextField } from "./ManaTextField";
-import { Button, NonIdealState } from "@blueprintjs/core";
+import { Button, NonIdealState, Slider } from "@blueprintjs/core";
 import { addNewCardToDoc } from "./App";
 
 export interface CardEditorProps {
@@ -17,32 +17,30 @@ export interface CardEditorProps {
 export function CardEditor(props: CardEditorProps) {
 	const { cardId } = props;
 	const { doc, v } = useDocumentWithV();
-	const cardEntry = useMemo(() => firstMatchingEntry<Card>(doc, { type: "Card", id: cardId }) ?? [undefined, undefined] as const, [doc, v, cardId]);
-	const [card, path] = cardEntry;
-	const [scaledInch, setScaledInch] = useState(150);
+	const cardEntry = useMemo(() => firstMatchingEntry<Card>(doc, { type: "Card", id: cardId }), [doc, v, cardId]);
+	const [dpi, setDpi] = useState(150);
 
-	const scaleCb = useCallback((e: ChangeEvent<HTMLInputElement>) => setScaledInch(Number(e.target.value)), [setScaledInch]);
 	const createCard = useCallback(() => addNewCardToDoc(doc), [doc]);
 
 	let editor;
-	if (card) {
+	if (cardEntry) {
 		editor = (
-			<div className="card-editor" style={{ "--in": `${scaledInch}px` } as CSSProperties}>
+			<div className="card-editor">
 				<CardFrame cardEntry={cardEntry} field={"frame"}/>
 				<div className="title-bar name-line">
-					<TextField cardPath={path} field={"name"} minFontSize={5} maxFontSize={10.5}/>
-					<ManaTextField cardPath={path} field={"cost"} minFontSize={4} maxFontSize={9}/>
+					<TextField cardEntry={cardEntry} field={"name"} minFontSize={5} maxFontSize={10.5}/>
+					<ManaTextField cardEntry={cardEntry} field={"cost"} minFontSize={4} maxFontSize={9}/>
 				</div>
 
-				<ImageField cardPath={path} field={"image"}/>
+				<ImageField cardEntry={cardEntry} field={"image"}/>
 				<div className="title-bar type-line">
-					<TextField cardPath={path} field={"type"} minFontSize={4} maxFontSize={8.5}/>
+					<TextField cardEntry={cardEntry} field={"type"} minFontSize={4} maxFontSize={8.5}/>
 
 					<div className="set-symbol"></div>
 				</div>
-				<TextField cardPath={path} field={"cardText"} minFontSize={4} maxFontSize={9}/>
-				<PowerToughnessBackground cardEntry={cardEntry} field={"pt_box"} checkField={"pt"}/>
-				<TextField cardPath={path} field={"pt"} minFontSize={5} maxFontSize={10.5}/>
+				<TextField cardEntry={cardEntry} field={"cardText"} minFontSize={4} maxFontSize={9}/>
+				<PowerToughnessBackground cardEntry={cardEntry} field={"ptBox"} checkField={"pt"}/>
+				<TextField cardEntry={cardEntry} field={"pt"} minFontSize={5} maxFontSize={10.5}/>
 			</div>
 		);
 	} else {
@@ -57,10 +55,18 @@ export function CardEditor(props: CardEditorProps) {
 	}
 
 	return (
-		<div className="card-editor-wrapper">
-			<div style={{ display: "grid", gridTemplateColumns: "6ch 1fr", width: "180px" }}>
-				<input type="number" min="75" max="300" step="1" value={scaledInch} onChange={scaleCb}/>
-				<input type="range" min="75" max="300" step="1" value={scaledInch} onChange={scaleCb}/>
+		<div className="card-editor-wrapper" style={{ "--in": `${dpi}px` } as CSSProperties}>
+			<div style={{ display: "grid", alignItems: "center", width: "150px" }}>
+				<Slider
+					min={100}
+					max={300}
+					stepSize={25}
+					labelValues={[100, 150, 300]}
+					onChange={setDpi}
+					value={dpi}
+					showTrackFill={false}
+					// handleHtmlProps={{ "aria-label": "example 1" }}
+				/>
 			</div>
 			{editor}
 		</div>

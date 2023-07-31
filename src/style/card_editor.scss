@@ -1,7 +1,10 @@
 @import "/node_modules/@blueprintjs/core/lib/scss/variables";
 
-div.card-editor {
+div.card-editor-wrapper {
 	--in: 150px;
+}
+
+div.card-editor {
 	--pt: calc(var(--in) / 72);
 
 	--title-color: #000;

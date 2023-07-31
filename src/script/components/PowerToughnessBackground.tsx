@@ -5,7 +5,7 @@ import { useDocument } from "./contexts/DocumentContext";
 import { CardFrameProps } from "./CardFrame";
 import { Field } from "./slate/Field";
 import { useImageStore } from "./contexts/ImageStoreContext";
-import { ptBoxUrls } from "../colorAssets";
+import { ptBoxUrls } from "../assets";
 import { Image } from "./slate/Image";
 import { ContextMenu, ContextMenuChildrenProps, Menu, MenuItem } from "@blueprintjs/core";
 

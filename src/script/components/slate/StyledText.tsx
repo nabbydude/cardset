@@ -1,10 +1,10 @@
 import React from "react";
-import { BaseText, Text } from "slate";
+import { BaseText } from "slate";
 import { RenderLeafProps } from "../../slate";
 
 export interface StyledText extends BaseText {
-	bold: boolean,
-	italic: boolean,
+	bold?: true,
+	italic?: true,
 }
 
 export function StyledTextElement(props: RenderLeafProps<StyledText>) {
@@ -19,8 +19,4 @@ export function StyledTextElement(props: RenderLeafProps<StyledText>) {
 			{props.children}
 		</span>
 	);
-}
-
-export function isStyledText(value: unknown): value is StyledText {
-	return Text.isText(value) && "bold" in value && "italic" in value;
 }

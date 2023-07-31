@@ -1,9 +1,3 @@
-let lastCardId = 0;
-export function newCardId(): number {
-	lastCardId += 1;
-	return lastCardId;
-}
-
 export function asScalingIn(n: number): string {
 	return `calc(${n} * var(--in))`;
 }
@@ -17,7 +11,6 @@ export function asEm(n: number): string {
 }
 
 export function getFillSize(el: HTMLElement, minFontSize: number, maxFontSize: number, step: number = 1, asUnit: (n: number) => string = asScalingPt) {
-	// we could start with a better initial guess but the ranges tand to be enough for our use case that we don't need to
 	let size = maxFontSize;
 
 	const old = el.style.fontSize;

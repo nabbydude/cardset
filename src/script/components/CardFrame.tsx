@@ -6,7 +6,7 @@ import { Field } from "./slate/Field";
 import { Image } from "./slate/Image";
 import { useImageStore } from "./contexts/ImageStoreContext";
 import { useDocument } from "./contexts/DocumentContext";
-import { frameUrls } from "../colorAssets";
+import { frameUrls } from "../assets";
 import { ContextMenu, ContextMenuChildrenProps, Menu, MenuItem } from "@blueprintjs/core";
 
 export interface CardFrameProps {

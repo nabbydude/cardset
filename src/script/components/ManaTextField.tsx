@@ -1,36 +1,23 @@
-import React, { KeyboardEvent, useCallback } from "react";
+import React, { useCallback } from "react";
 import { Editor } from "slate";
 import { ReactEditor } from "slate-react";
 import { isManaPip } from "./slate/ManaPip";
-import { colorNamesByLetter } from "../colorAssets";
+import { colorNamesByLetter } from "../assets";
 import { TextField, TextFieldProps, createGenericPip, createManaPipFromLetter } from "./TextField";
-import { CardFieldEditor } from "../slate";
-
-// export interface ManaTextFieldProps extends TextFieldProps {
-
-// }
 
 export function ManaTextField(props: TextFieldProps) {
-	const { onEditableDOMBeforeInput, onEditableKeyDown, ...rest } = props;
+	const { onDOMBeforeInput, ...rest } = props;
 	return (
 		<TextField
-			onEditableDOMBeforeInput={useCallback((e: InputEvent, editor: ReactEditor) => { onEditableDOMBeforeInput?.(e, editor); if(!e.defaultPrevented) onDOMBeforeInput(e, editor); }, [onEditableDOMBeforeInput])}
-			onEditableKeyDown={useCallback((e: KeyboardEvent, editor: ReactEditor) => { onEditableKeyDown?.(e, editor); if(!e.defaultPrevented) onKeyDown(e, editor); }, [onEditableDOMBeforeInput])}
+			onDOMBeforeInput={useCallback((e: InputEvent, editor: ReactEditor) => { onDOMBeforeInput?.(e, editor); if(!e.defaultPrevented) onManaTextFieldDOMBeforeInput(e, editor); }, [onDOMBeforeInput])}
 			{...rest}
 		/>
 	);
 }
 
-function onDOMBeforeInput(e: InputEvent, editor: ReactEditor) {
+function onManaTextFieldDOMBeforeInput(e: InputEvent, editor: ReactEditor) {
 	switch (e.inputType) {
 		case "insertText": return onInsertText(e, editor);
-	}
-}
-
-function onKeyDown(e: KeyboardEvent, editor: ReactEditor) {
-	switch (e.key) {
-		case "ArrowRight": (editor as CardFieldEditor).nudgeDirection = "forward"; break;
-		case "ArrowLeft": (editor as CardFieldEditor).nudgeDirection = "backward"; break;
 	}
 }
 

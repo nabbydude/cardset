@@ -1,5 +1,5 @@
 import React, { DragEvent, DragEventHandler, useCallback, useEffect, useMemo } from "react";
-import { Editor, Node, Path, Transforms } from "slate";
+import { Editor, Node, NodeEntry, Transforms } from "slate";
 
 import { firstMatchingElement, firstMatchingPath, } from "../slate";
 import { useDocument } from "./contexts/DocumentContext";
@@ -8,19 +8,19 @@ import { Image, isImage } from "./slate/Image";
 import { useImageStore } from "./contexts/ImageStoreContext";
 
 export interface ImageFieldProps {
-	cardPath: Path,
+	cardEntry: NodeEntry<Card>,
 	field: string,
 }
 
 export function ImageField(props: ImageFieldProps) {
-	const { cardPath, field } = props;
+	const { cardEntry, field } = props;
+	const [card, path] = cardEntry;
 	const doc = useDocument();
 	const imageStore = useImageStore();
-	const card = Node.get(doc, cardPath) as Card;
 	const pathRef = useMemo(() => {
 		const fieldPath = firstMatchingPath(card, { type: "Field", name: field });
 		if (!fieldPath) return;
-		const fullPath = cardPath.concat(fieldPath);
+		const fullPath = path.concat(fieldPath);
 		return Editor.pathRef(doc, fullPath);
 	}, [doc, card.id]);
 
