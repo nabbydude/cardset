@@ -12,13 +12,13 @@ import { addNewCardToDoc } from "./App";
 
 export interface CardEditorProps {
 	cardId: number | undefined;
+	dpi: number;
 }
 
 export function CardEditor(props: CardEditorProps) {
-	const { cardId } = props;
+	const { cardId, dpi } = props;
 	const { doc, v } = useDocumentWithV();
 	const cardEntry = useMemo(() => firstMatchingEntry<Card>(doc, { type: "Card", id: cardId }), [doc, v, cardId]);
-	const [dpi, setDpi] = useState(150);
 
 	const createCard = useCallback(() => addNewCardToDoc(doc), [doc]);
 
@@ -56,18 +56,6 @@ export function CardEditor(props: CardEditorProps) {
 
 	return (
 		<div className="card-editor-wrapper" style={{ "--in": `${dpi}px` } as CSSProperties}>
-			<div style={{ display: "grid", alignItems: "center", width: "150px" }}>
-				<Slider
-					min={100}
-					max={300}
-					stepSize={25}
-					labelValues={[100, 150, 300]}
-					onChange={setDpi}
-					value={dpi}
-					showTrackFill={false}
-					// handleHtmlProps={{ "aria-label": "example 1" }}
-				/>
-			</div>
 			{editor}
 		</div>
 	);

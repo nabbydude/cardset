@@ -1,5 +1,5 @@
 import React, { useCallback, useContext } from "react";
-import { Button, Navbar } from "@blueprintjs/core";
+import { Button, Navbar, NumericInput } from "@blueprintjs/core";
 import { useDocument } from "./contexts/DocumentContext";
 import { HistoryContext } from "./contexts/HistoryContext";
 import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
@@ -10,11 +10,13 @@ export interface HeaderProps {
 	saveActiveCardImage: () => void,
 	saveSet: () => void,
 	loadSet: () => void,
+	dpi: number,
+	setDpi: React.Dispatch<React.SetStateAction<number>>,
 }
 
 
 export function Header(props: HeaderProps) {
-	const { saveActiveCardImage, saveSet, loadSet } = props;
+	const { saveActiveCardImage, saveSet, loadSet, dpi, setDpi } = props;
 	const history = useContext(HistoryContext);
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const doc = useDocument(); // FocusedEditorContext doesn't update on doc changes, so we listen to the doc directly
@@ -35,6 +37,16 @@ export function Header(props: HeaderProps) {
 				<Navbar.Divider/>
 				<Button icon="bold"   minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "bold"  )} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "bold"  ); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
 				<Button icon="italic" minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "italic")} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "italic"); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
+				<Navbar.Divider/>
+				<NumericInput
+					style={{ width: "6em" }}
+					value={dpi}
+					buttonPosition="none"
+					leftElement ={<Button icon="zoom-out" minimal={true} disabled={dpi <=  75} onClick={useCallback(() => setDpi(dpi => Math.max(Math.floor(dpi/25 - 1)*25,  75) ), [setDpi])}/>}
+					rightElement={<Button icon="zoom-in"  minimal={true} disabled={dpi >= 300} onClick={useCallback(() => setDpi(dpi => Math.min(Math.ceil (dpi/25 + 1)*25, 300) ), [setDpi])}/>}
+					
+					onValueChange={setDpi}
+				/>
 			</Navbar.Group>
 		</Navbar>
 	);

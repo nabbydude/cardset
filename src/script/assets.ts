@@ -35,10 +35,11 @@ export const ptBoxUrls = {
 };
 
 export const iconUrls = {
-	white:     (new URL("/assets/mana/white.svg"    , import.meta.url)).toString(),
-	blue:      (new URL("/assets/mana/blue.svg"     , import.meta.url)).toString(),
-	black:     (new URL("/assets/mana/black.svg"    , import.meta.url)).toString(),
-	red:       (new URL("/assets/mana/red.svg"      , import.meta.url)).toString(),
-	green:     (new URL("/assets/mana/green.svg"    , import.meta.url)).toString(),
-	colorless: (new URL("/assets/mana/colorless.svg", import.meta.url)).toString(),
+	white:     (new URL("/assets/icons/white.svg"    , import.meta.url)).toString(),
+	blue:      (new URL("/assets/icons/blue.svg"     , import.meta.url)).toString(),
+	black:     (new URL("/assets/icons/black.svg"    , import.meta.url)).toString(),
+	red:       (new URL("/assets/icons/red.svg"      , import.meta.url)).toString(),
+	green:     (new URL("/assets/icons/green.svg"    , import.meta.url)).toString(),
+	colorless: (new URL("/assets/icons/colorless.svg", import.meta.url)).toString(),
+	tap:       (new URL("/assets/icons/tap.svg"      , import.meta.url)).toString(),
 };

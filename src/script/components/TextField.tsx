@@ -107,3 +107,11 @@ export function createGenericPip(text: string): ManaPip {
 		children: [{ text }],
 	};
 }
+
+export function createTapPip(): ManaPip {
+	return {
+		type: "ManaPip",
+		color: "var(--generic-mana-background-color)",
+		children: [{ type: "Icon", src: iconUrls.tap, alt: "T", children: [{ text: "" }] }],
+	};
+}

@@ -1,6 +1,6 @@
 import { Editor, Node, NodeEntry, Text } from "slate";
 import { colorNamesByLetter } from "./assets";
-import { createGenericPip, createManaPipFromLetter } from "./components/TextField";
+import { createGenericPip, createManaPipFromLetter, createTapPip } from "./components/TextField";
 import { MultiEditor, ViewEditor } from "./multiSlate";
 import { HistoryEditor } from "slate-history";
 
@@ -17,6 +17,7 @@ export const replacements: Replacement[] = [
 	{ pattern: /--| - /d, substitute: "\u2014" },
 	{ pattern: /{(?<letter>[WUBRGC])}/d, substitute: m => [createManaPipFromLetter(m.groups!.letter as keyof typeof colorNamesByLetter), { text: "" }] },
 	{ pattern: /{(?<digits>\d+)}/d, substitute: m => [createGenericPip(m.groups!.digits), { text: "" }] },
+	{ pattern: /{T}/d, substitute: () => [createTapPip(), { text: "" }] },
 ];
 
 export function doAutoReplace(editor: Editor) {

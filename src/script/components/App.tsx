@@ -46,6 +46,7 @@ export function App() {
 	const focusedEditorValue = useMemo<FocusedEditorContextValue>(() => ({ focusedEditor, setFocusedEditor, cachedFocusedEditor, setCachedFocusedEditor }), [focusedEditor, setFocusedEditor, cachedFocusedEditor, setCachedFocusedEditor]);
 	const [imageStore, setImageStore] = useState(new Map<number, imageEntry>());
 	const imageStoreValue = useMemo(() => [imageStore, setImageStore] as const, [imageStore, setImageStore]);
+	const [dpi, setDpi] = useState(150);
 
 	const saveActiveCardImage = useCallback(() => saveCardImage(doc!, activeId), [doc, activeId]);
 	const saveThisSet = useCallback(() => saveSet(doc!, imageStore), [doc, imageStore]);
@@ -62,9 +63,11 @@ export function App() {
 									saveActiveCardImage={saveActiveCardImage}
 									saveSet={saveThisSet}
 									loadSet={loadThisSet}
+									dpi={dpi}
+									setDpi={setDpi}
 								/>
 								<div id="content">
-									<CardEditor cardId={activeId}/>
+									<CardEditor cardId={activeId} dpi={dpi}/>
 									<MainCardList
 										columns={listColumns}
 										selectedIds={selectedIds}

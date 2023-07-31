@@ -10,6 +10,10 @@ body.bp5-dark {
 	background-color: #2f343c;
 }
 
+#header .bp5-input-group .bp5-input:not(:focus) + .bp5-input-action .bp5-button.bp5-minimal:not(:hover):not(:focus) .bp5-icon {
+	color: #abb3bf;
+}
+
 p:last-child {
 	margin-bottom: 0;
 }
