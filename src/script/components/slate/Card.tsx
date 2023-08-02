@@ -23,8 +23,8 @@ export function CardElement(props: RenderElementProps) {
 }
 
 let lastCardId = 0;
-export function resetCardId() {
-	lastCardId = 0;
+export function setCardId(value: number = 0) {
+	lastCardId = value;
 }
 
 export function newCardId(): number {

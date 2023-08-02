@@ -1,4 +1,4 @@
-import React, { CSSProperties, useCallback, useMemo, useState } from "react";
+import React, { CSSProperties, useMemo } from "react";
 import { firstMatchingEntry } from "../slate";
 import { TextField } from "./TextField";
 import { CardFrame } from "./CardFrame";
@@ -7,20 +7,18 @@ import { Card } from "./slate/Card";
 import { useDocumentWithV } from "./contexts/DocumentContext";
 import { ImageField } from "./ImageField";
 import { ManaTextField } from "./ManaTextField";
-import { Button, NonIdealState, Slider } from "@blueprintjs/core";
-import { addNewCardToDoc } from "./App";
+import { Button, NonIdealState } from "@blueprintjs/core";
 
 export interface CardEditorProps {
-	cardId: number | undefined;
-	dpi: number;
+	cardId: number | undefined,
+	dpi: number,
+	addCard: () => void,
 }
 
 export function CardEditor(props: CardEditorProps) {
-	const { cardId, dpi } = props;
+	const { cardId, dpi, addCard } = props;
 	const { doc, v } = useDocumentWithV();
 	const cardEntry = useMemo(() => firstMatchingEntry<Card>(doc, { type: "Card", id: cardId }), [doc, v, cardId]);
-
-	const createCard = useCallback(() => addNewCardToDoc(doc), [doc]);
 
 	let editor;
 	if (cardEntry) {
@@ -49,7 +47,7 @@ export function CardEditor(props: CardEditorProps) {
 				className="card-editor"
 				title="No Card Focused"
 				description="Select a card from the list on the right or create a new one."
-				action={<Button icon="plus" onClick={createCard}>Create a card</Button>}
+				action={<Button icon="plus" onClick={addCard}>Create a card</Button>}
 			/>
 		);
 	}

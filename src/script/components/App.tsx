@@ -1,4 +1,5 @@
 import React, { ReactNode, useCallback, useMemo, useState } from "react";
+import { Button, Tooltip } from "@blueprintjs/core";
 import { CardEditor } from "./CardEditor";
 import { Header } from "./Header";
 import { ReactEditor, Slate, useSlateWithV } from "slate-react";
@@ -15,15 +16,12 @@ import { loadSet, saveSet } from "../saveLoad";
 import { FocusedEditorContext, FocusedEditorContextValue } from "./contexts/FocusedEditorContext";
 import { HistoryWrapper } from "./contexts/HistoryContext";
 
+
 const startingDocument: [Document] = [
 	{
 		type: "Document",
 		name: "Untitled",
-		children: [
-			createTestCard("Test Card 1", "red"),
-			createTestCard("Test Card 2", "blue"),
-			createTestCard("Test Card 3", "green"),
-		],
+		children: [],
 	},
 ];
 
@@ -52,6 +50,12 @@ export function App() {
 	const saveThisSet = useCallback(() => saveSet(doc!, imageStore), [doc, imageStore]);
 	const loadThisSet = useCallback(() => loadSet(setDoc, setImageStore), [setDoc, setImageStore]);
 
+	const addCardAndFocus = useCallback(() => {
+		if (!doc) return;
+		const card = addNewCardToDoc(doc);
+		setActiveId(card.id);
+	}, [doc, setActiveId]);
+
 	return (
 		<ImageStoreContext.Provider value={imageStoreValue}>
 			{doc ? (
@@ -67,13 +71,14 @@ export function App() {
 									setDpi={setDpi}
 								/>
 								<div id="content">
-									<CardEditor cardId={activeId} dpi={dpi}/>
+									<CardEditor cardId={activeId} dpi={dpi} addCard={addCardAndFocus}/>
 									<MainCardList
 										columns={listColumns}
 										selectedIds={selectedIds}
 										setSelectedIds={setSelectedIds}
 										activeId={activeId}
 										setActiveId={setActiveId}
+										addCard={addCardAndFocus}
 									/>
 								</div>
 							</HistoryWrapper>
@@ -108,16 +113,44 @@ export interface MainCardListProps {
 	activeId?: number,
 	setSelectedIds: (cardsOrFunc: Set<number> | ((old: Set<number>) => Set<number>)) => void,
 	setActiveId: (card: number) => void,
+	addCard: () => void;
 }
 
 export function MainCardList(props: MainCardListProps) {
-	const { columns, selectedIds, activeId, setSelectedIds, setActiveId } = props;
+	const { columns, selectedIds, activeId, setSelectedIds, setActiveId, addCard } = props;
 	const doc = useDocument();
 	const listedCardEntries = [...Node.children(doc, [0])].filter(([card]) => isCard(card)) as NodeEntry<Card>[];
 
 	return (
-		<div id="mainCardListContainer">
-			<button onClick={useCallback(() => addNewCardToDoc(doc), [doc])}>New Card</button>
+		<div id="main-card-list-container">
+			{/* <Popover
+				content={<Menu>
+					<MenuItem text="Planeswalker"/>
+				</Menu>}
+				renderTarget={({ isOpen: isPopoverOpen, ref: popoverRef, ...popoverProps }) => (
+					<Tooltip
+						content="I have a popover!"
+						disabled={isPopoverOpen}
+						openOnTargetFocus={false}
+						renderTarget={({ isOpen: isTooltipOpen, ref: tooltipRef, ...tooltipProps }) => (
+							<ButtonGroup
+								{...tooltipProps}
+								ref={mergeRefs(tooltipRef, popoverRef)}
+							>
+								<Button icon="add" onClick={addCard}/>
+								<Button {...popoverProps} icon="caret-down" active={isPopoverOpen}/>
+							</ButtonGroup>
+						)}
+					/>
+				)}
+			/> */}
+
+			<Tooltip
+				content="Add Card"
+				renderTarget={({ ref, ...tooltipProps }) => (
+					<Button {...tooltipProps} ref={ref} icon="add" onClick={addCard}/>
+				)}
+			/>
 			<CardList
 				columns={columns}
 				cardEntries={listedCardEntries}
@@ -154,14 +187,16 @@ export async function saveCardImage(doc: DocumentEditor, activeId: number | unde
 	link.click();
 }
 
-export function addNewCardToDoc(doc: DocumentEditor) {
+export function addNewCardToDoc(doc: DocumentEditor): Card {
 	const documentNode = doc.children[0] as Document;
 	const child = documentNode.children[0];
+	const card = createTestCard("New Card", "colorless");
 	doc.withoutNormalizing(() => {
 		if (documentNode.children.length === 1 && (child as Text).text === "") {
-			doc.insertNodes(createTestCard("New Card", "white"), { at: [0, 0] }); // if the list is empty an empty text node gets added when normalized. When normalized after adding, if the text node is first, the block is assumed to contain inlines only, and deletes the following block node, so we put at the start
+			doc.insertNodes(card, { at: [0, 0] }); // if the list is empty an empty text node gets added when normalized. When normalized after adding, if the text node is first, the block is assumed to contain inlines only, and deletes the following block node, so we put at the start
 		} else {
-			doc.insertNodes(createTestCard("New Card", "white"), { at: [0, documentNode.children.length] });
+			doc.insertNodes(card, { at: [0, documentNode.children.length] });
 		}
 	});
+	return card;
 }

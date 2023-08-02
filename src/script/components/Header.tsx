@@ -1,5 +1,5 @@
 import React, { useCallback, useContext } from "react";
-import { Button, Navbar, NumericInput } from "@blueprintjs/core";
+import { AnchorButton, Navbar, NumericInput, Tooltip } from "@blueprintjs/core";
 import { useDocument } from "./contexts/DocumentContext";
 import { HistoryContext } from "./contexts/HistoryContext";
 import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
@@ -27,26 +27,28 @@ export function Header(props: HeaderProps) {
 			<Navbar.Group>
 				<Navbar.Heading>Cardset</Navbar.Heading>
 				<Navbar.Divider/>
-				<Button icon="folder-open" minimal={true} onClick={loadSet}/>
-				<Button icon="floppy-disk" minimal={true} onClick={saveSet}/>
+				<Tooltip content="Open File"><AnchorButton icon="folder-open" minimal={true} onClick={loadSet}/></Tooltip>
+				<Tooltip content="Save File"><AnchorButton icon="floppy-disk" minimal={true} onClick={saveSet}/></Tooltip>
 				<Navbar.Divider/>
-				<Button icon="archive" minimal={true} onClick={saveActiveCardImage}/>
+				<Tooltip content="Export Card Image"><AnchorButton icon="archive" minimal={true} onClick={saveActiveCardImage}/></Tooltip>
 				<Navbar.Divider/>
-				<Button icon="undo" minimal={true} disabled={!history.undo} onClick={history.undo}/>
-				<Button icon="redo" minimal={true} disabled={!history.redo} onClick={history.redo}/>
+				<Tooltip content="Undo"><AnchorButton icon="undo" minimal={true} disabled={!history.undo} onClick={history.undo}/></Tooltip>
+				<Tooltip content="Redo"><AnchorButton icon="redo" minimal={true} disabled={!history.redo} onClick={history.redo}/></Tooltip>
 				<Navbar.Divider/>
-				<Button icon="bold"   minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "bold"  )} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "bold"  ); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
-				<Button icon="italic" minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "italic")} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "italic"); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
+				<Tooltip content="Bold"  ><AnchorButton icon="bold"   minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "bold"  )} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "bold"  ); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/></Tooltip>
+				<Tooltip content="Italic"><AnchorButton icon="italic" minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "italic")} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "italic"); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/></Tooltip>
 				<Navbar.Divider/>
-				<NumericInput
-					style={{ width: "6em" }}
-					value={dpi}
-					buttonPosition="none"
-					leftElement ={<Button icon="zoom-out" minimal={true} disabled={dpi <=  75} onClick={useCallback(() => setDpi(dpi => Math.max(Math.floor(dpi/25 - 1)*25,  75) ), [setDpi])}/>}
-					rightElement={<Button icon="zoom-in"  minimal={true} disabled={dpi >= 300} onClick={useCallback(() => setDpi(dpi => Math.min(Math.ceil (dpi/25 + 1)*25, 300) ), [setDpi])}/>}
-					
-					onValueChange={setDpi}
-				/>
+				
+				<Tooltip content="DPI">
+					<NumericInput
+						style={{ width: "6em" }}
+						value={dpi}
+						buttonPosition="none"
+						leftElement ={<AnchorButton icon="zoom-out" minimal={true} disabled={dpi <=  75} onClick={useCallback(() => setDpi(dpi => Math.max(Math.floor(dpi/25 - 1)*25,  75) ), [setDpi])}/>}
+						rightElement={<AnchorButton icon="zoom-in"  minimal={true} disabled={dpi >= 300} onClick={useCallback(() => setDpi(dpi => Math.min(Math.ceil (dpi/25 + 1)*25, 300) ), [setDpi])}/>}
+						onValueChange={setDpi}
+					/>
+				</Tooltip>
 			</Navbar.Group>
 		</Navbar>
 	);
