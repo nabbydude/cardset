@@ -10,12 +10,13 @@ import { frameUrls } from "../assets";
 import { ContextMenu, ContextMenuChildrenProps, Menu, MenuItem } from "@blueprintjs/core";
 
 export interface CardFrameProps {
-	cardEntry: NodeEntry<Card>;
-	field: string;
+	cardEntry: NodeEntry<Card>,
+	field: string,
+	readOnly?: boolean,
 }
 
 export function CardFrame(props: CardFrameProps) {
-	const { cardEntry, field } = props;
+	const { cardEntry, field, readOnly = false } = props;
 	const [card, path] = cardEntry;
 	const doc = useDocument();
 	const imageStore = useImageStore();
@@ -43,6 +44,7 @@ export function CardFrame(props: CardFrameProps) {
 					<MenuItem text="Land"         onClick={useCallback<React.MouseEventHandler<HTMLAnchorElement>>(()=> changeColor("land"        ), [changeColor])} />
 				</Menu>
 			}
+			disabled={readOnly}
 		>
 			{({ className, onContextMenu, ref, popover}: ContextMenuChildrenProps) => (
 				<div

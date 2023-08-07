@@ -1,10 +1,7 @@
 @import "/node_modules/@blueprintjs/core/lib/scss/variables";
 
-div.card-editor-wrapper {
-	--in: 150px;
-}
-
 div.card-editor {
+	--in: 150px;
 	--pt: calc(var(--in) / 72);
 
 	--title-color: #000;
@@ -14,7 +11,6 @@ div.card-editor {
 	--normal-style: normal;
 	--italic-style: italic;
 	color: var(--text-color);
-
 
 	width: calc(2.5 * var(--in));
 	height: calc(3.5 * var(--in));
@@ -67,7 +63,7 @@ div.card-editor {
 		}
 	}
 
-	img.image {
+	.image {
 		position: absolute;
 		left:   calc(0.2  * var(--in));
 		top:    calc(0.4  * var(--in));
@@ -150,7 +146,7 @@ div.card-editor {
 			border: none;
 			&.selected {
 				outline: 2px solid $pt-outline-color;
-				outline-offset: -1px;
+				// outline-offset: -1px;
 			}
 		}
 	}

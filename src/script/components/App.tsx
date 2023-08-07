@@ -4,17 +4,16 @@ import { CardEditor } from "./CardEditor";
 import { Header } from "./Header";
 import { ReactEditor, Slate, useSlateWithV } from "slate-react";
 import { CardList, listColumn } from "./CardList";
-import { DocumentEditor, EditorWithVersion, createDocumentEditor, firstMatchingElement, toSingleLinePlaintext } from "../slate";
+import { DocumentEditor, EditorWithVersion, createDocumentEditor } from "../slate";
 import { Card, createTestCard, isCard } from "./slate/Card";
 import { Document } from "./slate/Document";
 import { DocumentContext, useDocument } from "./contexts/DocumentContext";
-import { Field } from "./slate/Field";
 import { Node, NodeEntry, Text } from "slate";
-import { domToPng } from "modern-screenshot";
 import { ImageStoreContext, imageEntry } from "./contexts/ImageStoreContext";
 import { loadSet, saveSet } from "../saveLoad";
 import { FocusedEditorContext, FocusedEditorContextValue } from "./contexts/FocusedEditorContext";
 import { HistoryWrapper } from "./contexts/HistoryContext";
+import { exportCardImage } from "../export";
 
 
 const startingDocument: [Document] = [
@@ -46,7 +45,7 @@ export function App() {
 	const imageStoreValue = useMemo(() => [imageStore, setImageStore] as const, [imageStore, setImageStore]);
 	const [dpi, setDpi] = useState(150);
 
-	const saveActiveCardImage = useCallback(() => saveCardImage(doc!, activeId), [doc, activeId]);
+	const exportActiveCardImage = useCallback(() => exportCardImage(doc!, imageStore, activeId, dpi), [doc, activeId, dpi]);
 	const saveThisSet = useCallback(() => saveSet(doc!, imageStore), [doc, imageStore]);
 	const loadThisSet = useCallback(() => loadSet(setDoc, setImageStore), [setDoc, setImageStore]);
 
@@ -64,7 +63,7 @@ export function App() {
 						<DocumentWrapper>
 							<HistoryWrapper setActiveId={setActiveId}>
 								<Header
-									saveActiveCardImage={saveActiveCardImage}
+									exportActiveCardImage={exportActiveCardImage}
 									saveSet={saveThisSet}
 									loadSet={loadThisSet}
 									dpi={dpi}
@@ -88,7 +87,6 @@ export function App() {
 			) : (
 				<div>Loading...</div>
 			)}
-			
 		</ImageStoreContext.Provider>
 	);
 }
@@ -148,7 +146,7 @@ export function MainCardList(props: MainCardListProps) {
 			<Tooltip
 				content="Add Card"
 				renderTarget={({ ref, ...tooltipProps }) => (
-					<Button {...tooltipProps} ref={ref} icon="add" onClick={addCard}/>
+					<Button {...tooltipProps} ref={ref} icon="plus" onClick={addCard}/>
 				)}
 			/>
 			<CardList
@@ -161,30 +159,6 @@ export function MainCardList(props: MainCardListProps) {
 			/>
 		</div>
 	);
-}
-
-export async function saveCardImage(doc: DocumentEditor, activeId: number | undefined) {
-	if (!activeId) {
-		console.warn("No active card id!");
-		return;
-	}
-	const editorElem = document.querySelector("div.card-editor") as HTMLDivElement | null;
-	if (!editorElem) {
-		console.warn("No active card editor!");
-		return;
-	}
-	const card = firstMatchingElement<Card>(doc, { type: "Card", id: activeId });
-	let name: string;
-	if (card) {
-		const nameNode = firstMatchingElement<Field>(card, { type: "Field", name: "name" });
-		if (nameNode) name = toSingleLinePlaintext(nameNode.children);
-	}
-	name ||= "Card";
-	const png = await domToPng(editorElem);
-	const link = document.createElement("a");
-	link.download = `${name}.png`;
-	link.href = png;
-	link.click();
 }
 
 export function addNewCardToDoc(doc: DocumentEditor): Card {

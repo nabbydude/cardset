@@ -6,6 +6,7 @@ import { useDocument } from "./contexts/DocumentContext";
 import { Card } from "./slate/Card";
 import { Image, isImage } from "./slate/Image";
 import { useImageStore } from "./contexts/ImageStoreContext";
+import { NonIdealState } from "@blueprintjs/core";
 
 export interface ImageFieldProps {
 	cardEntry: NodeEntry<Card>,
@@ -52,8 +53,16 @@ export function ImageField(props: ImageFieldProps) {
 
 	const src = (typeof image?.src === "number" ? imageStore.get(image.src)?.url : image?.src) ?? "";
 
-	return (
+	return src ? (
 		<img className="image" onDragOver={onDragOver} onDrop={onDrop} src={src}/>
+	) : (
+		<div className="image" data-no-render onDragOver={onDragOver} onDrop={onDrop}>
+			<NonIdealState
+				title="No Image"
+				description="Drag and drop an image to add one."
+				// action={<Button icon="plus" onClick={addCard}>Create a card</Button>}
+			/>
+		</div>
 	);
 }
 

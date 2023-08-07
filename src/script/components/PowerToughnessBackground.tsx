@@ -11,11 +11,12 @@ import { ContextMenu, ContextMenuChildrenProps, Menu, MenuItem } from "@blueprin
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface PowerToughnessBackgroundProps extends CardFrameProps {
-	checkField: string;
+	checkField: string,
+	readOnly?: boolean,
 }
 
 export function PowerToughnessBackground(props: PowerToughnessBackgroundProps) {
-	const { cardEntry, field, checkField } = props;
+	const { cardEntry, field, checkField, readOnly = false } = props;
 	const [card, path] = cardEntry;
 	const doc = useDocument();
 	const imageStore = useImageStore();
@@ -46,7 +47,7 @@ export function PowerToughnessBackground(props: PowerToughnessBackgroundProps) {
 
 	const src = (typeof image?.src === "number" ? imageStore.get(image.src)?.url : image?.src) ?? "";
 	return (
-		<ContextMenu content={menu}>
+		<ContextMenu content={menu} disabled={readOnly}>
 			{({ className, onContextMenu, ref, popover}: ContextMenuChildrenProps) => (
 				<div
 					className={className}

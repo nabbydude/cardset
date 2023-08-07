@@ -140,6 +140,28 @@ export function firstMatchingPath(root: Node, partial: Partial<Element>): Path |
 	return firstMatchingEntry(root, partial)?.[1];
 }
 
+
+/**
+ * tried to be clever with re-searching the tree but this doesnt properly rerender on frame selection
+ * maybe one day this code will be useful, but not in its current state
+ */
+// export function useMatchingEntry<T extends Element>(root: Ancestor, searchPath: Path, partial: Partial<T>): NodeEntry<T> | undefined {
+// 	const cachedRoot = useRef<Ancestor>();
+// 	const cachedEntry = useRef<NodeEntry<T>>();
+// 	const [node, path] = cachedEntry.current ?? [undefined, undefined];
+// 	const alreadyValid = (
+// 		root === cachedRoot.current &&
+// 		path &&
+// 		Path.isDescendant(path, searchPath) &&
+// 		Element.matches(node, partial)
+// 	);
+// 	if (!alreadyValid) {
+// 		cachedRoot.current = root;
+// 		cachedEntry.current = firstMatchingEntry(Node.get(root, searchPath), partial);
+// 	}
+// 	return cachedEntry.current;
+// }
+
 /**
  * perform one or more operations without normalizing and without forcing a normalize afterward
  */

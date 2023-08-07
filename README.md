@@ -2,7 +2,7 @@
 
 A tool for custom card design and management for TCGs and other card games.
 
-Cardset is a single-page web-app that treats sets of card like a rich text document, and allows for image exporting or cards, leveraging React, SlateJS, and modern-screenshot.
+Cardset is a single-page web-app that treats sets of card like a rich text document, and allows for image exporting or cards, leveraging React, SlateJS, and html-to-image.
 
 ## Usage
 

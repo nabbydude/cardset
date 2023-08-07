@@ -240,7 +240,6 @@ export const MultiEditor = {
 	},
 };
 
-
 export function useViewOfMatchingNode(editor: ViewEditor & ReactEditor, parentEditor: MultiEditor, searchPath: Path, partial: Partial<Element>, readOnly: boolean = false) {
 	const node = Node.get(parentEditor, searchPath);
 	const oldParentEditor = editor.viewParent.editor;
