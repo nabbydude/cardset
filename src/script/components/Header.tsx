@@ -1,27 +1,47 @@
 import React, { useCallback, useContext } from "react";
-import { AnchorButton, Navbar, NumericInput, Tooltip } from "@blueprintjs/core";
+import { AnchorButton, ButtonGroup, Menu, MenuItem, Navbar, NumericInput, Popover, Tooltip } from "@blueprintjs/core";
 import { useDocument } from "./contexts/DocumentContext";
 import { HistoryContext } from "./contexts/HistoryContext";
 import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
 import { ReactEditor } from "slate-react";
 import { isMarkActive, toggleMark } from "../slate";
+import { DpiContext } from "./contexts/DpiContext";
+import { exportCardImage, exportManyCardImages } from "../export";
+import { ImageStoreContext } from "./contexts/ImageStoreContext";
+import { Element } from "slate";
+import { Card } from "./slate/Card";
 
 export interface HeaderProps {
-	exportActiveCardImage: () => void,
+	activeId: number | undefined,
+	selectedIds: Set<number>,
 	saveSet: () => void,
 	loadSet: () => void,
-	dpi: number,
-	setDpi: React.Dispatch<React.SetStateAction<number>>,
 }
 
 
 export function Header(props: HeaderProps) {
-	const { exportActiveCardImage: saveActiveCardImage, saveSet, loadSet, dpi, setDpi } = props;
+	const { activeId, selectedIds, saveSet, loadSet } = props;
 	const history = useContext(HistoryContext);
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const doc = useDocument(); // FocusedEditorContext doesn't update on doc changes, so we listen to the doc directly
+	const [imageStore] = useContext(ImageStoreContext);
+	const { viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi } = useContext(DpiContext);
 	const { cachedFocusedEditor } = useContext(FocusedEditorContext);
 	// const text = focusedEditor ? toSingleLinePlaintext(focusedEditor.children) : "<no text>";
+
+	const exportActiveCard = useCallback(() => activeId && exportCardImage(doc, imageStore, activeId, exportDpi), [doc, imageStore, activeId, exportDpi]);
+	const exportAll = useCallback(async () => {
+		const entries = [...doc.nodes<Card>({ at: [], match: node => Element.isElement(node) && node.type === "Card" })];
+		const ids = entries.map(([node]) => node.id);
+		console.log(ids);
+		exportManyCardImages(doc, imageStore, ids, exportDpi);
+	}, [doc, imageStore, exportDpi]);
+	const exportSelected = useCallback(async () => {
+		const entries = [...doc.nodes<Card>({ at: [], match: node => Element.isElement(node) && node.type === "Card" && selectedIds.has(node.id) })];
+		const ids = entries.map(([node]) => node.id);
+		console.log(ids);
+		exportManyCardImages(doc, imageStore, ids, exportDpi);
+	}, [doc, imageStore, exportDpi, selectedIds]);
 	return (
 		<Navbar id="header">
 			<Navbar.Group>
@@ -38,16 +58,54 @@ export function Header(props: HeaderProps) {
 				<Navbar.Divider/>
 				<Tooltip content="DPI" position="bottom">
 					<NumericInput
-						style={{ width: "6em" }}
-						value={dpi}
+						style={{ width: "7em" }}
+						value={viewDpi}
 						buttonPosition="none"
-						leftElement ={<AnchorButton icon="zoom-out" minimal={true} disabled={dpi <=  75} onClick={useCallback(() => setDpi(dpi => Math.max(Math.floor(dpi/25 - 1)*25,  75) ), [setDpi])}/>}
-						rightElement={<AnchorButton icon="zoom-in"  minimal={true} disabled={dpi >= 300} onClick={useCallback(() => setDpi(dpi => Math.min(Math.ceil (dpi/25 + 1)*25, 300) ), [setDpi])}/>}
-						onValueChange={setDpi}
+						// leftElement ={<AnchorButton icon="zoom-out" minimal={true} disabled={dpi <=  75} onClick={useCallback(() => setDpi(dpi => Math.max(Math.floor(dpi/25 - 1)*25,  75) ), [setDpi])}/>}
+						rightElement={<ButtonGroup>
+							<AnchorButton icon="zoom-out" minimal={true} disabled={viewDpi <=  75} onClick={useCallback(() => setViewDpi(dpi => Math.max(Math.floor(dpi/25 - 1)*25,  75) ), [setViewDpi])}/>
+							<AnchorButton icon="zoom-in"  minimal={true} disabled={viewDpi >= 300} onClick={useCallback(() => setViewDpi(dpi => Math.min(Math.ceil (dpi/25 + 1)*25, 300) ), [setViewDpi])}/>
+						</ButtonGroup>}
+						onValueChange={setViewDpi}
 					/>
 				</Tooltip>
 				<Navbar.Divider/>
-				<Tooltip content="Export Card Image" position="bottom"><AnchorButton icon="export" minimal={true} onClick={saveActiveCardImage}/></Tooltip>
+				<ButtonGroup>
+					<Popover
+						content={<Menu>
+							<MenuItem text="Export All" onClick={exportAll}/>
+							<MenuItem text="Export Selected" disabled={selectedIds.size === 0} onClick={exportSelected}/>
+							<Tooltip content="Export DPI">
+								<NumericInput
+									style={{ width: "170px" }}
+									fill
+									value={exportDpi}
+									buttonPosition="none"
+									disabled={lockExportDpi}
+									leftElement ={<AnchorButton icon={lockExportDpi ? "lock" : "unlock"} minimal={true} onClick={useCallback(() => setLockExportDpi(old => !old), [setLockExportDpi])}/>}
+									rightElement={<ButtonGroup>
+										<AnchorButton icon="zoom-out" minimal={true} disabled={lockExportDpi || exportDpi <=  75} onClick={useCallback(() => setExportDpi(dpi => Math.max(Math.floor(dpi/25 - 1)*25,  75)), [setExportDpi])}/>
+										<AnchorButton icon="zoom-in"  minimal={true} disabled={lockExportDpi || exportDpi >= 300} onClick={useCallback(() => setExportDpi(dpi => Math.min(Math.ceil (dpi/25 + 1)*25, 300)), [setExportDpi])}/>
+									</ButtonGroup>}
+									onValueChange={setExportDpi}
+								/>
+							</Tooltip>
+						</Menu>}
+						renderTarget={({ isOpen: isPopoverOpen, ref: popoverRef, ...popoverProps }) => (
+							<Tooltip
+								content="Export Active Card"
+								position="bottom"
+								// disabled={isPopoverOpen}
+								renderTarget={({ ref: tooltipRef, onClick, ...tooltipProps }) => (
+									<ButtonGroup>
+										<AnchorButton ref={tooltipRef} {...tooltipProps} icon="export"     minimal={true} disabled={!activeId} onClick={useCallback<React.MouseEventHandler<HTMLElement>>(e => { onClick?.(e); exportActiveCard(); }, [exportActiveCard])}/>
+										<AnchorButton ref={popoverRef} {...popoverProps} icon="caret-down" minimal={true} small active={isPopoverOpen}/>
+									</ButtonGroup>
+								)}
+							/>
+						)}
+					/>
+				</ButtonGroup>
 			</Navbar.Group>
 		</Navbar>
 	);

@@ -1,4 +1,4 @@
-import React, { CSSProperties, useMemo } from "react";
+import React, { CSSProperties, useContext, useMemo } from "react";
 import { TextField } from "./TextField";
 import { CardFrame } from "./CardFrame";
 import { PowerToughnessBackground } from "./PowerToughnessBackground";
@@ -8,23 +8,24 @@ import { ManaTextField } from "./ManaTextField";
 import { Button, NonIdealState } from "@blueprintjs/core";
 import { firstMatchingEntry } from "../slate";
 import { Card } from "./slate/Card";
+import { DpiContext } from "./contexts/DpiContext";
 
 export interface CardEditorProps {
 	cardId: number | undefined,
-	dpi: number,
 	addCard: () => void,
 	readOnly?: boolean,
 	style?: Partial<CSSStyleDeclaration>,
 }
 
 export function CardEditor(props: CardEditorProps) {
-	const { cardId, dpi, addCard, readOnly = false, style = {} } = props;
+	const { cardId, addCard, readOnly = false, style = {} } = props;
 	const { doc, v } = useDocumentWithV();
+	const { viewDpi } = useContext(DpiContext);
 	const cardEntry = useMemo(() => firstMatchingEntry<Card>(doc, { type: "Card", id: cardId }), [doc, v, cardId]);
 
 	if (cardEntry) {
 		return (
-			<div className="card-editor" style={{ ...style, "--in": `${dpi}px` } as CSSProperties}>
+			<div className="card-editor" style={{ ...style, "--in": `${viewDpi}px` } as CSSProperties}>
 				<CardFrame cardEntry={cardEntry} field={"frame"} readOnly={readOnly}/>
 				<div className="title-bar name-line">
 					<TextField cardEntry={cardEntry} field={"name"} minFontSize={5} maxFontSize={10.5} readOnly={readOnly}/>
@@ -44,7 +45,7 @@ export function CardEditor(props: CardEditorProps) {
 		);
 	} else {
 		return (
-			<div className="card-editor" style={{ "--in": `${dpi}px` } as CSSProperties}>
+			<div className="card-editor" style={{ "--in": `${viewDpi}px` } as CSSProperties}>
 				<NonIdealState
 					title="No Card Focused"
 					description="Select a card from the list on the right or create a new one."

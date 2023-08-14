@@ -13,7 +13,7 @@ import { ImageStoreContext, imageEntry } from "./contexts/ImageStoreContext";
 import { loadSet, saveSet } from "../saveLoad";
 import { FocusedEditorContext, FocusedEditorContextValue } from "./contexts/FocusedEditorContext";
 import { HistoryWrapper } from "./contexts/HistoryContext";
-import { exportCardImage } from "../export";
+import { DpiContextWrapper } from "./contexts/DpiContext";
 
 
 const startingDocument: [Document] = [
@@ -43,9 +43,11 @@ export function App() {
 	const focusedEditorValue = useMemo<FocusedEditorContextValue>(() => ({ focusedEditor, setFocusedEditor, cachedFocusedEditor, setCachedFocusedEditor }), [focusedEditor, setFocusedEditor, cachedFocusedEditor, setCachedFocusedEditor]);
 	const [imageStore, setImageStore] = useState(new Map<number, imageEntry>());
 	const imageStoreValue = useMemo(() => [imageStore, setImageStore] as const, [imageStore, setImageStore]);
-	const [dpi, setDpi] = useState(150);
 
-	const exportActiveCardImage = useCallback(() => exportCardImage(doc!, imageStore, activeId, dpi), [doc, activeId, dpi]);
+	const [viewDpi, setViewDpi] = useState(150);
+	const [exportDpi, setExportDpi] = useState(150);
+	const [lockExportDpi, setLockExportDpi] = useState(true);
+
 	const saveThisSet = useCallback(() => saveSet(doc!, imageStore), [doc, imageStore]);
 	const loadThisSet = useCallback(() => loadSet(setDoc, setImageStore), [setDoc, setImageStore]);
 
@@ -57,36 +59,37 @@ export function App() {
 
 	return (
 		<ImageStoreContext.Provider value={imageStoreValue}>
-			{doc ? (
-				<Slate editor={doc} initialValue={doc.children}>
-					<FocusedEditorContext.Provider value={focusedEditorValue}>
+			<DpiContextWrapper value={{ viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi }}>
+				{doc ? (
+					<Slate editor={doc} initialValue={doc.children}>
 						<DocumentWrapper>
-							<HistoryWrapper setActiveId={setActiveId}>
-								<Header
-									exportActiveCardImage={exportActiveCardImage}
-									saveSet={saveThisSet}
-									loadSet={loadThisSet}
-									dpi={dpi}
-									setDpi={setDpi}
-								/>
-								<div id="content">
-									<CardEditor cardId={activeId} dpi={dpi} addCard={addCardAndFocus}/>
-									<MainCardList
-										columns={listColumns}
-										selectedIds={selectedIds}
-										setSelectedIds={setSelectedIds}
+							<FocusedEditorContext.Provider value={focusedEditorValue}>
+								<HistoryWrapper setActiveId={setActiveId}>
+									<Header
 										activeId={activeId}
-										setActiveId={setActiveId}
-										addCard={addCardAndFocus}
+										selectedIds={selectedIds}
+										saveSet={saveThisSet}
+										loadSet={loadThisSet}
 									/>
-								</div>
-							</HistoryWrapper>
+									<div id="content">
+										<CardEditor cardId={activeId} addCard={addCardAndFocus}/>
+										<MainCardList
+											columns={listColumns}
+											selectedIds={selectedIds}
+											setSelectedIds={setSelectedIds}
+											activeId={activeId}
+											setActiveId={setActiveId}
+											addCard={addCardAndFocus}
+										/>
+									</div>
+								</HistoryWrapper>
+							</FocusedEditorContext.Provider>
 						</DocumentWrapper>
-					</FocusedEditorContext.Provider>
-				</Slate>
-			) : (
-				<div>Loading...</div>
-			)}
+					</Slate>
+				) : (
+					<div>Loading...</div>
+				)}
+			</DpiContextWrapper>
 		</ImageStoreContext.Provider>
 	);
 }

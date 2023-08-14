@@ -10,9 +10,14 @@ body.bp5-dark {
 	background-color: #2f343c;
 }
 
-#header .bp5-input-group .bp5-input:not(:focus) + .bp5-input-action .bp5-button.bp5-minimal:not(:hover):not(:focus) .bp5-icon {
-	// this is specifically for DPI zoom control, otherwise coloring on left/right icons dont match
-	color: #abb3bf;
+.bp5-input-group .bp5-button-group {
+	margin: 3px;
+}
+.bp5-input-group .bp5-button-group .bp5-button {
+	margin: 0;
+}
+.bp5-dark .bp5-input-group .bp5-input:not(:focus) + .bp5-input-action .bp5-button.bp5-minimal:not(:hover):not(:focus).bp5-disabled {
+	color: $pt-dark-text-color-disabled;
 }
 
 p:last-child {
