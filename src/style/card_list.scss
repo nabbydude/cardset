@@ -22,5 +22,12 @@ table.card-list {
 			}
 		}
 	}
+}
 
+.controllable-card-list .controls {
+	display: flex;
+	flex-direction: row;
+	.info {
+		align-self: center;
+	}
 }

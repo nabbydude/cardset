@@ -1,19 +1,19 @@
 import React, { ReactNode, useCallback, useMemo, useState } from "react";
-import { Button, Tooltip } from "@blueprintjs/core";
 import { CardEditor } from "./CardEditor";
 import { Header } from "./Header";
 import { ReactEditor, Slate, useSlateWithV } from "slate-react";
-import { CardList, listColumn } from "./CardList";
-import { DocumentEditor, EditorWithVersion, createDocumentEditor } from "../slate";
-import { Card, createTestCard, isCard } from "./slate/Card";
+import { ControllableCardList, listColumn } from "./CardList";
+import { DocumentEditor, EditorWithVersion, addNewCardToDoc, createDocumentEditor, deleteCardsFromDoc } from "../slate";
+import { Card, isCard } from "./slate/Card";
 import { Document } from "./slate/Document";
 import { DocumentContext, useDocument } from "./contexts/DocumentContext";
-import { Node, NodeEntry, Text } from "slate";
+import { Node, NodeEntry } from "slate";
 import { ImageStoreContext, imageEntry } from "./contexts/ImageStoreContext";
 import { loadSet, saveSet } from "../saveLoad";
 import { FocusedEditorContext, FocusedEditorContextValue } from "./contexts/FocusedEditorContext";
 import { HistoryWrapper } from "./contexts/HistoryContext";
 import { DpiContextWrapper } from "./contexts/DpiContext";
+import { exportCardImage, exportManyCardImages } from "../export";
 
 
 const startingDocument: [Document] = [
@@ -51,15 +51,34 @@ export function App() {
 	const saveThisSet = useCallback(() => saveSet(doc!, imageStore), [doc, imageStore]);
 	const loadThisSet = useCallback(() => loadSet(setDoc, setImageStore), [setDoc, setImageStore]);
 
+	const addCard = useCallback(() => addNewCardToDoc(doc!), [doc]);
+
 	const addCardAndFocus = useCallback(() => {
-		if (!doc) return;
-		const card = addNewCardToDoc(doc);
+		const card = addNewCardToDoc(doc!);
 		setActiveId(card.id);
 	}, [doc, setActiveId]);
 
+	const exportCards = useCallback((ids: Iterable<number>) => {
+		const arr = [...ids];
+		if (arr.length === 1) {
+			exportCardImage(doc!, imageStore, arr[0], exportDpi);
+		} else {
+			exportManyCardImages(doc!, imageStore, arr, exportDpi);
+		}
+	}, [doc, imageStore, exportDpi]);
+
+	const deleteCards = useCallback((ids: Iterable<number>) => {
+		deleteCardsFromDoc(doc!, ids);
+		setSelectedIds(old => {
+			const v = new Set(old);
+			for (const id of ids) v.delete(id);
+			return v;
+		});
+	}, [doc, setSelectedIds]);
+
 	return (
 		<ImageStoreContext.Provider value={imageStoreValue}>
-			<DpiContextWrapper value={{ viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi }}>
+			<DpiContextWrapper value={useMemo(() => ({ viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi }), [viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi])}>
 				{doc ? (
 					<Slate editor={doc} initialValue={doc.children}>
 						<DocumentWrapper>
@@ -79,7 +98,9 @@ export function App() {
 											setSelectedIds={setSelectedIds}
 											activeId={activeId}
 											setActiveId={setActiveId}
-											addCard={addCardAndFocus}
+											addCard={addCard}
+											exportCards={exportCards}
+											deleteCards={deleteCards}
 										/>
 									</div>
 								</HistoryWrapper>
@@ -114,66 +135,19 @@ export interface MainCardListProps {
 	activeId?: number,
 	setSelectedIds: (cardsOrFunc: Set<number> | ((old: Set<number>) => Set<number>)) => void,
 	setActiveId: (card: number) => void,
-	addCard: () => void;
+	addCard: () => Card,
+	exportCards: (ids: Iterable<number>) => void,
+	deleteCards: (ids: Iterable<number>) => void,
 }
 
 export function MainCardList(props: MainCardListProps) {
-	const { columns, selectedIds, activeId, setSelectedIds, setActiveId, addCard } = props;
 	const doc = useDocument();
 	const listedCardEntries = [...Node.children(doc, [0])].filter(([card]) => isCard(card)) as NodeEntry<Card>[];
 
 	return (
-		<div id="main-card-list-container">
-			{/* <Popover
-				content={<Menu>
-					<MenuItem text="Planeswalker"/>
-				</Menu>}
-				renderTarget={({ isOpen: isPopoverOpen, ref: popoverRef, ...popoverProps }) => (
-					<Tooltip
-						content="I have a popover!"
-						disabled={isPopoverOpen}
-						openOnTargetFocus={false}
-						renderTarget={({ isOpen: isTooltipOpen, ref: tooltipRef, ...tooltipProps }) => (
-							<ButtonGroup
-								{...tooltipProps}
-								ref={mergeRefs(tooltipRef, popoverRef)}
-							>
-								<Button icon="add" onClick={addCard}/>
-								<Button {...popoverProps} icon="caret-down" active={isPopoverOpen}/>
-							</ButtonGroup>
-						)}
-					/>
-				)}
-			/> */}
-
-			<Tooltip
-				content="Add Card"
-				renderTarget={({ ref, ...tooltipProps }) => (
-					<Button {...tooltipProps} ref={ref} icon="plus" onClick={addCard}/>
-				)}
-			/>
-			<CardList
-				columns={columns}
-				cardEntries={listedCardEntries}
-				selectedIds={selectedIds}
-				setSelectedIds={setSelectedIds}
-				activeId={activeId}
-				setActiveId={setActiveId}
-			/>
-		</div>
+		<ControllableCardList
+			cardEntries={listedCardEntries}
+			{...props}
+		/>
 	);
-}
-
-export function addNewCardToDoc(doc: DocumentEditor): Card {
-	const documentNode = doc.children[0] as Document;
-	const child = documentNode.children[0];
-	const card = createTestCard("New Card", "colorless");
-	doc.withoutNormalizing(() => {
-		if (documentNode.children.length === 1 && (child as Text).text === "") {
-			doc.insertNodes(card, { at: [0, 0] }); // if the list is empty an empty text node gets added when normalized. When normalized after adding, if the text node is first, the block is assumed to contain inlines only, and deletes the following block node, so we put at the start
-		} else {
-			doc.insertNodes(card, { at: [0, documentNode.children.length] });
-		}
-	});
-	return card;
 }

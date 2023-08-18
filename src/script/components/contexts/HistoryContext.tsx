@@ -34,8 +34,12 @@ export function HistoryWrapper(props: HistoryWrapperProps) {
 			if (selection) doc.select(selection); // undo/redo use setSelection which noops if there's no existing selection, so we force it here
 			doc.redo();
 			if (selection) {
-				const cardEntry = doc.above<Card>({ at: selection, match: node => isCard(node) });
-				if (cardEntry) setActiveId(cardEntry[0].id);
+				try {
+					const cardEntry = doc.above<Card>({ at: selection, match: node => isCard(node) });
+					if (cardEntry) setActiveId(cardEntry[0].id);
+				} catch {
+					console.error("Error getting card entry for selection", selection, doc);
+				}
 			}
 		} : undefined,
 	}), [doc, canUndo, canRedo]);

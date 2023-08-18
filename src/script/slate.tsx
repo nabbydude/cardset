@@ -1,8 +1,8 @@
 import React from "react";
-import { BaseEditor, createEditor, Descendant, Editor, Element, Node, Path, Text } from "slate";
+import { BaseEditor, createEditor, Descendant, Editor, Element, Node, Path, Text, Transforms } from "slate";
 import { HistoryEditor, withHistory } from "slate-history";
 import { ReactEditor, RenderElementProps as BaseRenderElementProps, RenderLeafProps as BaseRenderLeafProps, withReact, Editable } from "slate-react";
-import { Card } from "./components/slate/Card";
+import { Card, createTestCard } from "./components/slate/Card";
 import { Field } from "./components/slate/Field";
 import { Paragraph, ParagraphElement } from "./components/slate/Paragraph";
 import { StyledText, StyledTextElement } from "./components/slate/StyledText";
@@ -228,4 +228,28 @@ export function isAtomic(el: Element) {
 	return (
 		(isManaPip(el) && el.children.length === 3 && (el.children[0] as Text).text === "" && (el.children[1] as Element).type === "Icon" && (el.children[2] as Text).text === "")
 	);
+}
+
+export function addNewCardToDoc(doc: DocumentEditor): Card {
+	const documentNode = doc.children[0] as Document;
+	const child = documentNode.children[0];
+	const card = createTestCard("New Card", "colorless");
+	doc.withoutNormalizing(() => {
+		if (documentNode.children.length === 1 && (child as Text).text === "") {
+			doc.insertNodes(card, { at: [0, 0] }); // if the list is empty an empty text node gets added when normalized. When normalized after adding, if the text node is first, the block is assumed to contain inlines only, and deletes the following block node, so we put at the start
+		} else {
+			doc.insertNodes(card, { at: [0, documentNode.children.length] });
+		}
+	});
+	return card;
+}
+
+export function deleteCardFromDoc(doc: DocumentEditor, id: number) {
+	const path = firstMatchingPath(doc, { type: "Card", id });
+	if (!path) throw Error("This card doesn't exist for some reason!");
+	Transforms.delete(doc, { at: path });
+}
+
+export function deleteCardsFromDoc(doc: DocumentEditor, ids: Iterable<number>) {
+	for (const id of ids) deleteCardFromDoc(doc, id);
 }
