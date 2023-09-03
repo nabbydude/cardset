@@ -1,11 +1,11 @@
-import React, { DragEvent, DragEventHandler, useCallback, useEffect, useMemo } from "react";
+import React, { DragEvent, DragEventHandler, useCallback, useContext, useEffect, useMemo } from "react";
 import { Editor, Node, NodeEntry, Transforms } from "slate";
 
 import { firstMatchingElement, firstMatchingPath, } from "../slate";
 import { useDocument } from "./contexts/DocumentContext";
 import { Card } from "./slate/Card";
 import { Image, isImage } from "./slate/Image";
-import { useImageStore } from "./contexts/ImageStoreContext";
+import { ImageStoreContext } from "./contexts/ImageStoreContext";
 import { NonIdealState } from "@blueprintjs/core";
 
 export interface ImageFieldProps {
@@ -17,7 +17,7 @@ export function ImageField(props: ImageFieldProps) {
 	const { cardEntry, field } = props;
 	const [card, path] = cardEntry;
 	const doc = useDocument();
-	const imageStore = useImageStore();
+	const imageStore = useContext(ImageStoreContext);
 	const pathRef = useMemo(() => {
 		const fieldPath = firstMatchingPath(card, { type: "Field", name: field });
 		if (!fieldPath) return;

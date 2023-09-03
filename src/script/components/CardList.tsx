@@ -1,4 +1,4 @@
-import React, { MouseEventHandler, useCallback, useState } from "react";
+import React, { Dispatch, MouseEventHandler, SetStateAction, useCallback, useState } from "react";
 
 import { EditableProps, createCardFieldEditor, renderElement, renderLeaf } from "../slate";
 import { Card } from "./slate/Card";
@@ -8,14 +8,16 @@ import { Slate } from "slate-react";
 import { FocusSendingEditable } from "./FocusSendingEditable";
 import { Button, ContextMenu, ContextMenuChildrenProps, Divider, HTMLTable, Menu, MenuItem, Tooltip } from "@blueprintjs/core";
 import { useViewOfMatchingNode } from "../multiSlate";
+import { createTestCard } from "./slate/Card";
 
 export interface listColumn {
 	field: string,
 	header: string,
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface ControllableCardListProps extends CardListProps {
-	addCard: () => Card,
+	
 }
 
 export interface CardListProps {
@@ -23,22 +25,29 @@ export interface CardListProps {
 	cardEntries: NodeEntry<Card>[],
 	selectedIds: Set<number>, // ids of selected cards
 	activeId?: number,
-	setSelectedIds: (cardsOrFunc: Set<number> | ((old: Set<number>) => Set<number>)) => void,
-	setActiveId: (card: number) => void,
+	setSelectedIds: Dispatch<SetStateAction<Set<number>>>,
+	setActiveId: Dispatch<SetStateAction<number | undefined>>,
 	exportCards?: (ids: Iterable<number>) => void,
-	deleteCards?: (ids: Iterable<number>) => void,
 }
 
 export function ControllableCardList(props: ControllableCardListProps) {
-	const { addCard, ...rest } = props;
-	const { selectedIds, setActiveId, setSelectedIds, deleteCards } = rest;
+	const { ...rest } = props;
+	const { selectedIds, setActiveId, setSelectedIds, activeId } = rest;
+
+	const doc = useDocument();
 
 	const addCardAndFocus = useCallback(() => {
-		const card = addCard();
+		const card = createTestCard("New Card", "colorless");
+		doc.addCard(card);
 		setActiveId(card.id);
 		setSelectedIds(new Set([card.id]));
 	}, [setActiveId]);
-	const deleteSelectedCards = useCallback(() => deleteCards?.(selectedIds), [deleteCards, selectedIds]);
+
+	const deleteSelectedCards = useCallback(() => {
+		doc.deleteCards(selectedIds);
+		if (selectedIds.has(activeId!)) setActiveId(undefined);
+		setSelectedIds(new Set());
+	}, [activeId, selectedIds, setActiveId, setSelectedIds]);
 
 	return (
 		<div className="controllable-card-list">
@@ -67,7 +76,7 @@ export function ControllableCardList(props: ControllableCardListProps) {
 				<Tooltip content="Add Card"><Button icon="plus" onClick={addCardAndFocus}/></Tooltip>
 				{selectedIds.size > 0 ? (<>
 					<Divider/>
-					{deleteCards && <Tooltip content={`Delete ${selectedIds.size > 1 ? `${selectedIds.size} cards` : "card"}`}><Button icon="trash" onClick={deleteSelectedCards}/></Tooltip>}
+					<Tooltip content={`Delete ${selectedIds.size > 1 ? `${selectedIds.size} cards` : "card"}`}><Button icon="trash" onClick={deleteSelectedCards}/></Tooltip>
 					<Divider/>
 					<div className="info">
 						{selectedIds.size} card{selectedIds.size === 1 ? "" : "s"} selected

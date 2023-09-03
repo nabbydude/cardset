@@ -1,10 +1,10 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useContext } from "react";
 import { Editor, Element } from "slate";
 import { firstMatchingEntry } from "../slate";
 import { useDocument } from "./contexts/DocumentContext";
 import { CardFrameProps } from "./CardFrame";
 import { Field } from "./slate/Field";
-import { useImageStore } from "./contexts/ImageStoreContext";
+import { ImageStoreContext } from "./contexts/ImageStoreContext";
 import { ptBoxUrls } from "../assets";
 import { Image } from "./slate/Image";
 import { ContextMenu, ContextMenuChildrenProps, Menu, MenuItem } from "@blueprintjs/core";
@@ -19,7 +19,7 @@ export function PowerToughnessBackground(props: PowerToughnessBackgroundProps) {
 	const { cardEntry, field, checkField, readOnly = false } = props;
 	const [card, path] = cardEntry;
 	const doc = useDocument();
-	const imageStore = useImageStore();
+	const imageStore = useContext(ImageStoreContext);
 
 	const [fieldElement, fieldPath] = firstMatchingEntry<Field>(card, { type: "Field", name: field }) ?? [undefined, []] as const;
 	const [image, imagePath] = (fieldElement && firstMatchingEntry<Image>(fieldElement, { type: "Image" })) ?? [undefined, []] as const;
@@ -49,10 +49,7 @@ export function PowerToughnessBackground(props: PowerToughnessBackgroundProps) {
 	return (
 		<ContextMenu content={menu} disabled={readOnly}>
 			{({ className, onContextMenu, ref, popover}: ContextMenuChildrenProps) => (
-				<div
-					className={className}
-					ref={ref}
-				>
+				<div className={className} ref={ref}>
 					{popover}
 					<img
 						className="pt-box"

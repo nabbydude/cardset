@@ -5,9 +5,9 @@ import { Field } from "./components/slate/Field";
 import { DocumentEditor, firstMatchingElement, toSingleLinePlaintext } from "./slate";
 import { Root, createRoot } from "react-dom/client";
 import { CardEditor } from "./components/CardEditor";
-import { ImageStoreContext, imageEntry } from "./components/contexts/ImageStoreContext";
+import { ImageStoreContext, imageEntry, useImageStoreHandle } from "./components/contexts/ImageStoreContext";
 import React, { useLayoutEffect } from "react";
-import { DocumentContext } from "./components/contexts/DocumentContext";
+import { DocumentWithVersionContext } from "./components/contexts/DocumentContext";
 import { DpiContext } from "./components/contexts/DpiContext";
 import JSZip from "jszip";
 
@@ -82,13 +82,13 @@ export function FakeApp(props: { doc: DocumentEditor, imageStore: Map<number, im
 	const noop = () => {};
 	useLayoutEffect(callback);
 	return (
-		<ImageStoreContext.Provider value={[imageStore, noop]}>
+		<ImageStoreContext.Provider value={useImageStoreHandle(imageStore, noop)}>
 			<DpiContext.Provider value={{ viewDpi: dpi, setViewDpi: noop, exportDpi: dpi, setExportDpi: noop, lockExportDpi: true, setLockExportDpi: noop }}>
-				<DocumentContext.Provider value={{ editor: doc, v: 0 }}>
+				<DocumentWithVersionContext.Provider value={{ doc, v: 0 }}>
 					<div id="content">
-						<CardEditor cardId={cardId} addCard={noop} readOnly style={{ display: "none" }}/>
+						<CardEditor cardId={cardId} setActiveId={noop} setSelectedIds={noop} readOnly style={{ display: "none" }}/>
 					</div>
-				</DocumentContext.Provider>
+				</DocumentWithVersionContext.Provider>
 			</DpiContext.Provider>
 		</ImageStoreContext.Provider>
 	);

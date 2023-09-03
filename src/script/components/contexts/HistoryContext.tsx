@@ -1,6 +1,7 @@
-import React, { Dispatch, ReactNode, SetStateAction, createContext, useEffect, useMemo } from "react";
+import React, { Dispatch, ReactNode, SetStateAction, createContext, useMemo } from "react";
 import { useDocument } from "./DocumentContext";
 import { Card, isCard } from "../slate/Card";
+import { HotkeyConfig, useHotkeys } from "@blueprintjs/core";
 
 export interface HistoryObject {
 	undo?: () => void,
@@ -44,20 +45,26 @@ export function HistoryWrapper(props: HistoryWrapperProps) {
 		} : undefined,
 	}), [doc, canUndo, canRedo]);
 
-	useEffect(() => {
-		if (!doc) return;
-		const handler = (e: KeyboardEvent) => {
-			if (!e.ctrlKey) return;
-			if (e.code !== "KeyZ") return;
-			if (e.shiftKey) {
-				history.redo?.();
-			} else {
-				history.undo?.();
-			}
-		};
-		window.addEventListener("keydown", handler);
-		return () => window.removeEventListener("keydown", handler);
-	}, [doc, history]);
+	const hotkeys = useMemo<HotkeyConfig[]>(() => [
+		{
+			combo: "mod+z",
+			label: "Undo",
+			global: true,
+			group: "History",
+			allowInInput: true,
+			onKeyDown: history.undo,
+		},
+		{
+			combo: "mod+shift+z",
+			label: "Redo",
+			global: true,
+			group: "History",
+			allowInInput: true,
+			onKeyDown: history.redo,
+		},
+	], [history.undo, history.redo]);
+
+	useHotkeys(hotkeys);
 
 	return (
 		<HistoryContext.Provider value={history}>

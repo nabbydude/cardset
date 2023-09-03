@@ -2,7 +2,7 @@ import React from "react";
 import { BaseEditor, createEditor, Descendant, Editor, Element, Node, Path, Text, Transforms } from "slate";
 import { HistoryEditor, withHistory } from "slate-history";
 import { ReactEditor, RenderElementProps as BaseRenderElementProps, RenderLeafProps as BaseRenderLeafProps, withReact, Editable } from "slate-react";
-import { Card, createTestCard } from "./components/slate/Card";
+import { Card } from "./components/slate/Card";
 import { Field } from "./components/slate/Field";
 import { Paragraph, ParagraphElement } from "./components/slate/Paragraph";
 import { StyledText, StyledTextElement } from "./components/slate/StyledText";
@@ -41,7 +41,13 @@ export type EditorWithVersion<T extends BaseEditor> = { editor: T, v: number }
 // export type ChildOf<N extends Ancestor> = N["children"] extends (infer C)[] ? C : never;
 // export type DescendantOf<N extends Ancestor, Before extends Ancestor = never> = ChildOf<N> | (ChildOf<N> extends Before ? never : (ChildOf<N> extends Ancestor ? DescendantOf<ChildOf<N>, N | Before> : never))
 
-export type DocumentEditor = BaseEditor & ReactEditor & HistoryEditor & MultiEditor;
+export type DocumentEditor = BaseEditor & ReactEditor & HistoryEditor & MultiEditor & CardsetDocumentEditor;
+
+export interface CardsetDocumentEditor extends BaseEditor {
+	addCard: (card: Card) => void,
+	deleteCard: (id: number) => void,
+	deleteCards: (ids: Iterable<number>) => void,
+}
 
 export interface RenderElementProps<T extends Element = Element> extends BaseRenderElementProps {
 	element: T,
@@ -63,10 +69,14 @@ export function empty(): [Absence] {
 }
 
 export function createDocumentEditor(initialValue: [Document]): DocumentEditor {
-	const editor = withReact(withMulti(withHistory(createEditor())));
+	const editor = withReact(withMulti(withHistory(createEditor() as CardsetDocumentEditor)));
 	editor.isVoid = isVoid;
 	editor.isInline = isInline;
 	editor.isElementReadOnly = isAtomic;
+
+	editor.addCard = (card: Card) => addCard(editor, card);
+	editor.deleteCard = (id: number) => deleteCard(editor, id);
+	editor.deleteCards = (ids: Iterable<number>) => deleteCards(editor, ids);
 
 	editor.children = initialValue;
 	return editor;
@@ -230,10 +240,9 @@ export function isAtomic(el: Element) {
 	);
 }
 
-export function addNewCardToDoc(doc: DocumentEditor): Card {
+export function addCard(doc: DocumentEditor, card: Card): Card {
 	const documentNode = doc.children[0] as Document;
 	const child = documentNode.children[0];
-	const card = createTestCard("New Card", "colorless");
 	doc.withoutNormalizing(() => {
 		if (documentNode.children.length === 1 && (child as Text).text === "") {
 			doc.insertNodes(card, { at: [0, 0] }); // if the list is empty an empty text node gets added when normalized. When normalized after adding, if the text node is first, the block is assumed to contain inlines only, and deletes the following block node, so we put at the start
@@ -244,12 +253,12 @@ export function addNewCardToDoc(doc: DocumentEditor): Card {
 	return card;
 }
 
-export function deleteCardFromDoc(doc: DocumentEditor, id: number) {
+export function deleteCard(doc: DocumentEditor, id: number) {
 	const path = firstMatchingPath(doc, { type: "Card", id });
-	if (!path) throw Error("This card doesn't exist for some reason!");
+	if (!path) throw Error(`Cannot delete card with id "${id}" because it can't be found.`);
 	Transforms.delete(doc, { at: path });
 }
 
-export function deleteCardsFromDoc(doc: DocumentEditor, ids: Iterable<number>) {
-	for (const id of ids) deleteCardFromDoc(doc, id);
+export function deleteCards(doc: DocumentEditor, ids: Iterable<number>) {
+	for (const id of ids) deleteCard(doc, id);
 }

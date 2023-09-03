@@ -7,7 +7,7 @@
 @import "mana.scss";
 
 body.bp5-dark {
-	background-color: #2f343c;
+	background-color: $dark-gray3;
 }
 
 .bp5-input-group .bp5-button-group {
@@ -16,7 +16,12 @@ body.bp5-dark {
 .bp5-input-group .bp5-button-group .bp5-button {
 	margin: 0;
 }
+
 .bp5-dark .bp5-input-group .bp5-input:not(:focus) + .bp5-input-action .bp5-button.bp5-minimal:not(:hover):not(:focus).bp5-disabled {
+	color: #abb3bf99;
+}
+
+.bp5-dark .bp5-input-group.bp5-disabled .bp5-input:not(:focus) + .bp5-input-action .bp5-button.bp5-minimal:not(:hover):not(:focus).bp5-disabled {
 	color: $pt-dark-text-color-disabled;
 }
 

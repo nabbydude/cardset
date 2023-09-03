@@ -1,5 +1,5 @@
 import React, { useCallback, useContext } from "react";
-import { AnchorButton, ButtonGroup, Menu, MenuItem, Navbar, NumericInput, Popover, Tooltip } from "@blueprintjs/core";
+import { AnchorButton, AnchorButtonProps, ButtonGroup, Menu, MenuItem, Navbar, NumericInput, Popover, Tooltip } from "@blueprintjs/core";
 import { useDocument } from "./contexts/DocumentContext";
 import { HistoryContext } from "./contexts/HistoryContext";
 import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
@@ -24,44 +24,39 @@ export function Header(props: HeaderProps) {
 	const history = useContext(HistoryContext);
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const doc = useDocument(); // FocusedEditorContext doesn't update on doc changes, so we listen to the doc directly
-	const [imageStore] = useContext(ImageStoreContext);
+	const imageStore = useContext(ImageStoreContext).object;
 	const { viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi } = useContext(DpiContext);
 	const { cachedFocusedEditor } = useContext(FocusedEditorContext);
-	// const text = focusedEditor ? toSingleLinePlaintext(focusedEditor.children) : "<no text>";
 
 	const exportActiveCard = useCallback(() => activeId && exportCardImage(doc, imageStore, activeId, exportDpi), [doc, imageStore, activeId, exportDpi]);
 	const exportAll = useCallback(async () => {
 		const entries = [...doc.nodes<Card>({ at: [], match: node => Element.isElement(node) && node.type === "Card" })];
 		const ids = entries.map(([node]) => node.id);
-		console.log(ids);
 		exportManyCardImages(doc, imageStore, ids, exportDpi);
 	}, [doc, imageStore, exportDpi]);
 	const exportSelected = useCallback(async () => {
-		const entries = [...doc.nodes<Card>({ at: [], match: node => Element.isElement(node) && node.type === "Card" && selectedIds.has(node.id) })];
-		const ids = entries.map(([node]) => node.id);
-		console.log(ids);
-		exportManyCardImages(doc, imageStore, ids, exportDpi);
+		exportManyCardImages(doc, imageStore, [...selectedIds], exportDpi);
 	}, [doc, imageStore, exportDpi, selectedIds]);
+
 	return (
 		<Navbar id="header">
 			<Navbar.Group>
 				<Navbar.Heading>Cardset</Navbar.Heading>
 				<Navbar.Divider/>
-				<Tooltip content="Open File" position="bottom"><AnchorButton icon="folder-open" minimal={true} onClick={loadSet}/></Tooltip>
-				<Tooltip content="Save File" position="bottom"><AnchorButton icon="floppy-disk" minimal={true} onClick={saveSet}/></Tooltip>
+				<NavbarButton tooltip="Open File" icon="folder-open" minimal={true} onClick={loadSet}/>
+				<NavbarButton tooltip="Save File" icon="floppy-disk" minimal={true} onClick={saveSet}/>
 				<Navbar.Divider/>
-				<Tooltip content="Undo" position="bottom"><AnchorButton icon="undo" minimal={true} disabled={!history.undo} onClick={history.undo}/></Tooltip>
-				<Tooltip content="Redo" position="bottom"><AnchorButton icon="redo" minimal={true} disabled={!history.redo} onClick={history.redo}/></Tooltip>
+				<NavbarButton tooltip="Undo" icon="undo" minimal={true} disabled={!history.undo} onClick={history.undo}/>
+				<NavbarButton tooltip="Redo" icon="redo" minimal={true} disabled={!history.redo} onClick={history.redo}/>
 				<Navbar.Divider/>
-				<Tooltip content="Bold"   position="bottom"><AnchorButton icon="bold"   minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "bold"  )} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "bold"  ); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/></Tooltip>
-				<Tooltip content="Italic" position="bottom"><AnchorButton icon="italic" minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "italic")} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "italic"); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/></Tooltip>
+				<NavbarButton tooltip="Bold"   icon="bold"   minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "bold"  )} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "bold"  ); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
+				<NavbarButton tooltip="Italic" icon="italic" minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "italic")} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "italic"); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
 				<Navbar.Divider/>
 				<Tooltip content="DPI" position="bottom">
 					<NumericInput
 						style={{ width: "7em" }}
 						value={viewDpi}
 						buttonPosition="none"
-						// leftElement ={<AnchorButton icon="zoom-out" minimal={true} disabled={dpi <=  75} onClick={useCallback(() => setDpi(dpi => Math.max(Math.floor(dpi/25 - 1)*25,  75) ), [setDpi])}/>}
 						rightElement={<ButtonGroup>
 							<AnchorButton icon="zoom-out" minimal={true} disabled={viewDpi <=  75} onClick={useCallback(() => setViewDpi(dpi => Math.max(Math.floor(dpi/25 - 1)*25,  75) ), [setViewDpi])}/>
 							<AnchorButton icon="zoom-in"  minimal={true} disabled={viewDpi >= 300} onClick={useCallback(() => setViewDpi(dpi => Math.min(Math.ceil (dpi/25 + 1)*25, 300) ), [setViewDpi])}/>
@@ -91,15 +86,15 @@ export function Header(props: HeaderProps) {
 								/>
 							</Tooltip>
 						</Menu>}
-						renderTarget={({ isOpen: isPopoverOpen, ref: popoverRef, ...popoverProps }) => (
+						renderTarget={({ isOpen, ...popoverProps }) => (
 							<Tooltip
 								content="Export Active Card"
 								position="bottom"
-								// disabled={isPopoverOpen}
-								renderTarget={({ ref: tooltipRef, onClick, ...tooltipProps }) => (
+								disabled={isOpen}
+								renderTarget={({ onClick, ...tooltipProps }) => (
 									<ButtonGroup>
-										<AnchorButton ref={tooltipRef} {...tooltipProps} icon="export"     minimal={true} disabled={!activeId} onClick={useCallback<React.MouseEventHandler<HTMLElement>>(e => { onClick?.(e); exportActiveCard(); }, [exportActiveCard])}/>
-										<AnchorButton ref={popoverRef} {...popoverProps} icon="caret-down" minimal={true} small active={isPopoverOpen}/>
+										<AnchorButton {...tooltipProps} icon="export"     minimal={true} disabled={!activeId} onClick={useCallback<React.MouseEventHandler<HTMLElement>>(e => { onClick?.(e); exportActiveCard(); }, [onClick, exportActiveCard])}/>
+										<AnchorButton {...popoverProps} icon="caret-down" minimal={true} small active={isOpen}/>
 									</ButtonGroup>
 								)}
 							/>
@@ -109,6 +104,15 @@ export function Header(props: HeaderProps) {
 			</Navbar.Group>
 		</Navbar>
 	);
+}
 
+interface NavbarButtonProps extends AnchorButtonProps {
+	tooltip: string | JSX.Element | undefined,
+}
 
+function NavbarButton(props: NavbarButtonProps) {
+	const { tooltip, ...rest } = props;
+	return (
+		<Tooltip content={tooltip} position="bottom" renderTarget={props => <AnchorButton {...props} {...rest}/>}/>
+	);
 }

@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useContext } from "react";
+import React, { Dispatch, ReactNode, SetStateAction, useEffect, useMemo, useState } from "react";
 import { createContext } from "react";
 
 export interface imageEntry {
@@ -12,13 +12,44 @@ export interface imageStoreHandle {
 	delete: (key: number) => void,
 	clear: () => void,
 	replace: (pairs: [number, Blob][]) => void,
+	object: Map<number, imageEntry>,
 }
 
-export const ImageStoreContext = createContext<readonly [Map<number, imageEntry>, Dispatch<SetStateAction<Map<number, imageEntry>>>]>([new Map(), () => {}]);
+export const ImageStoreContext = createContext<imageStoreHandle>({
+	get: () => undefined,
+	set: () => {},
+	delete: () => {},
+	clear: () => {},
+	replace: () => {},
+	object: new Map(),
+});
 
-export function useImageStore(): imageStoreHandle {
-	const [imageStore, setImageStore] = useContext(ImageStoreContext);
-	return {
+export interface ImageStoreProviderProps {
+	children: ReactNode,
+}
+
+export function ImageStoreProvider(props: ImageStoreProviderProps) {
+	const { children } = props;
+	const [imageStore, setImageStore] = useState(new Map<number, imageEntry>());
+
+	const value = useImageStoreHandle(imageStore, setImageStore);
+
+	useEffect(() => {
+		return () => {
+			for (const [, v] of imageStore) {
+				URL.revokeObjectURL(v.url);
+			}
+		};
+	}, []);
+	return (
+		<ImageStoreContext.Provider value={value}>
+			{children}
+		</ImageStoreContext.Provider>
+	);
+}
+
+export function useImageStoreHandle(imageStore: Map<number, imageEntry>, setImageStore: Dispatch<SetStateAction<Map<number, imageEntry>>>): imageStoreHandle {
+	return useMemo<imageStoreHandle>(() => ({
 		get: (key: number) => imageStore.get(key),
 		set: (key: number, data: Blob) => setImageStore(store => {
 			const old = store.get(key);
@@ -46,5 +77,6 @@ export function useImageStore(): imageStoreHandle {
 			}
 			return new Map(pairs.map(([k, data]) => [k, { data, url: URL.createObjectURL(data) }]));
 		}),
-	};
+		object: imageStore,
+	}), [imageStore, setImageStore]);
 }

@@ -1,4 +1,4 @@
-import React, { CSSProperties, useContext, useMemo } from "react";
+import React, { CSSProperties, Dispatch, SetStateAction, useCallback, useContext, useMemo } from "react";
 import { TextField } from "./TextField";
 import { CardFrame } from "./CardFrame";
 import { PowerToughnessBackground } from "./PowerToughnessBackground";
@@ -7,21 +7,29 @@ import { ImageField } from "./ImageField";
 import { ManaTextField } from "./ManaTextField";
 import { Button, NonIdealState } from "@blueprintjs/core";
 import { firstMatchingEntry } from "../slate";
-import { Card } from "./slate/Card";
+import { Card, createTestCard } from "./slate/Card";
 import { DpiContext } from "./contexts/DpiContext";
 
 export interface CardEditorProps {
 	cardId: number | undefined,
-	addCard: () => void,
+	setSelectedIds: Dispatch<SetStateAction<Set<number>>>,
+	setActiveId: Dispatch<SetStateAction<number | undefined>>,
 	readOnly?: boolean,
 	style?: Partial<CSSStyleDeclaration>,
 }
 
 export function CardEditor(props: CardEditorProps) {
-	const { cardId, addCard, readOnly = false, style = {} } = props;
+	const { cardId, setActiveId, setSelectedIds, readOnly = false, style = {} } = props;
 	const { doc, v } = useDocumentWithV();
 	const { viewDpi } = useContext(DpiContext);
 	const cardEntry = useMemo(() => firstMatchingEntry<Card>(doc, { type: "Card", id: cardId }), [doc, v, cardId]);
+
+	const addCardAndFocus = useCallback(() => {
+		const card = createTestCard("New Card", "colorless");
+		doc.addCard(card);
+		setActiveId(card.id);
+		setSelectedIds(new Set([card.id]));
+	}, [setActiveId]);
 
 	if (cardEntry) {
 		return (
@@ -49,7 +57,7 @@ export function CardEditor(props: CardEditorProps) {
 				<NonIdealState
 					title="No Card Focused"
 					description="Select a card from the list on the right or create a new one."
-					action={<Button icon="plus" onClick={addCard}>Create a card</Button>}
+					action={<Button icon="plus" onClick={addCardAndFocus}>Create a card</Button>}
 				/>
 			</div>
 		);

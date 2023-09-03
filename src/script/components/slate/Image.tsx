@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useContext } from "react";
 import { BaseElement, Element } from "slate";
 import { RenderElementProps } from "../../slate";
-import { useImageStore } from "../contexts/ImageStoreContext";
+import { ImageStoreContext } from "../contexts/ImageStoreContext";
 
 export interface Image extends BaseElement {
 	type: "Image",
@@ -9,7 +9,7 @@ export interface Image extends BaseElement {
 }
 
 export function ImageElement(props: RenderElementProps<Image>) {
-	const imageStore = useImageStore();
+	const imageStore = useContext(ImageStoreContext);
 	const src = (typeof props.element?.src === "number" ? imageStore.get(props.element.src)?.url : props.element?.src) ?? "";
 
 	return (
