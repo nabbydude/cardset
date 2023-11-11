@@ -25,9 +25,9 @@ const startingDocument: [Document] = [
 ];
 
 const listColumns: listColumn[] = [
-	{ field: "name", header: "Name" },
-	{ field: "cost", header: "Cost" },
-	{ field: "type", header: "Type" },
+	{ field: "name", heading: "Name", width: 100 },
+	{ field: "cost", heading: "Cost", width: 100 },
+	{ field: "type", heading: "Type", width: 100 },
 ];
 
 export function getApp() {
@@ -39,6 +39,8 @@ export function App() {
 	const [selectedIds, setSelectedIds] = useState(new Set<number>());
 	const [doc, setDoc] = useState<DocumentEditor | undefined>(() => createDocumentEditor(startingDocument));
 	const [imageStore, setImageStore] = useState(new Map<number, imageEntry>());
+
+	const [columns, setColumns] = useState(listColumns);
 
 	const [viewDpi, setViewDpi] = useState(150);
 	const [exportDpi, setExportDpi] = useState(150);
@@ -73,7 +75,8 @@ export function App() {
 									<div id="content">
 										<CardEditor cardId={activeId} setActiveId={setActiveId} setSelectedIds={setSelectedIds}/>
 										<MainCardList
-											columns={listColumns}
+											columns={columns}
+											setColumns={setColumns}
 											selectedIds={selectedIds}
 											setSelectedIds={setSelectedIds}
 											activeId={activeId}
@@ -97,6 +100,7 @@ export interface MainCardListProps {
 	columns: listColumn[],
 	selectedIds: Set<number>, // ids of selected cards
 	activeId?: number,
+	setColumns: Dispatch<SetStateAction<listColumn[]>>,
 	setSelectedIds: Dispatch<SetStateAction<Set<number>>>,
 	setActiveId: Dispatch<SetStateAction<number | undefined>>,
 	exportCards: (ids: Iterable<number>) => void,

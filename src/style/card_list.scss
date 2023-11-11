@@ -1,7 +1,74 @@
 @import "/node_modules/@blueprintjs/core/lib/scss/variables";
 
+.controllable-card-list {
+	overflow: hidden;
+	display: grid;
+	grid-template-rows: auto 1fr;
+	height: 100%;
+}
+
+.scroll-container {
+	position: relative;
+	min-height: 0;
+	min-width: 0;
+}
+
 table.card-list {
 	width: 100%;
+	height: 100%;
+	overflow: auto;
+	display: block;
+	thead {
+		padding: 1px;
+		th {
+			position: sticky;
+			box-shadow: inset 0 -1px rgba(255, 255, 255, 0.2);
+			top: 0;
+			background-color: #2f343c;;
+		}
+	}
+	tbody {
+		border-width: 0;
+		padding: 1px;
+	}
+
+	td {
+		// box-shadow: inset -1px 0 rgba(255, 255, 255, 0.2) !important;
+		box-shadow: none !important;
+
+		p {
+			text-overflow: ellipsis;
+			overflow: hidden;
+			white-space: nowrap;
+		}
+	}
+	th {
+		user-select: none;
+		position: relative;
+		&:hover {
+			// background-color: rgba($gray1, 0.3);
+			cursor: pointer;
+		}
+		.size-handle {
+			position: absolute;
+			background-color: rgba(255, 255, 255, 0.2);
+			top: 0;
+			right: 0;
+			bottom: 1px;
+			width: 0;
+			cursor: col-resize;
+			transition: all .05s ease-out;
+		}
+	}
+	
+	tr:hover {
+		.size-handle {
+			// right: -2px;
+			width: 4px;
+			transition: all .2s ease-out;
+		}
+	}
+
 	tr.selected td {
 		background-color: rgba($blue3, 0.6);
 	}
@@ -27,6 +94,7 @@ table.card-list {
 .controllable-card-list .controls {
 	display: flex;
 	flex-direction: row;
+	padding-top: 0.5rem;
 	.info {
 		align-self: center;
 	}

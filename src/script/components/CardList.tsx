@@ -1,4 +1,4 @@
-import React, { Dispatch, MouseEventHandler, SetStateAction, useCallback, useState } from "react";
+import React, { Dispatch, MouseEventHandler, PointerEventHandler, SetStateAction, useCallback, useMemo, useState } from "react";
 
 import { EditableProps, createCardFieldEditor, renderElement, renderLeaf } from "../slate";
 import { Card } from "./slate/Card";
@@ -12,7 +12,17 @@ import { createTestCard } from "./slate/Card";
 
 export interface listColumn {
 	field: string,
-	header: string,
+	heading: string,
+	/** width in pixels */
+	width: number,
+}
+
+function setColumnProperty<K extends keyof listColumn>(setColumns: Dispatch<SetStateAction<listColumn[]>>, index: number, key: K, value: listColumn[K] | ((old: listColumn[K]) => listColumn[K])) {
+	setColumns(old => {
+		const out = old.slice();
+		out[index] = { ...out[index], [key]: value instanceof Function ? value(out[index][key]) : value };
+		return out;
+	});
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -25,6 +35,7 @@ export interface CardListProps {
 	cardEntries: NodeEntry<Card>[],
 	selectedIds: Set<number>, // ids of selected cards
 	activeId?: number,
+	setColumns: Dispatch<SetStateAction<listColumn[]>>,
 	setSelectedIds: Dispatch<SetStateAction<Set<number>>>,
 	setActiveId: Dispatch<SetStateAction<number | undefined>>,
 	exportCards?: (ids: Iterable<number>) => void,
@@ -94,30 +105,84 @@ export function ControllableCardList(props: ControllableCardListProps) {
 }
 
 export function CardList(props: CardListProps) {
-	const { columns, cardEntries, ...rest } = props;
+	const { columns, cardEntries, setColumns, ...rest } = props;
 	// return null;
 	return (
-		<HTMLTable className="card-list" interactive={true}>
-			<thead>
-				<tr>
-					{columns.map(({ field, header }) => (<th key={field}>{header}</th>))}
-				</tr>
-			</thead>
-			<tbody>
-				{cardEntries.map(cardEntry => (
-					<CardRow
-						key={cardEntry[0].id}
-						columns={columns}
-						cardEntry={cardEntry}
-						{...rest}
-					/>
-				))}
-			</tbody>
-		</HTMLTable>
+		<div className="scroll-container">
+			<HTMLTable className="card-list" interactive={true}>
+				<thead>
+					<tr>
+						{useMemo(() => columns.map((column, index) => (<CardListHeader
+							key={column.field}
+							setWidth={(value) => setColumnProperty(setColumns, index, "width", value)}
+							{...column}
+						/>)), [columns, setColumns])}
+					</tr>
+				</thead>
+				<tbody>
+					{cardEntries.map(cardEntry => (
+						<CardListRow
+							key={cardEntry[0].id}
+							columns={columns}
+							cardEntry={cardEntry}
+							{...rest}
+						/>
+					))}
+				</tbody>
+			</HTMLTable>
+		</div>
 	);
 }
 
-export interface CardRowProps {
+export interface CardListHeaderProps {
+	field: string,
+	heading: string,
+	/** width in pixels */
+	width: number,
+	setWidth: Dispatch<SetStateAction<number>>,
+}
+
+export function CardListHeader(props: CardListHeaderProps) {
+	const { field, heading, width, setWidth } = props;
+
+	return (
+		<th
+			style={{ minWidth: `${width}px`, width: `${width}px`, maxWidth: `${width}px` }}
+			data-field={field}
+		>
+			{heading}
+			<SizeHandle setWidth={setWidth}/>
+		</th>
+	);
+}
+
+export function SizeHandle({
+	setWidth,
+}: {
+	setWidth: Dispatch<SetStateAction<number>>,
+}) {
+	const onPointerDown = useCallback<PointerEventHandler>(e => {
+		let lastX = e.pageX;
+		const move = (e: PointerEvent) => {
+			const diff = e.pageX - lastX; // im scared of lastX changing beneath us if things if this gets called twice so we cache the value here
+			setWidth(old => old + diff);
+			lastX = e.pageX;
+		};
+		const up = () => {
+			document.removeEventListener("pointermove", move);
+			document.body.style.removeProperty("cursor");
+		};
+		document.addEventListener("pointermove", move);
+		document.addEventListener("pointerup", up, { once: true });
+		// document.body.style.setProperty("cursor", "col-resize", "important");
+		e.currentTarget.setPointerCapture(e.pointerId);
+	}, [setWidth]);
+	return (
+		<div className="size-handle" onPointerDown={onPointerDown}/>
+	);
+}
+
+export interface CardListRowProps {
 	columns: listColumn[],
 	cardEntry: NodeEntry<Card>,
 	activeId?: number,
@@ -128,7 +193,7 @@ export interface CardRowProps {
 	deleteCards?: (ids: Iterable<number>) => void,
 }
 
-export function CardRow(props: CardRowProps) {
+export function CardListRow(props: CardListRowProps) {
 	const { columns, cardEntry, activeId, setActiveId, selectedIds, setSelectedIds, exportCards, deleteCards } = props;
 	const [card, path] = cardEntry;
 	const active = activeId === card.id;
@@ -175,20 +240,21 @@ export function CardRow(props: CardRowProps) {
 					ref={ref}
 				>
 					{popover}{/* this is a portal so it doesnt break table schema */}
-					{columns.map(({ field }) => <CardCell key={field} cardPath={path} field={field}/>)}
+					{columns.map(({ field, width }) => <CardListCell key={field} cardPath={path} field={field} width={width}/>)}
 				</tr>
 			)}
 		</ContextMenu>
 	);
 }
 
-export interface CardCellProps extends EditableProps {
+export interface CardListCellProps extends EditableProps {
 	cardPath: Path,
 	field: string,
+	width: number,
 }
 
-export function CardCell(props: CardCellProps) {
-	const { cardPath, field, ...rest } = props;
+export function CardListCell(props: CardListCellProps) {
+	const { cardPath, field, width, ...rest } = props;
 	const doc = useDocument();
 	const [editor] = useState(createCardFieldEditor);
 	useViewOfMatchingNode(editor, doc, cardPath, { type: "Field", name: field }, true);
@@ -201,8 +267,11 @@ export function CardCell(props: CardCellProps) {
 				renderLeaf={renderLeaf}
 				disableDefaultStyles={true}
 				style={{
-					whiteSpace: "pre-wrap",
-					wordWrap: "break-word",
+					whiteSpace: "nowrap",
+					// wordWrap: "break-word",
+					minWidth: `${width}px`,
+					width: `${width}px`,
+					maxWidth: `${width}px`,
 				}}
 				readOnly={true}
 				{...rest}

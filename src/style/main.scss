@@ -6,6 +6,11 @@
 @import "card_list.scss";
 @import "mana.scss";
 
+html, body, #app, #content {
+	overflow: hidden;
+	height: 100%;
+}
+
 body.bp5-dark {
 	background-color: $dark-gray3;
 }
@@ -29,10 +34,14 @@ p:last-child {
 	margin-bottom: 0;
 }
 
+#app {
+	display: grid;
+	grid-template-rows: auto 1fr;
+	align-items: start;
+}
+
 #content {
 	display: grid;
-	gap: 0.5rem;
-	padding: 0.5rem;
 	grid-auto-flow: column;
 	grid-template-columns: auto 1fr;
 	align-items: start;
