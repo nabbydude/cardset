@@ -1,49 +1,69 @@
-import React, { Dispatch, ReactNode, SetStateAction, createContext, useMemo } from "react";
-import { useDocument } from "./DocumentContext";
-import { Card, isCard } from "../slate/Card";
+import React, { Dispatch, ReactNode, SetStateAction, createContext, useContext, useMemo, useState } from "react";
 import { HotkeyConfig, useHotkeys } from "@blueprintjs/core";
+import { history, redo, undo } from "../../history";
+import { ProjectContext } from "./ProjectContext";
 
-export interface HistoryObject {
-	undo?: () => void,
-	redo?: () => void,
-}
 
-export const HistoryContext = createContext<HistoryObject>({});
+export const HistoryContext = createContext<history>({ index: 0, steps: [], allow_merging: false, force_merging: false, disable_next_merge: false });
+export const UndoRedoContext = createContext<undo_redo>({ undo: () => {}, redo: () => {}, can_undo: false, can_redo: false });
 
-export interface HistoryWrapperProps {
-	setActiveId: Dispatch<SetStateAction<number | undefined>>,
+export interface HistoryProviderProps {
+	setActiveId: Dispatch<SetStateAction<string | undefined>>,
 	children: ReactNode,
 }
 
-export function HistoryWrapper(props: HistoryWrapperProps) {
+export interface UndoRedoProviderProps {
+	children: ReactNode,
+}
+
+export interface undo_redo {
+	undo: () => void,
+	redo: () => void,
+	can_undo: boolean,
+	can_redo: boolean,
+}
+
+export function HistoryProvider(props: HistoryProviderProps) {
 	const { setActiveId, children } = props;
-	const doc = useDocument();
-	const canUndo = doc.history.undos.length > 0;
-	const canRedo = doc.history.redos.length > 0;
-	const history = useMemo(() => ({
-		undo: canUndo ? () => {
-			const selection = doc.history.undos[doc.history.undos.length - 1]?.selectionBefore;
-			doc.undo();
-			if (selection) {
-				doc.select(selection); // undo/redo use setSelection which noops if there's no existing selection, so we force it here
-				const cardEntry = doc.above<Card>({ at: selection, match: node => isCard(node) });
-				if (cardEntry) setActiveId(cardEntry[0].id);
-			}
-		} : undefined,
-		redo: canRedo ? () => {
-			const selection = doc.history.redos[doc.history.redos.length - 1]?.selectionBefore;
-			if (selection) doc.select(selection); // undo/redo use setSelection which noops if there's no existing selection, so we force it here
-			doc.redo();
-			if (selection) {
-				try {
-					const cardEntry = doc.above<Card>({ at: selection, match: node => isCard(node) });
-					if (cardEntry) setActiveId(cardEntry[0].id);
-				} catch {
-					console.error("Error getting card entry for selection", selection, doc);
-				}
-			}
-		} : undefined,
-	}), [doc, canUndo, canRedo]);
+	const project = useContext(ProjectContext);
+	
+	const [history, setHistory] = useState<history>({ index: 0, steps: [], allow_merging: false, force_merging: false, disable_next_merge: false });
+	// TODO: URGENT this doesnt actually work at all you have to actually *set* history to get the context to update for things like index. react is not my first language ill fix it later
+	// probably gonna do some sort of write-only-history hook for operations
+	const can_undo = history.index > 0;
+	const can_redo = history.index < history.steps.length;
+
+	const undo_redo = useMemo<undo_redo>(() => ({
+		can_undo,
+		can_redo,
+		undo: () => {
+			undo(project, history);
+
+			// TODO: set focus. maybe all of undo should be here?
+
+			// const selection = doc.history.undos[doc.history.undos.length - 1]?.selectionBefore;
+			// doc.undo();
+			// if (selection) {
+			// 	doc.select(selection); // undo/redo use setSelection which noops if there's no existing selection, so we force it here
+			// 	const cardEntry = doc.above<Card>({ at: selection, match: node => isCard(node) });
+			// 	if (cardEntry) setActiveId(cardEntry[0].id);
+			// }
+		},
+		redo: () => {
+			redo(project, history);
+			// const selection = doc.history.redos[doc.history.redos.length - 1]?.selectionBefore;
+			// if (selection) doc.select(selection); // undo/redo use setSelection which noops if there's no existing selection, so we force it here
+			// doc.redo();
+			// if (selection) {
+			// 	try {
+			// 		const cardEntry = doc.above<Card>({ at: selection, match: node => isCard(node) });
+			// 		if (cardEntry) setActiveId(cardEntry[0].id);
+			// 	} catch {
+			// 		console.error("Error getting card entry for selection", selection, doc);
+			// 	}
+			// }
+		},
+	}), [project, history, can_undo, can_redo]);
 
 	const hotkeys = useMemo<HotkeyConfig[]>(() => [
 		{
@@ -52,7 +72,7 @@ export function HistoryWrapper(props: HistoryWrapperProps) {
 			global: true,
 			group: "History",
 			allowInInput: true,
-			onKeyDown: history.undo,
+			onKeyDown: undo_redo.undo,
 		},
 		{
 			combo: "mod+shift+z",
@@ -60,15 +80,18 @@ export function HistoryWrapper(props: HistoryWrapperProps) {
 			global: true,
 			group: "History",
 			allowInInput: true,
-			onKeyDown: history.redo,
+			onKeyDown: undo_redo.redo,
 		},
-	], [history.undo, history.redo]);
+	], [undo_redo.undo, undo_redo.redo]);
 
 	useHotkeys(hotkeys);
 
+
 	return (
 		<HistoryContext.Provider value={history}>
-			{children}
+			<UndoRedoContext.Provider value={undo_redo}>
+				{children}
+			</UndoRedoContext.Provider>
 		</HistoryContext.Provider>
 	);
 }

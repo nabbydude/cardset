@@ -1,19 +1,17 @@
 import React, { useCallback, useContext } from "react";
 import { AnchorButton, AnchorButtonProps, ButtonGroup, Menu, MenuItem, Navbar, NumericInput, Popover, Tooltip } from "@blueprintjs/core";
-import { useDocument } from "./contexts/DocumentContext";
-import { HistoryContext } from "./contexts/HistoryContext";
+import { HistoryContext, UndoRedoContext } from "./contexts/HistoryContext";
 import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
 import { ReactEditor } from "slate-react";
 import { isMarkActive, toggleMark } from "../slate";
 import { DpiContext } from "./contexts/DpiContext";
 import { exportCardImage, exportManyCardImages } from "../export";
 import { ImageStoreContext } from "./contexts/ImageStoreContext";
-import { Element } from "slate";
-import { Card } from "./slate/Card";
+import { ProjectContext } from "./contexts/ProjectContext";
 
 export interface HeaderProps {
-	activeId: number | undefined,
-	selectedIds: Set<number>,
+	activeId: string | undefined,
+	selectedIds: Set<string>,
 	saveSet: () => void,
 	loadSet: () => void,
 }
@@ -21,22 +19,19 @@ export interface HeaderProps {
 
 export function Header(props: HeaderProps) {
 	const { activeId, selectedIds, saveSet, loadSet } = props;
-	const history = useContext(HistoryContext);
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const doc = useDocument(); // FocusedEditorContext doesn't update on doc changes, so we listen to the doc directly
+	const { undo, redo, can_undo, can_redo } = useContext(UndoRedoContext);
+	const project = useContext(ProjectContext);
 	const imageStore = useContext(ImageStoreContext).object;
 	const { viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi } = useContext(DpiContext);
 	const { cachedFocusedEditor } = useContext(FocusedEditorContext);
 
-	const exportActiveCard = useCallback(() => activeId && exportCardImage(doc, imageStore, activeId, exportDpi), [doc, imageStore, activeId, exportDpi]);
+	const exportActiveCard = useCallback(() => activeId && exportCardImage(project, imageStore, activeId, exportDpi), [project, imageStore, activeId, exportDpi]);
 	const exportAll = useCallback(async () => {
-		const entries = [...doc.nodes<Card>({ at: [], match: node => Element.isElement(node) && node.type === "Card" })];
-		const ids = entries.map(([node]) => node.id);
-		exportManyCardImages(doc, imageStore, ids, exportDpi);
-	}, [doc, imageStore, exportDpi]);
+		exportManyCardImages(project, imageStore, Object.keys(project.cards), exportDpi);
+	}, [project, imageStore, exportDpi]);
 	const exportSelected = useCallback(async () => {
-		exportManyCardImages(doc, imageStore, [...selectedIds], exportDpi);
-	}, [doc, imageStore, exportDpi, selectedIds]);
+		exportManyCardImages(project, imageStore, [...selectedIds], exportDpi);
+	}, [project, imageStore, exportDpi, selectedIds]);
 
 	return (
 		<Navbar id="header">
@@ -46,8 +41,8 @@ export function Header(props: HeaderProps) {
 				<NavbarButton tooltip="Open File" icon="folder-open" minimal={true} onClick={loadSet}/>
 				<NavbarButton tooltip="Save File" icon="floppy-disk" minimal={true} onClick={saveSet}/>
 				<Navbar.Divider/>
-				<NavbarButton tooltip="Undo" icon="undo" minimal={true} disabled={!history.undo} onClick={history.undo}/>
-				<NavbarButton tooltip="Redo" icon="redo" minimal={true} disabled={!history.redo} onClick={history.redo}/>
+				<NavbarButton tooltip="Undo" icon="undo" minimal={true} disabled={!can_undo} onClick={undo}/>
+				<NavbarButton tooltip="Redo" icon="redo" minimal={true} disabled={!can_redo} onClick={redo}/>
 				<Navbar.Divider/>
 				<NavbarButton tooltip="Bold"   icon="bold"   minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "bold"  )} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "bold"  ); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
 				<NavbarButton tooltip="Italic" icon="italic" minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "italic")} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "italic"); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>

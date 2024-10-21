@@ -1,21 +1,17 @@
 import React from "react";
-import { BaseEditor, createEditor, Descendant, Editor, Element, Node, Path, Text, Transforms } from "slate";
-import { HistoryEditor, withHistory } from "slate-history";
+import { BaseEditor, createEditor, Descendant, Editor, Element, Node, Path, Text } from "slate";
 import { ReactEditor, RenderElementProps as BaseRenderElementProps, RenderLeafProps as BaseRenderLeafProps, withReact, Editable } from "slate-react";
-import { Card } from "./components/slate/Card";
 import { Field } from "./components/slate/Field";
 import { Paragraph, ParagraphElement } from "./components/slate/Paragraph";
 import { StyledText, StyledTextElement } from "./components/slate/StyledText";
-import { ViewEditor, MultiEditor, withView, withMulti } from "./multiSlate";
-import { Document } from "./components/slate/Document";
-import { Absence } from "./components/slate/Absence";
 import { Image, ImageElement, isImage } from "./components/slate/Image";
-import { Section, SectionElement } from "./components/slate/Section";
 import { HorizontalRule, HorizontalRuleElement, isHorizontalRule } from "./components/slate/HorizontalRule";
 import { isManaPip, ManaPip, ManaPipElement } from "./components/slate/ManaPip";
 import { isIcon, Icon, IconElement } from "./components/slate/Icon";
 import { doAutoReplace } from "./autoReplace";
 import { cursorNudgeSelection } from "./cursorNudge";
+import { project } from "./project";
+import { history, SharedHistoryEditor, withSharedHistory } from "./history";
 
 ///////////
 // Types //
@@ -25,11 +21,13 @@ declare module "slate" {
 	interface CustomTypes {
 		// Editor: BaseEditor | HistoryEditor | ReactEditor | MultiEditor | ViewEditor,
 		Element: (
-			| Absence
-			| (Document | Card | Field | Section)
+			| Field
 			| HorizontalRule
 			| Paragraph
-			| (Image | Icon)
+
+			| Image
+			| Icon
+
 			| ManaPip
 		),
 		Text: StyledText,
@@ -41,13 +39,7 @@ export type EditorWithVersion<T extends BaseEditor> = { editor: T, v: number }
 // export type ChildOf<N extends Ancestor> = N["children"] extends (infer C)[] ? C : never;
 // export type DescendantOf<N extends Ancestor, Before extends Ancestor = never> = ChildOf<N> | (ChildOf<N> extends Before ? never : (ChildOf<N> extends Ancestor ? DescendantOf<ChildOf<N>, N | Before> : never))
 
-export type DocumentEditor = BaseEditor & ReactEditor & HistoryEditor & MultiEditor & CardsetDocumentEditor;
-
-export interface CardsetDocumentEditor extends BaseEditor {
-	addCard: (card: Card) => void,
-	deleteCard: (id: number) => void,
-	deleteCards: (ids: Iterable<number>) => void,
-}
+// export type DocumentEditor = BaseEditor & ReactEditor & HistoryEditor;
 
 export interface RenderElementProps<T extends Element = Element> extends BaseRenderElementProps {
 	element: T,
@@ -64,31 +56,35 @@ export type EditableProps = Parameters<typeof Editable>[0];
 // Code //
 //////////
 
-export function empty(): [Absence] {
-	return [{ type: "Absence", children: [{ text: "" }] }];
-}
+// export function createDocumentEditor(initialValue: [Document]): DocumentEditor {
+// 	const editor = withReact(withMulti(withHistory(createEditor() as CardsetDocumentEditor)));
+// 	editor.isVoid = isVoid;
+// 	editor.isInline = isInline;
+// 	editor.isElementReadOnly = isAtomic;
 
-export function createDocumentEditor(initialValue: [Document]): DocumentEditor {
-	const editor = withReact(withMulti(withHistory(createEditor() as CardsetDocumentEditor)));
-	editor.isVoid = isVoid;
-	editor.isInline = isInline;
-	editor.isElementReadOnly = isAtomic;
+// 	editor.addCard = (card: Card) => addCard(editor, card);
+// 	editor.deleteCard = (id: number) => deleteCard(editor, id);
+// 	editor.deleteCards = (ids: Iterable<number>) => deleteCards(editor, ids);
 
-	editor.addCard = (card: Card) => addCard(editor, card);
-	editor.deleteCard = (id: number) => deleteCard(editor, id);
-	editor.deleteCards = (ids: Iterable<number>) => deleteCards(editor, ids);
+// 	editor.children = initialValue;
+// 	return editor;
+// }
 
-	editor.children = initialValue;
-	return editor;
-}
-
-export interface CardFieldEditor extends BaseEditor {
+export interface CardTextControlEditor extends BaseEditor {
+	project: project,
+	control_id: string,
+	card_id: string,
+	property_id: string,
 	nudgeDirection?: "forward" | "backward",
 	actionSource?: "user" | "history",
 }
 
-export function createCardFieldEditor(): BaseEditor & CardFieldEditor & ReactEditor & ViewEditor {
-	const editor = withView(withReact(createEditor() as BaseEditor & CardFieldEditor));
+export function createCardTextControlEditor(project: project, history: history, control_id: string, card_id: string, property_id: string): BaseEditor & CardTextControlEditor & SharedHistoryEditor & ReactEditor {
+	const editor = withSharedHistory(withReact(createEditor() as BaseEditor & CardTextControlEditor), history);
+	editor.project = project;
+	editor.control_id = control_id;
+	editor.card_id = card_id;
+	editor.property_id = property_id;
 	editor.isVoid = isVoid;
 	editor.isInline = isInline;
 	editor.isElementReadOnly = isAtomic;
@@ -121,9 +117,18 @@ export function createCardFieldEditor(): BaseEditor & CardFieldEditor & ReactEdi
 			doAutoReplace(editor);
 		}
 		editor.actionSource = undefined;
+		if (editor.project.cards[card_id].properties[property_id]?.type === "text") {
+			editor.project.cards[card_id].properties[property_id].nodes = editor.children;
+		} else {
+			editor.project.cards[card_id].properties[property_id] = { id: property_id, type: "text", nodes: editor.children };
+		}
 	};
-
-	editor.children = empty();
+	if (editor.project.cards[card_id].properties[property_id]?.type === "text") {
+		editor.children = editor.project.cards[card_id].properties[property_id].nodes;
+	} else {
+		editor.project.cards[card_id].properties[property_id] = { id: property_id, type: "text", nodes: [{ type: "Paragraph", children: [{ text: "" }] }] };
+		editor.children = editor.project.cards[card_id].properties[property_id].nodes;
+	}
 	return editor;
 }
 
@@ -204,7 +209,6 @@ export function isMarkActive(editor: Editor, key: keyof StyledText) {
 
 export function renderElement(props: RenderElementProps) {
 	switch (props.element.type) {
-		case "Section":        return <SectionElement        {...props as RenderElementProps<Section       >}/>;
 		case "HorizontalRule": return <HorizontalRuleElement {...props as RenderElementProps<HorizontalRule>}/>;
 		case "ManaPip":        return <ManaPipElement        {...props as RenderElementProps<ManaPip       >}/>;
 		case "Image":          return <ImageElement          {...props as RenderElementProps<Image         >}/>;
@@ -238,27 +242,4 @@ export function isAtomic(el: Element) {
 	return (
 		(isManaPip(el) && el.children.length === 3 && (el.children[0] as Text).text === "" && (el.children[1] as Element).type === "Icon" && (el.children[2] as Text).text === "")
 	);
-}
-
-export function addCard(doc: DocumentEditor, card: Card): Card {
-	const documentNode = doc.children[0] as Document;
-	const child = documentNode.children[0];
-	doc.withoutNormalizing(() => {
-		if (documentNode.children.length === 1 && (child as Text).text === "") {
-			doc.insertNodes(card, { at: [0, 0] }); // if the list is empty an empty text node gets added when normalized. When normalized after adding, if the text node is first, the block is assumed to contain inlines only, and deletes the following block node, so we put at the start
-		} else {
-			doc.insertNodes(card, { at: [0, documentNode.children.length] });
-		}
-	});
-	return card;
-}
-
-export function deleteCard(doc: DocumentEditor, id: number) {
-	const path = firstMatchingPath(doc, { type: "Card", id });
-	if (!path) throw Error(`Cannot delete card with id "${id}" because it can't be found.`);
-	Transforms.delete(doc, { at: path });
-}
-
-export function deleteCards(doc: DocumentEditor, ids: Iterable<number>) {
-	for (const id of ids) deleteCard(doc, id);
 }

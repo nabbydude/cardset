@@ -1,33 +1,26 @@
-import React, { Dispatch, SetStateAction, useCallback, useMemo, useState } from "react";
+import React, { Dispatch, SetStateAction, useCallback, useContext, useMemo, useState } from "react";
 import { CardEditor } from "./CardEditor";
 import { Header } from "./Header";
 import { ControllableCardList, listColumn } from "./CardList";
-import { DocumentEditor, createDocumentEditor } from "../slate";
-import { Card, isCard } from "./slate/Card";
-import { Document } from "./slate/Document";
-import { DocumentProvider, useDocument } from "./contexts/DocumentContext";
-import { Node, NodeEntry } from "slate";
 import { ImageStoreProvider, imageEntry } from "./contexts/ImageStoreContext";
-import { loadSet, saveSet } from "../saveLoad";
+import { load_set, save_set } from "../saveLoad";
 import { FocusedEditorProvider } from "./contexts/FocusedEditorContext";
-import { HistoryWrapper } from "./contexts/HistoryContext";
+import { HistoryProvider } from "./contexts/HistoryContext";
 import { DpiProvider } from "./contexts/DpiContext";
 import { exportCardImage, exportManyCardImages } from "../export";
 import { HotkeysProvider } from "@blueprintjs/core";
+import { project } from "../project";
+import { ProjectContext, ProjectProvider } from "./contexts/ProjectContext";
 
-
-const startingDocument: [Document] = [
-	{
-		type: "Document",
-		name: "Untitled",
-		children: [],
-	},
-];
+const starting_project: project = {
+	name: "Untitled",
+	cards: {},
+};
 
 const listColumns: listColumn[] = [
-	{ field: "name", heading: "Name", width: 100 },
-	{ field: "cost", heading: "Cost", width: 100 },
-	{ field: "type", heading: "Type", width: 100 },
+	{ property: "name", heading: "Name", width: 100 },
+	{ property: "cost", heading: "Cost", width: 100 },
+	{ property: "type", heading: "Type", width: 100 },
 ];
 
 export function getApp() {
@@ -35,10 +28,10 @@ export function getApp() {
 }
 
 export function App() {
-	const [activeId, setActiveId] = useState<number | undefined>();
-	const [selectedIds, setSelectedIds] = useState(new Set<number>());
-	const [doc, setDoc] = useState<DocumentEditor | undefined>(() => createDocumentEditor(startingDocument));
-	const [imageStore, setImageStore] = useState(new Map<number, imageEntry>());
+	const [activeId, setActiveId] = useState<string | undefined>();
+	const [selectedIds, setSelectedIds] = useState(new Set<string>());
+	const [project, setProject] = useState<project | undefined>(starting_project);
+	const [imageStore, setImageStore] = useState(new Map<string, imageEntry>());
 
 	const [columns, setColumns] = useState(listColumns);
 
@@ -46,26 +39,26 @@ export function App() {
 	const [exportDpi, setExportDpi] = useState(150);
 	const [lockExportDpi, setLockExportDpi] = useState(true);
 
-	const saveThisSet = useCallback(() => saveSet(doc!, imageStore), [doc, imageStore]);
-	const loadThisSet = useCallback(() => loadSet(setDoc, setImageStore), [setDoc, setImageStore]);
+	const saveThisSet = useCallback(() => save_set(project!, imageStore), [project, imageStore]);
+	const loadThisSet = useCallback(() => load_set(setProject, setImageStore), [setProject, setImageStore]);
 
-	const exportCards = useCallback((ids: Iterable<number>) => {
+	const exportCards = useCallback((ids: Iterable<string>) => {
 		const arr = [...ids];
 		if (arr.length === 1) {
-			exportCardImage(doc!, imageStore, arr[0], exportDpi);
+			exportCardImage(project!, imageStore, arr[0], exportDpi);
 		} else {
-			exportManyCardImages(doc!, imageStore, arr, exportDpi);
+			exportManyCardImages(project!, imageStore, arr, exportDpi);
 		}
-	}, [doc, imageStore, exportDpi]);
+	}, [project, imageStore, exportDpi]);
 
 	return (
 		<HotkeysProvider>
 			<ImageStoreProvider>
 				<DpiProvider value={useMemo(() => ({ viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi }), [viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi])}>
-					{doc ? (
-						<DocumentProvider doc={doc}>
+					{project ? (
+						<ProjectProvider project={project}>
 							<FocusedEditorProvider>
-								<HistoryWrapper setActiveId={setActiveId}>
+								<HistoryProvider setActiveId={setActiveId}>
 									<Header
 										activeId={activeId}
 										selectedIds={selectedIds}
@@ -73,8 +66,8 @@ export function App() {
 										loadSet={loadThisSet}
 									/>
 									<div id="content">
-										<CardEditor cardId={activeId} setActiveId={setActiveId} setSelectedIds={setSelectedIds}/>
-										<MainCardList
+										<CardEditor card={activeId ? project.cards[activeId] : undefined} setActiveId={setActiveId} setSelectedIds={setSelectedIds}/>
+										{/* <MainCardList
 											columns={columns}
 											setColumns={setColumns}
 											selectedIds={selectedIds}
@@ -82,11 +75,11 @@ export function App() {
 											activeId={activeId}
 											setActiveId={setActiveId}
 											exportCards={exportCards}
-										/>
+										/> */}
 									</div>
-								</HistoryWrapper>
+								</HistoryProvider>
 							</FocusedEditorProvider>
-						</DocumentProvider>
+						</ProjectProvider>
 					) : (
 						<div>Loading...</div>
 					)}
@@ -98,21 +91,21 @@ export function App() {
 
 export interface MainCardListProps {
 	columns: listColumn[],
-	selectedIds: Set<number>, // ids of selected cards
-	activeId?: number,
+	selectedIds: Set<string>, // ids of selected cards
+	activeId?: string,
 	setColumns: Dispatch<SetStateAction<listColumn[]>>,
-	setSelectedIds: Dispatch<SetStateAction<Set<number>>>,
-	setActiveId: Dispatch<SetStateAction<number | undefined>>,
-	exportCards: (ids: Iterable<number>) => void,
+	setSelectedIds: Dispatch<SetStateAction<Set<string>>>,
+	setActiveId: Dispatch<SetStateAction<string | undefined>>,
+	exportCards: (ids: Iterable<string>) => void,
 }
 
 export function MainCardList(props: MainCardListProps) {
-	const doc = useDocument();
-	const listedCardEntries = [...Node.children(doc, [0])].filter(([card]) => isCard(card)) as NodeEntry<Card>[];
+	const project = useContext(ProjectContext);
+	const cards = Object.values(project.cards);
 
 	return (
 		<ControllableCardList
-			cardEntries={listedCardEntries}
+			cards={cards}
 			{...props}
 		/>
 	);

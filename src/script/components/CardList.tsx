@@ -1,17 +1,17 @@
-import React, { Dispatch, MouseEventHandler, PointerEventHandler, SetStateAction, useCallback, useMemo, useState } from "react";
+import React, { Dispatch, MouseEventHandler, PointerEventHandler, SetStateAction, useCallback, useContext, useMemo, useState } from "react";
 
-import { EditableProps, createCardFieldEditor, renderElement, renderLeaf } from "../slate";
-import { Card } from "./slate/Card";
-import { useDocument } from "./contexts/DocumentContext";
-import { NodeEntry, Path } from "slate";
+import { EditableProps, createCardTextControlEditor, renderElement, renderLeaf } from "../slate";
 import { Slate } from "slate-react";
 import { FocusSendingEditable } from "./FocusSendingEditable";
 import { Button, ContextMenu, ContextMenuChildrenProps, Divider, HTMLTable, Menu, MenuItem, Tooltip } from "@blueprintjs/core";
-import { useViewOfMatchingNode } from "../multiSlate";
-import { createTestCard } from "./slate/Card";
+import { card, createTestCard } from "../card";
+import { add_card, delete_cards } from "../project";
+import { ProjectContext } from "./contexts/ProjectContext";
+import { HistoryContext } from "./contexts/HistoryContext";
+import { ControlEditorDirectoryContext } from "./contexts/ControlEditorDirectory";
 
 export interface listColumn {
-	field: string,
+	property: string,
 	heading: string,
 	/** width in pixels */
 	width: number,
@@ -32,30 +32,41 @@ export interface ControllableCardListProps extends CardListProps {
 
 export interface CardListProps {
 	columns: listColumn[],
-	cardEntries: NodeEntry<Card>[],
-	selectedIds: Set<number>, // ids of selected cards
-	activeId?: number,
+	cards: card[],
+	selectedIds: Set<string>, // ids of selected cards
+	activeId?: string,
 	setColumns: Dispatch<SetStateAction<listColumn[]>>,
-	setSelectedIds: Dispatch<SetStateAction<Set<number>>>,
-	setActiveId: Dispatch<SetStateAction<number | undefined>>,
-	exportCards?: (ids: Iterable<number>) => void,
+	setSelectedIds: Dispatch<SetStateAction<Set<string>>>,
+	setActiveId: Dispatch<SetStateAction<string | undefined>>,
+	exportCards?: (ids: Iterable<string>) => void,
 }
 
 export function ControllableCardList(props: ControllableCardListProps) {
 	const { ...rest } = props;
 	const { selectedIds, setActiveId, setSelectedIds, activeId } = rest;
 
-	const doc = useDocument();
+	const project = useContext(ProjectContext);
+	const history = useContext(HistoryContext);
 
 	const addCardAndFocus = useCallback(() => {
 		const card = createTestCard("New Card", "colorless");
-		doc.addCard(card);
+		add_card(
+			project,
+			history,
+			{ type: "none" },
+			card
+		);
 		setActiveId(card.id);
 		setSelectedIds(new Set([card.id]));
 	}, [setActiveId]);
 
 	const deleteSelectedCards = useCallback(() => {
-		doc.deleteCards(selectedIds);
+		delete_cards(
+			project,
+			history,
+			{ type: "none" },
+			selectedIds
+		);
 		if (selectedIds.has(activeId!)) setActiveId(undefined);
 		setSelectedIds(new Set());
 	}, [activeId, selectedIds, setActiveId, setSelectedIds]);
@@ -105,7 +116,7 @@ export function ControllableCardList(props: ControllableCardListProps) {
 }
 
 export function CardList(props: CardListProps) {
-	const { columns, cardEntries, setColumns, ...rest } = props;
+	const { columns, cards, setColumns, ...rest } = props;
 	// return null;
 	return (
 		<div className="scroll-container">
@@ -113,18 +124,18 @@ export function CardList(props: CardListProps) {
 				<thead>
 					<tr>
 						{useMemo(() => columns.map((column, index) => (<CardListHeader
-							key={column.field}
+							key={column.property}
 							setWidth={(value) => setColumnProperty(setColumns, index, "width", value)}
 							{...column}
 						/>)), [columns, setColumns])}
 					</tr>
 				</thead>
 				<tbody>
-					{cardEntries.map(cardEntry => (
+					{cards.map(card => (
 						<CardListRow
-							key={cardEntry[0].id}
+							key={card.id}
 							columns={columns}
-							cardEntry={cardEntry}
+							card={card}
 							{...rest}
 						/>
 					))}
@@ -135,7 +146,7 @@ export function CardList(props: CardListProps) {
 }
 
 export interface CardListHeaderProps {
-	field: string,
+	property: string,
 	heading: string,
 	/** width in pixels */
 	width: number,
@@ -143,12 +154,12 @@ export interface CardListHeaderProps {
 }
 
 export function CardListHeader(props: CardListHeaderProps) {
-	const { field, heading, width, setWidth } = props;
+	const { property, heading, width, setWidth } = props;
 
 	return (
 		<th
 			style={{ minWidth: `${width}px`, width: `${width}px`, maxWidth: `${width}px` }}
-			data-field={field}
+			data-field={property}
 		>
 			{heading}
 			<SizeHandle setWidth={setWidth}/>
@@ -184,18 +195,17 @@ export function SizeHandle({
 
 export interface CardListRowProps {
 	columns: listColumn[],
-	cardEntry: NodeEntry<Card>,
-	activeId?: number,
-	setActiveId: (card: number) => void,
-	selectedIds: Set<number>,
-	setSelectedIds: (cardsOrFunc: Set<number> | ((old: Set<number>) => Set<number>)) => void,
-	exportCards?: (ids: Iterable<number>) => void,
-	deleteCards?: (ids: Iterable<number>) => void,
+	card: card,
+	activeId?: string,
+	setActiveId: (card: string) => void,
+	selectedIds: Set<string>,
+	setSelectedIds: (cardsOrFunc: Set<string> | ((old: Set<string>) => Set<string>)) => void,
+	exportCards?: (ids: Iterable<string>) => void,
+	deleteCards?: (ids: Iterable<string>) => void,
 }
 
 export function CardListRow(props: CardListRowProps) {
-	const { columns, cardEntry, activeId, setActiveId, selectedIds, setSelectedIds, exportCards, deleteCards } = props;
-	const [card, path] = cardEntry;
+	const { columns, card, activeId, setActiveId, selectedIds, setSelectedIds, exportCards, deleteCards } = props;
 	const active = activeId === card.id;
 	const selected = selectedIds.has(card.id);
 
@@ -239,8 +249,8 @@ export function CardListRow(props: CardListRowProps) {
 					}, [selected, onContextMenu])}
 					ref={ref}
 				>
-					{popover}{/* this is a portal so it doesnt break table schema */}
-					{columns.map(({ field, width }) => <CardListCell key={field} cardPath={path} field={field} width={width}/>)}
+					{popover}{/* this is a portal, so it doesnt break table schema */}
+					{columns.map(({ property, width }) => <CardListCell key={property} card={card} propertyId={property} controlId={`list_cell#${property}`} width={width}/>)}
 				</tr>
 			)}
 		</ContextMenu>
@@ -248,16 +258,29 @@ export function CardListRow(props: CardListRowProps) {
 }
 
 export interface CardListCellProps extends EditableProps {
-	cardPath: Path,
-	field: string,
+	card: card,
+	propertyId: string,
+	controlId: string,
 	width: number,
 }
 
 export function CardListCell(props: CardListCellProps) {
-	const { cardPath, field, width, ...rest } = props;
-	const doc = useDocument();
-	const [editor] = useState(createCardFieldEditor);
-	useViewOfMatchingNode(editor, doc, cardPath, { type: "Field", name: field }, true);
+	const { card, propertyId, controlId, width, ...rest } = props;
+	const project = useContext(ProjectContext);
+	const history = useContext(HistoryContext);
+	const control_editor_directory = useContext(ControlEditorDirectoryContext);
+	// const doc = useDocument();
+	// const [editor] = useState(createCardTextControlEditor);
+	// useViewOfMatchingNode(editor, doc, cardPath, { type: "Field", name: field }, true);
+
+	const editor = useMemo(() => {
+		let editor = control_editor_directory.get(controlId);
+		if (!editor) {
+			editor = createCardTextControlEditor(project, history, controlId, card.id, propertyId)
+			control_editor_directory.set(controlId, editor);
+		}
+		return editor;
+	},[control_editor_directory.get(controlId)]);
 
 	return (
 		<Slate editor={editor} initialValue={editor.children}>

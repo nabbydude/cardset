@@ -1,8 +1,8 @@
-import { Editor, Node, NodeEntry, Text } from "slate";
+import { Node, NodeEntry, Text } from "slate";
 import { colorNamesByLetter } from "./assets";
-import { createGenericPip, createManaPipFromLetter, createTapPip } from "./components/TextField";
-import { MultiEditor, ViewEditor } from "./multiSlate";
-import { HistoryEditor } from "slate-history";
+import { createGenericPip, createManaPipFromLetter, createTapPip } from "./components/TextControl";
+import { batch_in_history, SharedHistoryEditor, write_operation_to_history } from "./history";
+import { CardTextControlEditor } from "./slate";
 
 interface RegExpExecArray extends globalThis.RegExpExecArray {
 	indices: [number, number][], // this is a relatively recent feature availiable in all modern browsers, just not in typescript at time of writing
@@ -20,7 +20,7 @@ export const replacements: Replacement[] = [
 	{ pattern: /{T}/d, substitute: () => [createTapPip(), { text: "" }] },
 ];
 
-export function doAutoReplace(editor: Editor) {
+export function doAutoReplace(editor: CardTextControlEditor & SharedHistoryEditor) {
 	if (!editor.selection) return;
 	const [node, path] = editor.node(editor.selection.focus) as NodeEntry<Text>;
 	const offset = editor.selection.focus.offset;
@@ -31,21 +31,19 @@ export function doAutoReplace(editor: Editor) {
 
 		if (!(offset >= start && offset <= end)) continue;
 
-		const doc = (editor as ViewEditor).viewParent.editor as MultiEditor & HistoryEditor;
-
-		// force a new undo step 
-		doc.writeHistory("undos", { operations: [], selectionBefore: doc.selection });
-
-		const resolved = substitute instanceof Function ? substitute(m) : substitute;
-		const insertable = (typeof resolved === "string") ? { text: resolved } : resolved;
-
-		editor.insertNodes(insertable, {
-			at: {
-				anchor: { path, offset: start },
-				focus: { path, offset: end },
-			},
-			select: true,
-		});
+		// force a new undo step
+		batch_in_history(editor.history, () => {
+			const resolved = substitute instanceof Function ? substitute(m) : substitute;
+			const insertable = (typeof resolved === "string") ? { text: resolved } : resolved;
+	
+			editor.insertNodes(insertable, {
+				at: {
+					anchor: { path, offset: start },
+					focus: { path, offset: end },
+				},
+				select: true,
+			});
+		})
 		return;
 	}
 }

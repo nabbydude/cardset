@@ -1,11 +1,12 @@
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-import { DocumentEditor, createDocumentEditor } from "./slate";
 import { imageEntry } from "./components/contexts/ImageStoreContext";
+import { project } from "./project";
+import { card } from "./card";
 
-type version = [number, number, number];
+type version = readonly [number, number, number];
 
-const currentSaveVersion: version = [0, 1, 0];
+const current_save_version = [0, 2, 0] as const;
 
 export function isVersion(version: unknown): version is version {
 	return (
@@ -27,11 +28,19 @@ export function compareVersion(version: version, other: version): number {
 	return 0;
 }
 
-export function versionIsLater(version: version, other: version): boolean {
+export function version_is_earlier(version: version, other: version): boolean {
+	return compareVersion(version, other) < 0;
+}
+
+export function version_is_same_or_earlier(version: version, other: version): boolean {
+	return compareVersion(version, other) <= 0;
+}
+
+export function version_is_later(version: version, other: version): boolean {
 	return compareVersion(version, other) > 0;
 }
 
-export function versionIsSameOrLater(version: version, other: version): boolean {
+export function version_is_same_or_later(version: version, other: version): boolean {
 	return compareVersion(version, other) >= 0;
 }
 
@@ -45,28 +54,45 @@ export const mimeTypeToFileExtension: Record<string, string> = {
 };
 
 
-interface BaseMeta {
+interface base_meta {
 	version: version,
 }
 
-export function isBaseMeta(meta: unknown): meta is BaseMeta {
-	return !!meta && isVersion((meta as BaseMeta).version);
+interface current_meta {
+	version: typeof current_save_version,
+	name: string,
 }
 
+export function is_base_meta(meta: unknown): meta is base_meta {
+	return !!meta && isVersion((meta as base_meta).version);
+}
 
+export function ensure_current_version(meta: base_meta): meta is current_meta {
+	if (version_is_later(meta.version, current_save_version)) throw Error(`Version mismatch, Savefile is version ${meta.version.join(".")}, loader is only ${current_save_version.join(".")}`);
+	if (version_is_same_or_earlier(meta.version, [0, 2, 0])) throw Error(`Version mismatch, loader cannot convert from files version 0.2.0 or earlier`);
+	// in the future I'd rather smarter handling of major/minor/bugfix versions with modal/toasted warnings etc
 
-export async function saveSet(doc: DocumentEditor, imageStore: Map<number, imageEntry>) {
+	return true;
+}
+
+export async function save_set(project: project, imageStore: Map<string, imageEntry>) {
 	const zip = new JSZip();
-	zip.file("meta.json", JSON.stringify({ version: currentSaveVersion }));
-	zip.file("document.json", JSON.stringify(doc.children));
+	const meta: current_meta = { version: current_save_version, name: project.name };
+
+	zip.file("meta.json", JSON.stringify(meta));
+	for (const k in project.cards) {
+		const v = project.cards[k];
+		zip.file(`cards/${k}.json`, v);
+	}
 	for (const [k, v] of imageStore) {
 		zip.file(`images/${k}.${mimeTypeToFileExtension[v.data.type]}`, v.data);
 	}
+
 	const blob = await zip.generateAsync({ type:"blob" });
-	saveAs(blob, "mySet.zip");
+	saveAs(blob, "my_set.zip");
 }
 
-export async function loadSet(setDoc: React.Dispatch<React.SetStateAction<DocumentEditor | undefined>>, setImageStore: React.Dispatch<React.SetStateAction<Map<number, imageEntry>>>) {
+export async function load_set(setProject: React.Dispatch<React.SetStateAction<project | undefined>>, setImageStore: React.Dispatch<React.SetStateAction<Map<string, imageEntry>>>) {
 	const input = document.createElement("input");
 	input.type = "file";
 	const change = new Promise<Event>((resolve) => input.addEventListener("change", resolve, { once: true }));
@@ -76,34 +102,47 @@ export async function loadSet(setDoc: React.Dispatch<React.SetStateAction<Docume
 	const file = input.files?.[0];
 	if (!file) throw Error("No file found to load");
 
-	setDoc(undefined); // todo: fix. this is omega jank, if we don't do it, slate will continue to show stale document
+	setProject(undefined); // todo: fix. this is omega jank, if we don't do it, slate will continue to show stale document. replace with loading indicator or something
 
 	const zip = await JSZip.loadAsync(file);
 
-	const metaZipped = zip.file("meta.json");
-	if (!metaZipped) throw Error("meta.json not found");
-	const metaText = await metaZipped.async("text");
-	const meta = JSON.parse(metaText);
-	if (!isBaseMeta(meta)) throw Error("Invalid meta.json");
-	if (versionIsLater(meta.version, currentSaveVersion)) throw Error(`Version mismatch, Savefile is version ${meta.version.join(".")}, loader is only ${currentSaveVersion.join(".")}`);
-	// in the future I'd rather smarter handling of major/minor/bugfix versions with modal/toasted warnings etc
+	const meta_zipped = zip.file("meta.json");
+	if (!meta_zipped) throw Error("meta.json not found");
+	const meta_text = await meta_zipped.async("text");
+	const meta = JSON.parse(meta_text);
+	if (!is_base_meta(meta)) throw Error("Invalid meta.json");
+	if(!ensure_current_version(meta)) throw Error(`Can't update save version for unknown reason`);
 
-	const docZipped = zip.file("document.json");
-	if (!docZipped) throw Error("document.json not found");
-	const docText = await docZipped.async("text");
-	const doc = JSON.parse(docText);
+	const project: project = {
+		name: meta.name,
+		cards: {},
+	};
+	const cards_zipped = zip.file(/^cards\//);
 
-	const imagesZipped = zip.file(/^images\//);
-	const pairs: [number, imageEntry][] = await Promise.all(imagesZipped.map(async v => {
-		const data = await v.async("blob");
-		return [Number(v.name.match(/^(?:.*\/)?(\d+)\.\w+$/)![1]), { data, url: URL.createObjectURL(data) }];
+	await Promise.all(cards_zipped.map(async v => {
+		const text = await v.async("text");
+		let data: unknown;
+		try {
+			data = JSON.parse(text);
+		} catch (e: unknown) {
+			throw Error(`Error parsing card file ${v.name}, bad JSON`, { cause: e });
+		}
+		// todo: properly check if is card
+		if (!(data as card).id) throw Error(`Error parsing card file ${v.name}, no ID`);
+		project.cards[(data as card).id] = data as card;
 	}));
 
-	setDoc(() => createDocumentEditor(doc));
+	const images_zipped = zip.file(/^images\//);
+	const image_pairs: [string, imageEntry][] = await Promise.all(images_zipped.map(async v => {
+		const data = await v.async("blob");
+		return [v.name, { data, url: URL.createObjectURL(data) }];
+	}));
+
+	setProject(project);
 	setImageStore(store => {
 		for (const [, v] of store) {
 			URL.revokeObjectURL(v.url);
 		}
-		return new Map(pairs);
+		return new Map(image_pairs);
 	});
 }

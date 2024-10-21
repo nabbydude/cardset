@@ -1,34 +1,36 @@
 import React, { useCallback, useContext } from "react";
-import { NodeEntry } from "slate";
-import { Card } from "./slate/Card";
-import { firstMatchingEntry } from "../slate";
-import { Field } from "./slate/Field";
-import { Image } from "./slate/Image";
-import { useDocument } from "./contexts/DocumentContext";
 import { frameUrls } from "../assets";
 import { ContextMenu, ContextMenuChildrenProps, Menu, MenuItem } from "@blueprintjs/core";
-import { ImageStoreContext } from "./contexts/ImageStoreContext";
+import { image_property } from "../property";
+import { card } from "../card";
+import { write_operation_to_history } from "../history";
+import { HistoryContext } from "./contexts/HistoryContext";
 
 export interface CardFrameProps {
-	cardEntry: NodeEntry<Card>,
-	field: string,
+	card: card,
+	controlId: string,
+	propertyId: string,
 	readOnly?: boolean,
 }
 
 export function CardFrame(props: CardFrameProps) {
-	const { cardEntry, field, readOnly = false } = props;
-	const [card, path] = cardEntry;
-	const doc = useDocument();
-	const imageStore = useContext(ImageStoreContext);
+	const { card, controlId, propertyId, readOnly = false } = props;
+	// const imageStore = useContext(ImageStoreContext);
+	const history = useContext(HistoryContext);
 
-	const [fieldElement, fieldPath] = firstMatchingEntry<Field>(card, { type: "Field", name: field }) ?? [undefined, []] as const;
-	const [image, imagePath] = (fieldElement && firstMatchingEntry<Image>(fieldElement, { type: "Image" })) ?? [undefined, []] as const;
-	const fullPath = path.concat(fieldPath, imagePath);
 	const changeColor = useCallback((color: keyof typeof frameUrls) => {
-		doc.setNodes({ src: frameUrls[color] }, { at: fullPath });
-	}, [doc, fullPath.join(",")]);
+		const old_image = (card.properties[propertyId] as image_property).src;
+		(card.properties[propertyId] as image_property).src = frameUrls[color];
+		write_operation_to_history(
+			history,
+			{ type: "none" }, // TODO: real focus
+			{ type: "image_property", card_id: card.id, property_id: propertyId, old_image, new_image: frameUrls[color] }
+		)
+	}, [card, propertyId]);
 
-	const src = (typeof image?.src === "number" ? imageStore.get(image.src)?.url : image?.src) ?? "";
+	const src = (card.properties[propertyId] as image_property).src ?? "";
+	// const src_url = useMemo(() => src instanceof Blob ? URL.createObjectURL(src) : src, [src]); // TODO: this leaks. we should manage this better
+
 	return (
 		<ContextMenu
 			content={
