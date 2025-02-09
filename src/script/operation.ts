@@ -1,76 +1,99 @@
-import { Descendant, Editor, Operation, Operation as SlateOperation, Transforms } from 'slate'
+import { Editor, Operation as SlateOperation, Transforms } from 'slate'
 import { card } from './card';
-import { enum_property, image_property, image_src, text_property } from './property';
-import { project } from './project';
-
+import { property, property_value, text_property } from './property';
+import { card_list } from './card_list';
+import { notify_observers } from './observable';
 
 export interface base_operation {
 	type: string,
 }
 
-export interface property_operation {
+export interface base_property_operation<P extends property = property> {
 	type: string,
-	card_id: string,
-	property_id: string,
+	property: P,
 }
 
-export interface text_property_operation extends property_operation {
-	type: "text_property",
-	operation: SlateOperation
+export interface change_property_value_operation<P extends property = property> extends base_property_operation<P> {
+	type: "change_property_value",
+	old_value: property_value<P>,
+	new_value: property_value<P>,
 }
 
-export interface image_property_operation extends property_operation {
-	type: "image_property",
-	old_image?: image_src,
-	new_image?: image_src,
+export type generic_property_operation = (
+	| change_property_value_operation
+);
+
+export interface modify_property_text_operation extends base_property_operation<text_property> {
+	type: "modify_property_text",
+	operation: SlateOperation,
 }
 
-export interface enum_property_operation extends property_operation {
-	type: "enum_property",
-	old_value: string,
-	new_value: string,
-}
+export type text_property_operation = (
+	| generic_property_operation
+	| modify_property_text_operation
+);
 
-export interface add_card_operation extends base_operation {
-	type: "add_card",
+export type property_operation = (
+	| generic_property_operation
+	| text_property_operation
+);
+
+export type inner<P extends property, O> = O extends base_property_operation<P> ? O : never;
+export type property_operation_for<P extends property> = inner<P, property_operation>
+
+export interface base_card_list_operation {
+	type: string,
 	card: card,
+	list: card_list,
 }
 
-export interface remove_card_operation extends base_operation {
-	type: "remove_card",
-	card: card,
+export interface add_card_to_list_operation extends base_card_list_operation {
+	type: "add_card_to_list",
 }
+
+export interface remove_card_from_list_operation extends base_card_list_operation {
+	type: "remove_card_from_list",
+}
+
+export type card_list_operation = (
+	| add_card_to_list_operation
+	| remove_card_from_list_operation
+);
 
 export type operation = (
-	| text_property_operation
-	| image_property_operation
-	| enum_property_operation
-	| add_card_operation
-	| remove_card_operation
+	| property_operation
+	| card_list_operation
 );
 
 export function get_inverse(op: operation): operation {
 	switch (op.type) {
-		case "text_property" : return { type: op.type, card_id: op.card_id, property_id: op.property_id, operation: SlateOperation.inverse(op.operation) };
-		case "image_property": return { type: op.type, card_id: op.card_id, property_id: op.property_id, old_image: op.new_image, new_image: op.old_image };
-		case "enum_property" : return { type: op.type, card_id: op.card_id, property_id: op.property_id, old_value: op.new_value, new_value: op.old_value };
-		case "add_card"      : return { type: "remove_card", card: op.card };
-		case "remove_card"   : return { type: "add_card"   , card: op.card };
+		case "modify_property_text" : return { type: op.type, property: op.property, operation: SlateOperation.inverse(op.operation) };
+		case "change_property_value": return { type: op.type, property: op.property, old_value: op.new_value, new_value: op.old_value };
+		case "add_card_to_list"     : return { type: "remove_card_from_list", card: op.card, list: op.list };
+		case "remove_card_from_list": return { type: "add_card_to_list"     , card: op.card, list: op.list };
 	}
 }
 
-export function apply(project: project, op: operation) {
+export function apply_operation(op: operation) {
 	switch (op.type) {
-		case "text_property" : dumb_apply_to_nodes((project.cards[op.card_id].properties[op.property_id] as text_property).nodes, op.operation); break; //TODO: use actual apply for the active control
-		case "image_property": (project.cards[op.card_id].properties[op.property_id] as image_property).src = op.new_image; break;
-		case "enum_property" : (project.cards[op.card_id].properties[op.property_id] as enum_property).value = op.new_value; break;
-		case "add_card"      : project.cards[op.card.id] = op.card; break;
-		case "remove_card"   : delete project.cards[op.card.id]; break;
-	}
-}
+		case "modify_property_text": {
+			Transforms.transform(op.property.value as Editor, op.operation);
+			notify_observers(op.property, op);
+		} break;
 
-export function dumb_apply_to_nodes(nodes: Descendant[], op: Operation) {
-	const dummy_editor = { children: nodes } as Editor;
-	Transforms.transform(dummy_editor, op);
-	if (dummy_editor.children !== nodes) nodes.splice(0, nodes.length, ...dummy_editor.children);
+		case "change_property_value": {
+			op.property.value = op.new_value;
+			notify_observers(op.property, op);
+		} break;
+
+		case "add_card_to_list": {
+			op.list.cards.add(op.card);
+			notify_observers(op.list, op);
+		} break;
+
+		case "remove_card_from_list": {
+			op.list.cards.delete(op.card);
+			notify_observers(op.list, op);
+		} break;
+	}
 }

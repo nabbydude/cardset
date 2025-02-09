@@ -1,14 +1,14 @@
 import React, { Dispatch, ReactNode, SetStateAction, createContext, useContext, useMemo, useState } from "react";
 import { HotkeyConfig, useHotkeys } from "@blueprintjs/core";
 import { history, redo, undo } from "../../history";
-import { ProjectContext } from "./ProjectContext";
+import { card } from "../../card";
 
 
 export const HistoryContext = createContext<history>({ index: 0, steps: [], allow_merging: false, force_merging: false, disable_next_merge: false });
 export const UndoRedoContext = createContext<undo_redo>({ undo: () => {}, redo: () => {}, can_undo: false, can_redo: false });
 
 export interface HistoryProviderProps {
-	setActiveId: Dispatch<SetStateAction<string | undefined>>,
+	setActiveCard: Dispatch<SetStateAction<card | undefined>>,
 	children: ReactNode,
 }
 
@@ -24,12 +24,10 @@ export interface undo_redo {
 }
 
 export function HistoryProvider(props: HistoryProviderProps) {
-	const { setActiveId, children } = props;
-	const project = useContext(ProjectContext);
-	
+	const { setActiveCard, children } = props;
 	const [history, setHistory] = useState<history>({ index: 0, steps: [], allow_merging: false, force_merging: false, disable_next_merge: false });
-	// TODO: URGENT this doesnt actually work at all you have to actually *set* history to get the context to update for things like index. react is not my first language ill fix it later
-	// probably gonna do some sort of write-only-history hook for operations
+
+	const [_, refresh_undo_redo] = useState({});
 	const can_undo = history.index > 0;
 	const can_redo = history.index < history.steps.length;
 
@@ -37,8 +35,8 @@ export function HistoryProvider(props: HistoryProviderProps) {
 		can_undo,
 		can_redo,
 		undo: () => {
-			undo(project, history);
-
+			undo(history);
+			refresh_undo_redo({});
 			// TODO: set focus. maybe all of undo should be here?
 
 			// const selection = doc.history.undos[doc.history.undos.length - 1]?.selectionBefore;
@@ -50,7 +48,8 @@ export function HistoryProvider(props: HistoryProviderProps) {
 			// }
 		},
 		redo: () => {
-			redo(project, history);
+			redo(history);
+			refresh_undo_redo({});
 			// const selection = doc.history.redos[doc.history.redos.length - 1]?.selectionBefore;
 			// if (selection) doc.select(selection); // undo/redo use setSelection which noops if there's no existing selection, so we force it here
 			// doc.redo();
@@ -63,7 +62,7 @@ export function HistoryProvider(props: HistoryProviderProps) {
 			// 	}
 			// }
 		},
-	}), [project, history, can_undo, can_redo]);
+	}), [history, can_undo, can_redo]);
 
 	const hotkeys = useMemo<HotkeyConfig[]>(() => [
 		{

@@ -1,5 +1,5 @@
 import React from "react";
-import { ptBoxUrls } from "../assets";
+import { pt_box_images } from "../assets";
 import { ImageEnumControl, ImageEnumControlProps, option } from "./ImageEnumControl";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -11,14 +11,14 @@ export function PowerToughnessBackground(props: PowerToughnessBackgroundProps) {
 	// const { card, propertyId, checkPropertyId: check_property, readOnly = false } = props;
 
 	const options: option[] = [
-		{ id: "white"       , label: "White"        , image: ptBoxUrls["white"       ] },
-		{ id: "blue"        , label: "Blue"         , image: ptBoxUrls["blue"        ] },
-		{ id: "black"       , label: "Black"        , image: ptBoxUrls["black"       ] },
-		{ id: "red"         , label: "Red"          , image: ptBoxUrls["red"         ] },
-		{ id: "green"       , label: "Green"        , image: ptBoxUrls["green"       ] },
-		{ id: "multicolored", label: "Multicolored" , image: ptBoxUrls["multicolored"] },
-		{ id: "colorless"   , label: "Colorless"    , image: ptBoxUrls["colorless"   ] },
-		{ id: "artifact"    , label: "Artifact"     , image: ptBoxUrls["artifact"    ] },
+		{ id: "white"       , label: "White"        , image: pt_box_images["white"       ] },
+		{ id: "blue"        , label: "Blue"         , image: pt_box_images["blue"        ] },
+		{ id: "black"       , label: "Black"        , image: pt_box_images["black"       ] },
+		{ id: "red"         , label: "Red"          , image: pt_box_images["red"         ] },
+		{ id: "green"       , label: "Green"        , image: pt_box_images["green"       ] },
+		{ id: "multicolored", label: "Multicolored" , image: pt_box_images["multicolored"] },
+		{ id: "colorless"   , label: "Colorless"    , image: pt_box_images["colorless"   ] },
+		{ id: "artifact"    , label: "Artifact"     , image: pt_box_images["artifact"    ] },
 	];
 
 	return (

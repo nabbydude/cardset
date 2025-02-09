@@ -1,32 +1,22 @@
 import React, { DragEvent, DragEventHandler, useCallback, useContext } from "react";
-import { ImageStoreContext, imageStoreHandle } from "./contexts/ImageStoreContext";
 import { NonIdealState } from "@blueprintjs/core";
 import { card } from "../card";
 import { image_property } from "../property";
 import { HistoryContext } from "./contexts/HistoryContext";
-import { write_operation_to_history } from "../history";
+import { apply_and_write } from "../history";
+import { load_image_from_blob } from "../image";
+import { usePropertyValue } from "./hooks/usePropertyValue";
 
 export interface ImageControlProps {
 	card: card,
 	controlId: string,
-	propertyId: string,
+	property: image_property,
 }
 
 export function ImageControl(props: ImageControlProps) {
-	const { card, controlId, propertyId } = props;
-	const imageStore = useContext(ImageStoreContext);
+	const { card, controlId, property } = props;
 	const history = useContext(HistoryContext);
-	// const pathRef = useMemo(() => {
-	// 	const propertyPath = firstMatchingPath(card, { type: "Control", name: property });
-	// 	if (!propertyPath) return;
-	// 	const fullPath = path.concat(propertyPath);
-	// 	return Editor.pathRef(doc, fullPath);
-	// }, [doc, card.id]);
-
-	// // clean up old refs when card changes or this element unmounts
-	// useEffect(() => {
-	// 	return () => { pathRef?.unref(); };
-	// }, [pathRef]);
+	const value = usePropertyValue(property);
 
 	const onDrop = useCallback<DragEventHandler>(e => {
 		e.preventDefault();
@@ -41,19 +31,16 @@ export function ImageControl(props: ImageControlProps) {
 			file = e.dataTransfer.items[0];
 		}
 		if (!file.type.startsWith("image/")) return;
-		const store_id = `${card.id}_${Date.now()}`;
-		imageStore.set(store_id, file);
-		const old_image = (card.properties[propertyId] as image_property).src;
-		const new_image = `store://${store_id}`;
-		(card.properties[propertyId] as image_property).src = new_image;
-		write_operation_to_history(
+		const old_value = property.value;
+		const new_value = load_image_from_blob(file);
+		apply_and_write(
 			history,
 			{ type: "none" }, // todo
-			{ type: "image_property", card_id: card.id, property_id: propertyId, new_image, old_image }
+			{ type: "change_property_value", property, new_value, old_value }
 		);
-	}, [card.id, propertyId, imageStore]);
+	}, [card.id, property]);
 
-	const src = getTrueImageUrl(imageStore, (card.properties[propertyId] as image_property).src ?? "");
+	const src = property.value?.url ?? "";
 
 	return src ? (
 		<img className="image" onDragOver={onDragOver} onDrop={onDrop} src={src}/>
@@ -70,11 +57,4 @@ export function ImageControl(props: ImageControlProps) {
 
 function onDragOver(e: DragEvent) {
 	e.preventDefault();
-}
-
-function getTrueImageUrl(image_store: imageStoreHandle, src: string): string {
-	// let src = (card.properties[property] as image_property).src ?? "";
-	let m = /^store:\/\/(.*)$/.exec(src);
-	if (m) src = image_store.get(m[1])?.url ?? "";
-	return src;
 }

@@ -1,31 +1,24 @@
 import { Descendant } from "slate";
+import { image } from "./image";
+import { observable } from "./observable";
+import { operation, generic_property_operation, text_property_operation } from "./operation";
 
-export interface base_property {
+export interface base_property<V extends unknown, O extends operation> extends observable<O> {
 	id: string,
 	type: string,
+	value: V,
 }
 
-export interface text_property {
-	id: string,
+export interface text_property extends base_property<{ children: Descendant[] }, text_property_operation> {
 	type: "text",
-	nodes: Descendant[],
 }
 
-export interface image_property {
-	id: string,
+export interface image_property extends base_property<image | undefined, generic_property_operation> {
 	type: "image",
-	src?: image_src,
 }
 
-export type image_src = string;
-// export type image_src = string | Blob;
-
-export interface enum_property {
-	id: string,
+export interface enum_property extends base_property<string, generic_property_operation> {
 	type: "enum",
-	/**id of the enum this references */
-	enum: string,
-	value: string,
 }
 
 export type property = (
@@ -33,3 +26,5 @@ export type property = (
 	| image_property
 	| enum_property
 );
+
+export type property_value<P extends property> = P["value"];

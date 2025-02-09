@@ -1,7 +1,7 @@
 import React, { ReactNode, createContext } from "react";
 import { project } from "../../project";
 
-export const ProjectContext = createContext<project>({ name: "Null Project", cards: {} });
+export const ProjectContext = createContext<project>({ name: "Null Project", card_list: { id: "all", cards: new Set(), observers: new Set() } });
 
 export interface ProjectProviderProps {
 	project: project,

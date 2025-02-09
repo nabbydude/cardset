@@ -1,37 +1,36 @@
 import React, { useCallback, useContext } from "react";
 import { AnchorButton, AnchorButtonProps, ButtonGroup, Menu, MenuItem, Navbar, NumericInput, Popover, Tooltip } from "@blueprintjs/core";
-import { HistoryContext, UndoRedoContext } from "./contexts/HistoryContext";
+import { UndoRedoContext } from "./contexts/HistoryContext";
 import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
 import { ReactEditor } from "slate-react";
 import { isMarkActive, toggleMark } from "../slate";
 import { DpiContext } from "./contexts/DpiContext";
 import { exportCardImage, exportManyCardImages } from "../export";
-import { ImageStoreContext } from "./contexts/ImageStoreContext";
 import { ProjectContext } from "./contexts/ProjectContext";
+import { card } from "../card";
 
 export interface HeaderProps {
-	activeId: string | undefined,
-	selectedIds: Set<string>,
+	activeCard: card | undefined,
+	selectedCards: Set<card	>,
 	saveSet: () => void,
 	loadSet: () => void,
 }
 
 
 export function Header(props: HeaderProps) {
-	const { activeId, selectedIds, saveSet, loadSet } = props;
+	const { activeCard, selectedCards, saveSet, loadSet } = props;
 	const { undo, redo, can_undo, can_redo } = useContext(UndoRedoContext);
 	const project = useContext(ProjectContext);
-	const imageStore = useContext(ImageStoreContext).object;
 	const { viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi } = useContext(DpiContext);
 	const { cachedFocusedEditor } = useContext(FocusedEditorContext);
 
-	const exportActiveCard = useCallback(() => activeId && exportCardImage(project, imageStore, activeId, exportDpi), [project, imageStore, activeId, exportDpi]);
+	const exportActiveCard = useCallback(() => activeCard && exportCardImage(project, activeCard, exportDpi), [project, activeCard, exportDpi]);
 	const exportAll = useCallback(async () => {
-		exportManyCardImages(project, imageStore, Object.keys(project.cards), exportDpi);
-	}, [project, imageStore, exportDpi]);
+		exportManyCardImages(project, [...project.card_list.cards], exportDpi);
+	}, [project, exportDpi]);
 	const exportSelected = useCallback(async () => {
-		exportManyCardImages(project, imageStore, [...selectedIds], exportDpi);
-	}, [project, imageStore, exportDpi, selectedIds]);
+		exportManyCardImages(project, [...selectedCards], exportDpi);
+	}, [project, exportDpi, selectedCards]);
 
 	return (
 		<Navbar id="header">
@@ -64,7 +63,7 @@ export function Header(props: HeaderProps) {
 					<Popover
 						content={<Menu>
 							<MenuItem text="Export All" onClick={exportAll}/>
-							<MenuItem text="Export Selected" disabled={selectedIds.size === 0} onClick={exportSelected}/>
+							<MenuItem text="Export Selected" disabled={selectedCards.size === 0} onClick={exportSelected}/>
 							<Tooltip content="Export DPI">
 								<NumericInput
 									style={{ width: "170px" }}
@@ -88,7 +87,7 @@ export function Header(props: HeaderProps) {
 								disabled={isOpen}
 								renderTarget={({ onClick, ...tooltipProps }) => (
 									<ButtonGroup>
-										<AnchorButton {...tooltipProps} icon="export"     minimal={true} disabled={!activeId} onClick={useCallback<React.MouseEventHandler<HTMLElement>>(e => { onClick?.(e); exportActiveCard(); }, [onClick, exportActiveCard])}/>
+										<AnchorButton {...tooltipProps} icon="export"     minimal={true} disabled={!activeCard} onClick={useCallback<React.MouseEventHandler<HTMLElement>>(e => { onClick?.(e); exportActiveCard(); }, [onClick, exportActiveCard])}/>
 										<AnchorButton {...popoverProps} icon="caret-down" minimal={true} small active={isOpen}/>
 									</ButtonGroup>
 								)}

@@ -1,17 +1,20 @@
 import React from "react";
-import { BaseEditor, createEditor, Descendant, Editor, Element, Node, Path, Text } from "slate";
+import { BaseEditor, createEditor, Descendant, Editor, Element, Node, Operation, Path, Text } from "slate";
 import { ReactEditor, RenderElementProps as BaseRenderElementProps, RenderLeafProps as BaseRenderLeafProps, withReact, Editable } from "slate-react";
 import { Field } from "./components/slate/Field";
 import { Paragraph, ParagraphElement } from "./components/slate/Paragraph";
 import { StyledText, StyledTextElement } from "./components/slate/StyledText";
-import { Image, ImageElement, isImage } from "./components/slate/Image";
 import { HorizontalRule, HorizontalRuleElement, isHorizontalRule } from "./components/slate/HorizontalRule";
 import { isManaPip, ManaPip, ManaPipElement } from "./components/slate/ManaPip";
 import { isIcon, Icon, IconElement } from "./components/slate/Icon";
 import { doAutoReplace } from "./autoReplace";
 import { cursorNudgeSelection } from "./cursorNudge";
 import { project } from "./project";
-import { history, SharedHistoryEditor, withSharedHistory } from "./history";
+import { history, SharedHistoryEditor, write_operation_to_history } from "./history";
+import { card } from "./card";
+import { text_property } from "./property";
+import { apply_operation, modify_property_text_operation, text_property_operation } from "./operation";
+import { observe, observer, unobserve } from "./observable";
 
 ///////////
 // Types //
@@ -25,7 +28,6 @@ declare module "slate" {
 			| HorizontalRule
 			| Paragraph
 
-			| Image
 			| Icon
 
 			| ManaPip
@@ -70,30 +72,89 @@ export type EditableProps = Parameters<typeof Editable>[0];
 // 	return editor;
 // }
 
-export interface CardTextControlEditor extends BaseEditor {
+export interface BaseCardTextControlEditor extends BaseEditor {
 	project: project,
+
+	history: history,
+	write_history: boolean,
+	propagate_to_property: boolean,
+
 	control_id: string,
-	card_id: string,
-	property_id: string,
+	card?: card,
+	property: text_property
 	nudgeDirection?: "forward" | "backward",
 	actionSource?: "user" | "history",
+	true_apply: (operation: Operation) => void;
+	observer?: observer<text_property_operation>;
+	observe: () => void;
+	unobserve: () => void;
 }
+export type CardTextControlEditor = BaseEditor & BaseCardTextControlEditor & SharedHistoryEditor & ReactEditor
 
-export function createCardTextControlEditor(project: project, history: history, control_id: string, card_id: string, property_id: string): BaseEditor & CardTextControlEditor & SharedHistoryEditor & ReactEditor {
-	const editor = withSharedHistory(withReact(createEditor() as BaseEditor & CardTextControlEditor), history);
+export function createTextPropertyControlEditor(project: project, history: history, control_id: string, card: card | undefined, property: text_property): CardTextControlEditor {
+	const editor = withReact(createEditor() as BaseEditor & BaseCardTextControlEditor);
 	editor.project = project;
+
+	editor.history = history;
+	editor.write_history = true;
+	editor.propagate_to_property = true;
+
 	editor.control_id = control_id;
-	editor.card_id = card_id;
-	editor.property_id = property_id;
+	editor.card = card;
+	editor.property = property;
 	editor.isVoid = isVoid;
 	editor.isInline = isInline;
 	editor.isElementReadOnly = isAtomic;
-	const { normalize, normalizeNode, onChange } = editor;
+
+	editor.observe = () => {
+		if (editor.observer) return;
+		editor.observer = (operation) => {
+			if (operation.type !== "modify_property_text") throw Error("non-text property");
+			editor.true_apply(operation.operation);
+		}
+		observe(editor.property, editor.observer);
+	}
+	editor.unobserve = () => {
+		if (!editor.observer) return;
+		unobserve(editor.property, editor.observer);
+		editor.observer = undefined;
+	}
+
+	const { apply, normalize, normalizeNode, onChange } = editor;
+	
+	editor.true_apply = apply;
+
+	editor.apply = (slate_operation) => {
+		if (!editor.propagate_to_property) {
+			editor.true_apply(slate_operation);
+			return;
+		}
+		if (!editor.observer) {
+			console.warn(`[${editor.card?.id}:${editor.property.id}] Applying operation to TextPropertyControlEditor without observing. Falling back to regular #apply (may cause strange or unstable behavior)`)
+			editor.true_apply(slate_operation);
+			return;
+		}
+		if (slate_operation.type === "set_selection") {
+			editor.true_apply(slate_operation);
+			return;
+		}
+		const { operations, history, write_history, card, control_id, property, selection } = editor;
+		const operation: modify_property_text_operation = { type: "modify_property_text", property, operation: slate_operation };
+		if (write_history) {
+			write_operation_to_history(
+				history,
+				{ type: "card_text_control", card: card!, control_id, selection }, // todo: type safety on undefined
+				operation,
+				operations.length !== 0,
+			);
+			history.allow_merging = true;
+		}
+		apply_operation(operation);
+	};
 
 	editor.normalize = (options) => {
-		if (!editor.isNormalizing()) return; // normalize gets called even when normalizing is disabled, so we have to manually check or our code below will get run
 		normalize(options);
-
+		if (!editor.isNormalizing()) return; // normalize gets called even when normalizing is disabled, so we have to manually check or our code below will get run
 		withoutEverNormalizing(editor, () => {
 			cursorNudgeSelection(editor, { direction: editor.nudgeDirection });
 			editor.nudgeDirection = undefined;
@@ -117,20 +178,56 @@ export function createCardTextControlEditor(project: project, history: history, 
 			doAutoReplace(editor);
 		}
 		editor.actionSource = undefined;
-		if (editor.project.cards[card_id].properties[property_id]?.type === "text") {
-			editor.project.cards[card_id].properties[property_id].nodes = editor.children;
-		} else {
-			editor.project.cards[card_id].properties[property_id] = { id: property_id, type: "text", nodes: editor.children };
-		}
+		editor.property.value.children = editor.children;
+
 	};
-	if (editor.project.cards[card_id].properties[property_id]?.type === "text") {
-		editor.children = editor.project.cards[card_id].properties[property_id].nodes;
-	} else {
-		editor.project.cards[card_id].properties[property_id] = { id: property_id, type: "text", nodes: [{ type: "Paragraph", children: [{ text: "" }] }] };
-		editor.children = editor.project.cards[card_id].properties[property_id].nodes;
-	}
+
+	// editor.children = editor.property.nodes;
+
 	return editor;
 }
+
+// export function createCardTextControlEditor(project: project, history: history, control_id: string, card: card | undefined, property: text_property): CardTextControlEditor {
+// 	const editor = withSharedHistory(withReact(createEditor() as BaseEditor & BaseCardTextControlEditor), history);
+// 	editor.project = project;
+// 	editor.control_id = control_id;
+// 	editor.card = card;
+// 	editor.property = property;
+// 	editor.isVoid = isVoid;
+// 	editor.isInline = isInline;
+// 	editor.isElementReadOnly = isAtomic;
+// 	const { normalize, normalizeNode, onChange } = editor;
+
+// 	editor.normalize = (options) => {
+// 		if (!editor.isNormalizing()) return; // normalize gets called even when normalizing is disabled, so we have to manually check or our code below will get run
+// 		normalize(options);
+
+// 		withoutEverNormalizing(editor, () => {
+// 			cursorNudgeSelection(editor, { direction: editor.nudgeDirection });
+// 			editor.nudgeDirection = undefined;
+// 		});
+// 	};
+
+// 	editor.normalizeNode = (entry, options) => {
+// 		const [node, path] = entry;
+
+// 		if (isManaPip(node) && editor.isEmpty(node)) {
+// 			editor.removeNodes({ at: path });
+// 			return;
+// 		}
+
+// 		normalizeNode(entry, options);
+// 	};
+
+// 	editor.onChange = (options) => {
+// 		onChange(options);
+// 		if (editor.actionSource === "user" && editor.operations.find(v => v.type === "insert_text")) {
+// 			doAutoReplace(editor);
+// 		}
+// 		editor.actionSource = undefined;
+// 	};
+// 	return editor;
+// }
 
 export function toPlaintext(nodes: Descendant[]) {
 	return nodes.map(n => Node.string(n)).join("\n");
@@ -189,6 +286,18 @@ export function withoutEverNormalizing(editor: Editor, fn: () => void) {
 		Editor.setNormalizing(editor, value);
 	}
 }
+/**
+ * perform one or more operations without normalizing and without forcing a normalize afterward
+ */
+export function withoutPropagating(editor: CardTextControlEditor, fn: () => void) {
+	const value = editor.propagate_to_property;
+	editor.propagate_to_property = false;
+	try {
+		fn();
+	} finally {
+		editor.propagate_to_property = value;
+	}
+}
 
 export function toggleMark(editor: Editor, mark: keyof StyledText) {
 	const isActive = isMarkActive(editor, mark);
@@ -207,11 +316,18 @@ export function isMarkActive(editor: Editor, key: keyof StyledText) {
 	return !!match;
 }
 
+export function safeToDomNode(editor: ReactEditor, node: Node): HTMLElement | undefined {
+	try {
+		return ReactEditor.toDOMNode(editor, node);
+	} catch {
+		return undefined;
+	}
+}
+
 export function renderElement(props: RenderElementProps) {
 	switch (props.element.type) {
 		case "HorizontalRule": return <HorizontalRuleElement {...props as RenderElementProps<HorizontalRule>}/>;
 		case "ManaPip":        return <ManaPipElement        {...props as RenderElementProps<ManaPip       >}/>;
-		case "Image":          return <ImageElement          {...props as RenderElementProps<Image         >}/>;
 		case "Icon":           return <IconElement           {...props as RenderElementProps<Icon          >}/>;
 		case "Paragraph":      return <ParagraphElement      {...props as RenderElementProps<Paragraph     >}/>;
 
@@ -226,8 +342,7 @@ export function renderLeaf(props: RenderLeafProps) {
 export function isVoid(el: Element) {
 	return (
 		isHorizontalRule(el) ||
-		isIcon(el) ||
-		isImage(el)
+		isIcon(el)
 	);
 }
 

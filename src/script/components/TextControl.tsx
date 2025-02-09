@@ -1,20 +1,19 @@
-import React, { KeyboardEvent, MouseEvent, useCallback, useContext, useLayoutEffect, useMemo } from "react";
+import React, { KeyboardEvent, MouseEvent, useCallback, useLayoutEffect } from "react";
 import { Editor } from "slate";
 import { ReactEditor, Slate } from "slate-react";
-import { CardTextControlEditor, createCardTextControlEditor, EditableProps, renderElement, renderLeaf, toggleMark } from "../slate";
+import { CardTextControlEditor, EditableProps, renderElement, renderLeaf, safeToDomNode, toggleMark, toSingleLinePlaintext } from "../slate";
 import { FocusSendingEditable } from "./FocusSendingEditable";
 import { ManaPip } from "./slate/ManaPip";
 import { colorNamesByLetter, iconUrls } from "../assets";
 import { asScalingPt, getFillSize } from "../autoScaleText";
 import { card } from "../card";
-import { ProjectContext } from "./contexts/ProjectContext";
-import { ControlEditorDirectoryContext } from "./contexts/ControlEditorDirectory";
-import { HistoryContext } from "./contexts/HistoryContext";
+import { useCardTextControlEditor } from "./hooks/useTextControlEditor";
+import { text_property } from "../property";
 
-export interface TextControlProps extends Omit<EditableProps, keyof TextControlEventProps>, TextControlEventProps {
+export interface TextControlProps extends Omit<EditableProps, "property" | keyof TextControlEventProps>, TextControlEventProps {
 	card: card,
 	controlId: string,
-	propertyId: string,
+	property: text_property,
 	minFontSize: number,
 	maxFontSize: number,
 }
@@ -26,23 +25,11 @@ export interface TextControlEventProps {
 }
 
 export function TextControl(props: TextControlProps) {
-	const { card, controlId, propertyId, minFontSize, maxFontSize, onDOMBeforeInput, onClick, onKeyDown, ...rest } = props;
-	const project = useContext(ProjectContext);
-	const history = useContext(HistoryContext);
-	const control_editor_directory = useContext(ControlEditorDirectoryContext);
-	const editor = useMemo(() => {
-		let editor = control_editor_directory.get(controlId);
-		if (!editor) {
-			editor = createCardTextControlEditor(project, history, controlId, card.id, propertyId)
-			control_editor_directory.set(controlId, editor);
-		}
-		return editor;
-	},[control_editor_directory.get(controlId)]);
-	// const [editor] = useState(() => createCardTextControlEditor(project, history, controlId, card.id, propertyId));
-	// useViewOfMatchingNode(editor, project, path, { type: "Field", name: property });
-
+	const { card, controlId, property, minFontSize, maxFontSize, onDOMBeforeInput, onClick, onKeyDown, ...rest } = props;
+	const editor = useCardTextControlEditor(card, controlId, property);
 	useLayoutEffect(() => {
-		const el = ReactEditor.toDOMNode(editor, editor);
+		const el = safeToDomNode(editor, editor);
+		if (!el) return;
 		const size = getFillSize(el, minFontSize, maxFontSize, 0.5);
 		el.style.fontSize = asScalingPt(size);
 	});
@@ -50,11 +37,14 @@ export function TextControl(props: TextControlProps) {
 	const thisOnClick          = useCallback((e: MouseEvent   ) => { onClick         ?.(e, editor);                                                               }, [editor, onClick         ]);
 	const thisOnKeyDown        = useCallback((e: KeyboardEvent) => { onKeyDown       ?.(e, editor); if(!e.defaultPrevented) onTextControlKeyDown       (e, editor); }, [editor, onKeyDown       ]);
 	const thisOnDOMBeforeInput = useCallback((e: InputEvent   ) => { onDOMBeforeInput?.(e, editor); if(!e.defaultPrevented) onTextControlDOMBeforeInput(e, editor); }, [editor, onDOMBeforeInput]);
+	
+	// console.log(toSingleLinePlaintext(editor.children));
 
 	return (
 		<Slate editor={editor} initialValue={editor.children}>
 			<FocusSendingEditable
 				className="property"
+				data-card-id={card.id}
 				data-control-id={controlId}
 				renderElement={renderElement}
 				renderLeaf={renderLeaf}
@@ -90,11 +80,6 @@ function onTextControlDOMBeforeInput(e: InputEvent, editor: ReactEditor & CardTe
 	switch (e.inputType) {
 		case "insertText": return onTextControlInsertText(e, editor);
 	}
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function onTextControlFieldClick(e: MouseEvent, editor: ReactEditor) {
-
 }
 
 function onTextControlInsertText(e: InputEvent, editor: ReactEditor & CardTextControlEditor) {

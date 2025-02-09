@@ -1,12 +1,8 @@
 import { Node, NodeEntry, Text } from "slate";
 import { colorNamesByLetter } from "./assets";
 import { createGenericPip, createManaPipFromLetter, createTapPip } from "./components/TextControl";
-import { batch_in_history, SharedHistoryEditor, write_operation_to_history } from "./history";
+import { batch_in_history, SharedHistoryEditor } from "./history";
 import { CardTextControlEditor } from "./slate";
-
-interface RegExpExecArray extends globalThis.RegExpExecArray {
-	indices: [number, number][], // this is a relatively recent feature availiable in all modern browsers, just not in typescript at time of writing
-}
 
 export interface Replacement {
 	pattern: RegExp,
@@ -27,9 +23,9 @@ export function doAutoReplace(editor: CardTextControlEditor & SharedHistoryEdito
 	for (const { pattern, substitute } of replacements) {
 		const m = pattern.exec(node.text) as RegExpExecArray;
 		if (!m) continue;
-		const [start, end] = m.indices[0];
+		const [start, end] = m.indices![0];
 
-		if (!(offset >= start && offset <= end)) continue;
+		if (!(offset > start && offset <= end)) continue;
 
 		// force a new undo step
 		batch_in_history(editor.history, () => {

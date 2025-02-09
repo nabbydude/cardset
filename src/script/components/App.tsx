@@ -2,7 +2,6 @@ import React, { Dispatch, SetStateAction, useCallback, useContext, useMemo, useS
 import { CardEditor } from "./CardEditor";
 import { Header } from "./Header";
 import { ControllableCardList, listColumn } from "./CardList";
-import { ImageStoreProvider, imageEntry } from "./contexts/ImageStoreContext";
 import { load_set, save_set } from "../saveLoad";
 import { FocusedEditorProvider } from "./contexts/FocusedEditorContext";
 import { HistoryProvider } from "./contexts/HistoryContext";
@@ -11,16 +10,21 @@ import { exportCardImage, exportManyCardImages } from "../export";
 import { HotkeysProvider } from "@blueprintjs/core";
 import { project } from "../project";
 import { ProjectContext, ProjectProvider } from "./contexts/ProjectContext";
+import { card } from "../card";
 
 const starting_project: project = {
 	name: "Untitled",
-	cards: {},
+	card_list: {
+		id: "all",
+		cards: new Set(),
+		observers: new Set()
+	},
 };
 
 const listColumns: listColumn[] = [
-	{ property: "name", heading: "Name", width: 100 },
-	{ property: "cost", heading: "Cost", width: 100 },
-	{ property: "type", heading: "Type", width: 100 },
+	{ property_id: "name", heading: "Name", width: 100 },
+	{ property_id: "cost", heading: "Cost", width: 100 },
+	{ property_id: "type", heading: "Type", width: 100 },
 ];
 
 export function getApp() {
@@ -28,10 +32,9 @@ export function getApp() {
 }
 
 export function App() {
-	const [activeId, setActiveId] = useState<string | undefined>();
-	const [selectedIds, setSelectedIds] = useState(new Set<string>());
+	const [activeCard, setActiveCard] = useState<card | undefined>();
+	const [selectedCards, setSelectedCards] = useState(new Set<card>());
 	const [project, setProject] = useState<project | undefined>(starting_project);
-	const [imageStore, setImageStore] = useState(new Map<string, imageEntry>());
 
 	const [columns, setColumns] = useState(listColumns);
 
@@ -39,73 +42,70 @@ export function App() {
 	const [exportDpi, setExportDpi] = useState(150);
 	const [lockExportDpi, setLockExportDpi] = useState(true);
 
-	const saveThisSet = useCallback(() => save_set(project!, imageStore), [project, imageStore]);
-	const loadThisSet = useCallback(() => load_set(setProject, setImageStore), [setProject, setImageStore]);
+	const saveThisSet = useCallback(() => save_set(project!), [project]);
+	const loadThisSet = useCallback(() => load_set(setProject), [setProject]);
 
-	const exportCards = useCallback((ids: Iterable<string>) => {
-		const arr = [...ids];
+	const exportCards = useCallback((cards: Iterable<card>) => {
+		const arr = [...cards];
 		if (arr.length === 1) {
-			exportCardImage(project!, imageStore, arr[0], exportDpi);
+			exportCardImage(project!, arr[0], exportDpi);
 		} else {
-			exportManyCardImages(project!, imageStore, arr, exportDpi);
+			exportManyCardImages(project!, arr, exportDpi);
 		}
-	}, [project, imageStore, exportDpi]);
+	}, [project, exportDpi]);
 
 	return (
 		<HotkeysProvider>
-			<ImageStoreProvider>
-				<DpiProvider value={useMemo(() => ({ viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi }), [viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi])}>
-					{project ? (
-						<ProjectProvider project={project}>
-							<FocusedEditorProvider>
-								<HistoryProvider setActiveId={setActiveId}>
-									<Header
-										activeId={activeId}
-										selectedIds={selectedIds}
-										saveSet={saveThisSet}
-										loadSet={loadThisSet}
+			<DpiProvider value={useMemo(() => ({ viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi }), [viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi])}>
+				{project ? (
+					<ProjectProvider project={project}>
+						<FocusedEditorProvider>
+							<HistoryProvider setActiveCard={setActiveCard}>
+								<Header
+									activeCard={activeCard}
+									selectedCards={selectedCards}
+									saveSet={saveThisSet}
+									loadSet={loadThisSet}
+								/>
+								<div id="content">
+									<CardEditor card={activeCard} setActiveCard={setActiveCard} setSelectedCards={setSelectedCards}/>
+									<MainCardList
+										columns={columns}
+										setColumns={setColumns}
+										selectedCards={selectedCards}
+										setSelectedCards={setSelectedCards}
+										activeCard={activeCard}
+										setActiveCard={setActiveCard}
+										exportCards={exportCards}
 									/>
-									<div id="content">
-										<CardEditor card={activeId ? project.cards[activeId] : undefined} setActiveId={setActiveId} setSelectedIds={setSelectedIds}/>
-										{/* <MainCardList
-											columns={columns}
-											setColumns={setColumns}
-											selectedIds={selectedIds}
-											setSelectedIds={setSelectedIds}
-											activeId={activeId}
-											setActiveId={setActiveId}
-											exportCards={exportCards}
-										/> */}
-									</div>
-								</HistoryProvider>
-							</FocusedEditorProvider>
-						</ProjectProvider>
-					) : (
-						<div>Loading...</div>
-					)}
-				</DpiProvider>
-			</ImageStoreProvider>
+								</div>
+							</HistoryProvider>
+						</FocusedEditorProvider>
+					</ProjectProvider>
+				) : (
+					<div>Loading...</div>
+				)}
+			</DpiProvider>
 		</HotkeysProvider>
 	);
 }
 
 export interface MainCardListProps {
 	columns: listColumn[],
-	selectedIds: Set<string>, // ids of selected cards
-	activeId?: string,
+	selectedCards: Set<card>, // ids of selected cards
+	activeCard?: card,
 	setColumns: Dispatch<SetStateAction<listColumn[]>>,
-	setSelectedIds: Dispatch<SetStateAction<Set<string>>>,
-	setActiveId: Dispatch<SetStateAction<string | undefined>>,
-	exportCards: (ids: Iterable<string>) => void,
+	setSelectedCards: Dispatch<SetStateAction<Set<card>>>,
+	setActiveCard: Dispatch<SetStateAction<card | undefined>>,
+	exportCards: (ids: Iterable<card>) => void,
 }
 
 export function MainCardList(props: MainCardListProps) {
 	const project = useContext(ProjectContext);
-	const cards = Object.values(project.cards);
 
 	return (
 		<ControllableCardList
-			cards={cards}
+			card_list={project.card_list}
 			{...props}
 		/>
 	);

@@ -17,6 +17,5 @@ export function FocusSendingEditable(props: EditableProps) {
 		setFocusedEditor(undefined);
 		if (onBlur) onBlur(e);
 	}, [setFocusedEditor, onBlur]);
-
 	return <Editable onFocus={newOnFocus} onBlur={newOnBlur} {...rest}/>;
 }
