@@ -46,7 +46,7 @@ div.card-editor {
 		top:    calc(0.175 * var(--in));
 		height: calc(0.2   * var(--in));
 		grid-template-columns: 1fr auto;
-		>.field[data-field-name="name"] {
+		>.property[data-control-id="name"] {
 			box-sizing: border-box;
 			margin: 0;
 			padding: 0 0 calc(0.0125 * var(--in)) calc(0.0625 * var(--in));
@@ -56,7 +56,7 @@ div.card-editor {
 			-webkit-text-stroke: var(--title-color) calc(var(--in) / 750);
 			overflow: hidden;
 		}
-		>.field[data-field-name="cost"] {
+		>.property[data-control-id="cost"] {
 			min-width: calc(0.2 * var(--in));
 			padding: calc(0.025 * var(--in)) calc(0.0625 * var(--in)) 0 calc(0.0125 * var(--in));
 			text-align: right;
@@ -77,7 +77,7 @@ div.card-editor {
 		height: calc(0.19 * var(--in));
 		box-sizing: border-box;
 		grid-template-columns: 1fr auto;
-		>.field[data-field-name="type"] {
+		>.property[data-control-id="type"] {
 			box-sizing: border-box;
 			margin: 0;
 			padding: 0 0 0 calc(0.0625 * var(--in));
@@ -105,7 +105,7 @@ div.card-editor {
 		}
 	}
 
-	div.field[data-field-name="cardText"] {
+	div[data-control-id="cardText"] {
 		position: absolute;
 		left:   calc(0.2  * var(--in));
 		top:    calc(2.175  * var(--in));
@@ -151,14 +151,14 @@ div.card-editor {
 			}
 		}
 	}
-	img.pt-box {
+	img[data-control-id="ptBox"] {
 		position: absolute;
 		right:  calc(0.14 * var(--in));
 		bottom: calc(0.1  * var(--in));
 		width:  calc(0.54 * var(--in));
 		height: calc(0.28 * var(--in));
 	}
-	div.field[data-field-name="pt"] {
+	div[data-control-id="pt"] {
 		position: absolute;
 		right:  calc(0.1675 * var(--in));
 		bottom: calc(0.18   * var(--in));

@@ -1,51 +1,49 @@
 import React, { KeyboardEvent, MouseEvent, useCallback, useLayoutEffect } from "react";
-import { useState } from "react";
-import { Editor, NodeEntry } from "slate";
+import { Editor } from "slate";
 import { ReactEditor, Slate } from "slate-react";
-import { CardFieldEditor, createCardFieldEditor, EditableProps, renderElement, renderLeaf, toggleMark } from "../slate";
-import { useDocument } from "./contexts/DocumentContext";
+import { CardTextControlEditor, EditableProps, renderElement, renderLeaf, safeToDomNode, toggleMark, toSingleLinePlaintext } from "../slate";
 import { FocusSendingEditable } from "./FocusSendingEditable";
 import { ManaPip } from "./slate/ManaPip";
 import { colorNamesByLetter, iconUrls } from "../assets";
-import { Card } from "./slate/Card";
-import { useViewOfMatchingNode } from "../multiSlate";
 import { asScalingPt, getFillSize } from "../autoScaleText";
+import { card } from "../card";
+import { useCardTextControlEditor } from "./hooks/useTextControlEditor";
+import { text_property } from "../property";
 
-export interface TextFieldProps extends Omit<EditableProps, keyof TextFieldEventProps>, TextFieldEventProps {
-	cardEntry: NodeEntry<Card>,
-	field: string,
+export interface TextControlProps extends Omit<EditableProps, "property" | keyof TextControlEventProps>, TextControlEventProps {
+	card: card,
+	controlId: string,
+	property: text_property,
 	minFontSize: number,
 	maxFontSize: number,
 }
 
-export interface TextFieldEventProps {
+export interface TextControlEventProps {
 	onDOMBeforeInput?: (e: InputEvent   , editor: ReactEditor) => void,
 	onClick         ?: (e: MouseEvent   , editor: ReactEditor) => void,
 	onKeyDown       ?: (e: KeyboardEvent, editor: ReactEditor) => void,
 }
 
-export function TextField(props: TextFieldProps) {
-	const { cardEntry, field, minFontSize, maxFontSize, onDOMBeforeInput, onClick, onKeyDown, ...rest } = props;
-	const [, path] = cardEntry;
-	const doc = useDocument();
-	const [editor] = useState(createCardFieldEditor);
-	useViewOfMatchingNode(editor, doc, path, { type: "Field", name: field });
-
+export function TextControl(props: TextControlProps) {
+	const { card, controlId, property, minFontSize, maxFontSize, onDOMBeforeInput, onClick, onKeyDown, ...rest } = props;
+	const editor = useCardTextControlEditor(card, controlId, property);
 	useLayoutEffect(() => {
-		const el = ReactEditor.toDOMNode(editor, editor);
+		const el = safeToDomNode(editor, editor);
+		if (!el) return;
 		const size = getFillSize(el, minFontSize, maxFontSize, 0.5);
 		el.style.fontSize = asScalingPt(size);
 	});
 
 	const thisOnClick          = useCallback((e: MouseEvent   ) => { onClick         ?.(e, editor);                                                               }, [editor, onClick         ]);
-	const thisOnKeyDown        = useCallback((e: KeyboardEvent) => { onKeyDown       ?.(e, editor); if(!e.defaultPrevented) onTextFieldKeyDown       (e, editor); }, [editor, onKeyDown       ]);
-	const thisOnDOMBeforeInput = useCallback((e: InputEvent   ) => { onDOMBeforeInput?.(e, editor); if(!e.defaultPrevented) onTextFieldDOMBeforeInput(e, editor); }, [editor, onDOMBeforeInput]);
+	const thisOnKeyDown        = useCallback((e: KeyboardEvent) => { onKeyDown       ?.(e, editor); if(!e.defaultPrevented) onTextControlKeyDown       (e, editor); }, [editor, onKeyDown       ]);
+	const thisOnDOMBeforeInput = useCallback((e: InputEvent   ) => { onDOMBeforeInput?.(e, editor); if(!e.defaultPrevented) onTextControlDOMBeforeInput(e, editor); }, [editor, onDOMBeforeInput]);
 
 	return (
 		<Slate editor={editor} initialValue={editor.children}>
 			<FocusSendingEditable
-				className="field"
-				data-field-name={field}
+				className="property"
+				data-card-id={card.id}
+				data-control-id={controlId}
 				renderElement={renderElement}
 				renderLeaf={renderLeaf}
 				onClick={thisOnClick}
@@ -62,7 +60,7 @@ export function TextField(props: TextFieldProps) {
 	);
 }
 
-function onTextFieldKeyDown(e: KeyboardEvent, editor: Editor) {
+function onTextControlKeyDown(e: KeyboardEvent, editor: Editor) {
 	if (e.ctrlKey) {
 		switch (e.key) {
 			case "b": e.preventDefault(); toggleMark(editor, "bold"  ); break;
@@ -71,23 +69,18 @@ function onTextFieldKeyDown(e: KeyboardEvent, editor: Editor) {
 	}
 
 	switch (e.key) {
-		case "ArrowRight": (editor as CardFieldEditor).nudgeDirection = "forward" ; break;
-		case "ArrowLeft" : (editor as CardFieldEditor).nudgeDirection = "backward"; break;
+		case "ArrowRight": (editor as CardTextControlEditor).nudgeDirection = "forward" ; break;
+		case "ArrowLeft" : (editor as CardTextControlEditor).nudgeDirection = "backward"; break;
 	}
 }
 
-function onTextFieldDOMBeforeInput(e: InputEvent, editor: ReactEditor) {
+function onTextControlDOMBeforeInput(e: InputEvent, editor: ReactEditor & CardTextControlEditor) {
 	switch (e.inputType) {
-		case "insertText": return onInsertText(e, editor);
+		case "insertText": return onTextControlInsertText(e, editor);
 	}
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function onTextFieldClick(e: MouseEvent, editor: ReactEditor) {
-
-}
-
-function onInsertText(e: InputEvent, editor: ReactEditor & CardFieldEditor) {
+function onTextControlInsertText(e: InputEvent, editor: ReactEditor & CardTextControlEditor) {
 	editor.actionSource = "user";
 }
 

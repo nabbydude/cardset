@@ -1,33 +1,32 @@
-import React, { Dispatch, SetStateAction, useCallback, useMemo, useState } from "react";
+import React, { Dispatch, SetStateAction, useCallback, useContext, useMemo, useState } from "react";
 import { CardEditor } from "./CardEditor";
 import { Header } from "./Header";
 import { ControllableCardList, listColumn } from "./CardList";
-import { DocumentEditor, createDocumentEditor } from "../slate";
-import { Card, isCard } from "./slate/Card";
-import { Document } from "./slate/Document";
-import { DocumentProvider, useDocument } from "./contexts/DocumentContext";
-import { Node, NodeEntry } from "slate";
-import { ImageStoreProvider, imageEntry } from "./contexts/ImageStoreContext";
-import { loadSet, saveSet } from "../saveLoad";
+import { save_set } from "../save";
 import { FocusedEditorProvider } from "./contexts/FocusedEditorContext";
-import { HistoryWrapper } from "./contexts/HistoryContext";
+import { HistoryProvider } from "./contexts/HistoryContext";
 import { DpiProvider } from "./contexts/DpiContext";
 import { exportCardImage, exportManyCardImages } from "../export";
 import { HotkeysProvider } from "@blueprintjs/core";
+import { project } from "../project";
+import { ProjectContext, ProjectProvider } from "./contexts/ProjectContext";
+import { card } from "../card";
+import { load_set } from "../load";
+import { history, new_history } from "../history";
 
-
-const startingDocument: [Document] = [
-	{
-		type: "Document",
-		name: "Untitled",
-		children: [],
+const starting_project: project = {
+	name: "Untitled",
+	card_list: {
+		id: "all",
+		cards: new Set(),
+		observers: new Set()
 	},
-];
+};
 
 const listColumns: listColumn[] = [
-	{ field: "name", heading: "Name", width: 100 },
-	{ field: "cost", heading: "Cost", width: 100 },
-	{ field: "type", heading: "Type", width: 100 },
+	{ property_id: "name", heading: "Name", width: 300 },
+	{ property_id: "cost", heading: "Cost", width: 100 },
+	{ property_id: "type", heading: "Type", width: 300 },
 ];
 
 export function getApp() {
@@ -35,10 +34,10 @@ export function getApp() {
 }
 
 export function App() {
-	const [activeId, setActiveId] = useState<number | undefined>();
-	const [selectedIds, setSelectedIds] = useState(new Set<number>());
-	const [doc, setDoc] = useState<DocumentEditor | undefined>(() => createDocumentEditor(startingDocument));
-	const [imageStore, setImageStore] = useState(new Map<number, imageEntry>());
+	const [activeCard, setActiveCard] = useState<card | undefined>();
+	const [selectedCards, setSelectedCards] = useState(new Set<card>());
+	const [project, setProject] = useState<project | undefined>(starting_project);
+	const [history, setHistory] = useState<history>(new_history());
 
 	const [columns, setColumns] = useState(listColumns);
 
@@ -46,73 +45,70 @@ export function App() {
 	const [exportDpi, setExportDpi] = useState(150);
 	const [lockExportDpi, setLockExportDpi] = useState(true);
 
-	const saveThisSet = useCallback(() => saveSet(doc!, imageStore), [doc, imageStore]);
-	const loadThisSet = useCallback(() => loadSet(setDoc, setImageStore), [setDoc, setImageStore]);
+	const saveThisSet = useCallback(() => save_set(project!), [project]);
+	const loadThisSet = useCallback(() => load_set(project!, history, setProject, setHistory), [setProject]);
 
-	const exportCards = useCallback((ids: Iterable<number>) => {
-		const arr = [...ids];
+	const exportCards = useCallback((cards: Iterable<card>) => {
+		const arr = [...cards];
 		if (arr.length === 1) {
-			exportCardImage(doc!, imageStore, arr[0], exportDpi);
+			exportCardImage(project!, arr[0], exportDpi);
 		} else {
-			exportManyCardImages(doc!, imageStore, arr, exportDpi);
+			exportManyCardImages(project!, arr, exportDpi);
 		}
-	}, [doc, imageStore, exportDpi]);
+	}, [project, exportDpi]);
 
 	return (
 		<HotkeysProvider>
-			<ImageStoreProvider>
-				<DpiProvider value={useMemo(() => ({ viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi }), [viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi])}>
-					{doc ? (
-						<DocumentProvider doc={doc}>
-							<FocusedEditorProvider>
-								<HistoryWrapper setActiveId={setActiveId}>
-									<Header
-										activeId={activeId}
-										selectedIds={selectedIds}
-										saveSet={saveThisSet}
-										loadSet={loadThisSet}
+			<DpiProvider value={useMemo(() => ({ viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi }), [viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi])}>
+				{project ? (
+					<ProjectProvider project={project}>
+						<FocusedEditorProvider>
+							<HistoryProvider history={history} setActiveCard={setActiveCard}>
+								<Header
+									activeCard={activeCard}
+									selectedCards={selectedCards}
+									saveSet={saveThisSet}
+									loadSet={loadThisSet}
+								/>
+								<div id="content">
+									<CardEditor card={activeCard} setActiveCard={setActiveCard} setSelectedCards={setSelectedCards}/>
+									<MainCardList
+										columns={columns}
+										setColumns={setColumns}
+										selectedCards={selectedCards}
+										setSelectedCards={setSelectedCards}
+										activeCard={activeCard}
+										setActiveCard={setActiveCard}
+										exportCards={exportCards}
 									/>
-									<div id="content">
-										<CardEditor cardId={activeId} setActiveId={setActiveId} setSelectedIds={setSelectedIds}/>
-										<MainCardList
-											columns={columns}
-											setColumns={setColumns}
-											selectedIds={selectedIds}
-											setSelectedIds={setSelectedIds}
-											activeId={activeId}
-											setActiveId={setActiveId}
-											exportCards={exportCards}
-										/>
-									</div>
-								</HistoryWrapper>
-							</FocusedEditorProvider>
-						</DocumentProvider>
-					) : (
-						<div>Loading...</div>
-					)}
-				</DpiProvider>
-			</ImageStoreProvider>
+								</div>
+							</HistoryProvider>
+						</FocusedEditorProvider>
+					</ProjectProvider>
+				) : (
+					<div>Loading...</div>
+				)}
+			</DpiProvider>
 		</HotkeysProvider>
 	);
 }
 
 export interface MainCardListProps {
 	columns: listColumn[],
-	selectedIds: Set<number>, // ids of selected cards
-	activeId?: number,
+	selectedCards: Set<card>, // ids of selected cards
+	activeCard?: card,
 	setColumns: Dispatch<SetStateAction<listColumn[]>>,
-	setSelectedIds: Dispatch<SetStateAction<Set<number>>>,
-	setActiveId: Dispatch<SetStateAction<number | undefined>>,
-	exportCards: (ids: Iterable<number>) => void,
+	setSelectedCards: Dispatch<SetStateAction<Set<card>>>,
+	setActiveCard: Dispatch<SetStateAction<card | undefined>>,
+	exportCards: (ids: Iterable<card>) => void,
 }
 
 export function MainCardList(props: MainCardListProps) {
-	const doc = useDocument();
-	const listedCardEntries = [...Node.children(doc, [0])].filter(([card]) => isCard(card)) as NodeEntry<Card>[];
+	const project = useContext(ProjectContext);
 
 	return (
 		<ControllableCardList
-			cardEntries={listedCardEntries}
+			card_list={project.card_list}
 			{...props}
 		/>
 	);

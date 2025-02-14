@@ -3,19 +3,19 @@ import { Editor } from "slate";
 import { ReactEditor } from "slate-react";
 import { isManaPip } from "./slate/ManaPip";
 import { colorNamesByLetter } from "../assets";
-import { TextField, TextFieldProps, createGenericPip, createManaPipFromLetter } from "./TextField";
+import { TextControl, TextControlProps, createGenericPip, createManaPipFromLetter } from "./TextControl";
 
-export function ManaTextField(props: TextFieldProps) {
+export function ManaTextControl(props: TextControlProps) {
 	const { onDOMBeforeInput, ...rest } = props;
 	return (
-		<TextField
-			onDOMBeforeInput={useCallback((e: InputEvent, editor: ReactEditor) => { onDOMBeforeInput?.(e, editor); if(!e.defaultPrevented) onManaTextFieldDOMBeforeInput(e, editor); }, [onDOMBeforeInput])}
+		<TextControl
+			onDOMBeforeInput={useCallback((e: InputEvent, editor: ReactEditor) => { onDOMBeforeInput?.(e, editor); if(!e.defaultPrevented) onManaTextControlDOMBeforeInput(e, editor); }, [onDOMBeforeInput])}
 			{...rest}
 		/>
 	);
 }
 
-function onManaTextFieldDOMBeforeInput(e: InputEvent, editor: ReactEditor) {
+function onManaTextControlDOMBeforeInput(e: InputEvent, editor: ReactEditor) {
 	switch (e.inputType) {
 		case "insertText": return onInsertText(e, editor);
 	}

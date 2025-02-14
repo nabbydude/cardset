@@ -17,7 +17,7 @@ export function getFillSize(el: HTMLElement, minFontSize: number, maxFontSize: n
 	el.style.fontSize = asUnit(size);
 	while (size > minFontSize && (el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight)) {
 		size -= step;
-		el.style.fontSize = asUnit(size);
+		el.style.fontSize = asUnit(size); // this re-layouts every time
 	}
 	el.style.fontSize = old;
 	return size;
