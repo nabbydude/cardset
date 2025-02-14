@@ -1,10 +1,10 @@
-import { frame_images, pt_box_images } from "./assets";
-import { dumb_load_image_from_url } from "./image";
+import { assets } from "./assets";
+import { load_asset_image_from_url } from "./image";
 import { property } from "./property";
 
 export interface card {
 	id: string,
-	properties: Record<string, property>,
+	properties: Map<string, property>,
 }
 
 let lastCardId = 0;
@@ -17,12 +17,14 @@ export function newCardId(): string {
 	return `card_${lastCardId}`;
 }
 
-export function createTestCard(name: string = "Test Card", color: keyof typeof frame_images & keyof typeof pt_box_images = "red"): card {
+type card_color = "white" | "blue" | "black" | "red" | "green" | "multicolored" | "colorless" | "artifact";
+
+export function createTestCard(name: string = "Test Card", color: card_color = "red"): card {
 	const id = newCardId();
 	return {
 		id,
-		properties: {
-			frame: { type: "image", id: "frame", value: frame_images[color], observers: new Set() },
+		properties: new Map(Object.entries({
+			frame: { type: "image", id: "frame", value: assets[`frame_${color}`], observers: new Set() },
 
 			name:  { type: "text", id: "name", value: { children: [{ type: "Paragraph", children: [{ text: `${name} [${id}]`, }] }] }, observers: new Set() },
 			cost:  { type: "text", id: "cost", value: { children: [{ type: "Paragraph", children: [{ text: "",                }] }] }, observers: new Set() },
@@ -33,8 +35,8 @@ export function createTestCard(name: string = "Test Card", color: keyof typeof f
 			rulesText:  { type: "text", id: "rulesText" , value: { children: [{ type: "Paragraph", children: [{ text: "Rules are rules."     }] }] }, observers: new Set() },
 			flavorText: { type: "text", id: "flavorText", value: { children: [{ type: "Paragraph", children: [{ text: "Flavor is nice."      }] }] }, observers: new Set() },
 
-			ptBox: { type: "image", id: "ptBox", value: pt_box_images[color], observers: new Set() },
+			ptBox: { type: "image", id: "ptBox", value: assets[`pt_box_${color}`], observers: new Set() },
 			image: { type: "image", id: "image", value: undefined, observers: new Set() },
-		}
+		})),
 	};
 }

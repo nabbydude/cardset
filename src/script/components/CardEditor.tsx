@@ -33,26 +33,24 @@ export function CardEditor(props: CardEditorProps) {
 		setSelectedIds(new Set([new_card]));
 	}, [project, history, setActiveId, setSelectedIds]);
 
-	console.log(card)
-	console.log(card?.properties["frame"].value)
 	if (card) {
 		return (
 			<div className="card-editor" style={{ ...style, "--in": `${viewDpi}px` } as CSSProperties}>
-				<CardFrame card={card} controlId={"frame"} property={card.properties["frame"] as image_property} readOnly={readOnly}/>
+				<CardFrame card={card} controlId={"frame"} property={card.properties.get("frame") as image_property} readOnly={readOnly}/>
 				<div className="title-bar name-line">
-					<TextControl card={card} controlId={"name"} property={card.properties["name"] as text_property} minFontSize={5} maxFontSize={10.5} readOnly={readOnly}/>
-					<ManaTextControl card={card} controlId={"cost"} property={card.properties["cost"] as text_property} minFontSize={4} maxFontSize={9} readOnly={readOnly}/>
+					<TextControl card={card} controlId={"name"} property={card.properties.get("name") as text_property} minFontSize={5} maxFontSize={10.5} readOnly={readOnly}/>
+					<ManaTextControl card={card} controlId={"cost"} property={card.properties.get("cost") as text_property} minFontSize={4} maxFontSize={9} readOnly={readOnly}/>
 				</div>
 
-				<ImageControl card={card} controlId={"image"} property={card.properties["image"] as image_property}/>
+				<ImageControl card={card} controlId={"image"} property={card.properties.get("image") as image_property}/>
 				<div className="title-bar type-line">
-					<TextControl card={card} controlId={"type"} property={card.properties["type"] as text_property} minFontSize={4} maxFontSize={8.5} readOnly={readOnly}/>
+					<TextControl card={card} controlId={"type"} property={card.properties.get("type") as text_property} minFontSize={4} maxFontSize={8.5} readOnly={readOnly}/>
 
 					<div className="set-symbol"></div>
 				</div>
-				<TextControl card={card} controlId={"cardText"} property={card.properties["cardText"] as text_property} minFontSize={4} maxFontSize={9} readOnly={readOnly}/>
-				<PowerToughnessBackground card={card} controlId={"ptBox"} property={card.properties["ptBox"] as image_property} checkPropertyId={"pt"} readOnly={readOnly}/>
-				<TextControl card={card} controlId={"pt"} property={card.properties["pt"] as text_property} minFontSize={5} maxFontSize={10.5} readOnly={readOnly}/>
+				<TextControl card={card} controlId={"cardText"} property={card.properties.get("cardText") as text_property} minFontSize={4} maxFontSize={9} readOnly={readOnly}/>
+				<PowerToughnessBackground card={card} controlId={"ptBox"} property={card.properties.get("ptBox") as image_property} checkPropertyId={"pt"} readOnly={readOnly}/>
+				<TextControl card={card} controlId={"pt"} property={card.properties.get("pt") as text_property} minFontSize={5} maxFontSize={10.5} readOnly={readOnly}/>
 			</div>
 		);
 	} else {

@@ -9,7 +9,7 @@ import { add_card, delete_cards } from "../project";
 import { ProjectContext } from "./contexts/ProjectContext";
 import { HistoryContext } from "./contexts/HistoryContext";
 import { useCardTextControlEditor } from "./hooks/useTextControlEditor";
-import { property } from "../property";
+import { property, text_property } from "../property";
 import { card_list } from "../card_list";
 import { useCardListCards } from "./hooks/useCardListCards";
 
@@ -252,7 +252,7 @@ export function CardListRow(props: CardListRowProps) {
 					ref={ref}
 				>
 					{popover}{/* this is a portal, so it doesnt break table schema */}
-					{columns.map(({ property_id, width }) => <CardListCell key={property_id} card={card} property={card.properties[property_id]} controlId={`list_cell#${property_id}`} width={width}/>)}
+					{columns.map(({ property_id, width }) => <CardListCell key={property_id} card={card} property={card.properties.get(property_id) as text_property} controlId={`list_cell#${property_id}`} width={width}/>)}
 				</tr>
 			)}
 		</ContextMenu>
@@ -261,20 +261,17 @@ export function CardListRow(props: CardListRowProps) {
 
 export interface CardListCellProps extends Omit<EditableProps, "property"> {
 	card: card,
-	property: property,
+	property: text_property,
 	controlId: string,
 	width: number,
 }
 
 export function CardListCell(props: CardListCellProps) {
 	const { card, property, controlId: controlCard, width, ...rest } = props;
-	const project = useContext(ProjectContext);
-	const history = useContext(HistoryContext);
 	// const doc = useDocument();
 	// const [editor] = useState(createCardTextControlEditor);
 	// useViewOfMatchingNode(editor, doc, cardPath, { type: "Field", name: field }, true);
 
-	if (property.type !== "text") throw Error(`property "${property.id}" is not text property`)
 	const editor = useCardTextControlEditor(card, controlCard, property)
 
 	return (

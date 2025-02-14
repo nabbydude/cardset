@@ -2,7 +2,7 @@ import React, { Dispatch, SetStateAction, useCallback, useContext, useMemo, useS
 import { CardEditor } from "./CardEditor";
 import { Header } from "./Header";
 import { ControllableCardList, listColumn } from "./CardList";
-import { load_set, save_set } from "../saveLoad";
+import { save_set } from "../save";
 import { FocusedEditorProvider } from "./contexts/FocusedEditorContext";
 import { HistoryProvider } from "./contexts/HistoryContext";
 import { DpiProvider } from "./contexts/DpiContext";
@@ -11,6 +11,8 @@ import { HotkeysProvider } from "@blueprintjs/core";
 import { project } from "../project";
 import { ProjectContext, ProjectProvider } from "./contexts/ProjectContext";
 import { card } from "../card";
+import { load_set } from "../load";
+import { history, new_history } from "../history";
 
 const starting_project: project = {
 	name: "Untitled",
@@ -22,9 +24,9 @@ const starting_project: project = {
 };
 
 const listColumns: listColumn[] = [
-	{ property_id: "name", heading: "Name", width: 100 },
+	{ property_id: "name", heading: "Name", width: 300 },
 	{ property_id: "cost", heading: "Cost", width: 100 },
-	{ property_id: "type", heading: "Type", width: 100 },
+	{ property_id: "type", heading: "Type", width: 300 },
 ];
 
 export function getApp() {
@@ -35,6 +37,7 @@ export function App() {
 	const [activeCard, setActiveCard] = useState<card | undefined>();
 	const [selectedCards, setSelectedCards] = useState(new Set<card>());
 	const [project, setProject] = useState<project | undefined>(starting_project);
+	const [history, setHistory] = useState<history>(new_history());
 
 	const [columns, setColumns] = useState(listColumns);
 
@@ -43,7 +46,7 @@ export function App() {
 	const [lockExportDpi, setLockExportDpi] = useState(true);
 
 	const saveThisSet = useCallback(() => save_set(project!), [project]);
-	const loadThisSet = useCallback(() => load_set(setProject), [setProject]);
+	const loadThisSet = useCallback(() => load_set(project!, history, setProject, setHistory), [setProject]);
 
 	const exportCards = useCallback((cards: Iterable<card>) => {
 		const arr = [...cards];
@@ -60,7 +63,7 @@ export function App() {
 				{project ? (
 					<ProjectProvider project={project}>
 						<FocusedEditorProvider>
-							<HistoryProvider setActiveCard={setActiveCard}>
+							<HistoryProvider history={history} setActiveCard={setActiveCard}>
 								<Header
 									activeCard={activeCard}
 									selectedCards={selectedCards}

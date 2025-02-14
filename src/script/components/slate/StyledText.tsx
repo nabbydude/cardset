@@ -8,7 +8,6 @@ export interface StyledText extends BaseText {
 }
 
 export function StyledTextElement(props: RenderLeafProps<StyledText>) {
-	// console.log(`rendering ${props.text.text}`)
 	return (
 		<span
 			{...props.attributes}

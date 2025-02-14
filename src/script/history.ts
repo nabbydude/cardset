@@ -1,5 +1,4 @@
 import { Editor, Path, Operation as SlateOperation } from 'slate'
-import { BaseCardTextControlEditor } from './slate';
 import { apply_operation, get_inverse, operation } from './operation';
 import { focus } from './focus';
 import { image, unload_image } from './image';
@@ -23,6 +22,16 @@ export interface history {
 export interface SharedHistoryEditor extends Editor {
 	history: history,
 	write_history: boolean,
+}
+
+export function new_history() {
+	return {
+		index: 0,
+		steps: [],
+		allow_merging: false,
+		force_merging: false,
+		disable_next_merge: false
+	};
 }
 
 // export function withSharedHistory<T extends BaseCardTextControlEditor>(editor: T, history: history): T & SharedHistoryEditor {
@@ -95,16 +104,19 @@ export function write_history_step(history: history, step: history_step) {
 	history.steps.splice(history.index, history.steps.length - history.index, step);
 	history.index++;
 	while (history.steps.length > MAX_HISTORY_STEPS) {
-		const step = history.steps.shift();
-		for (const op of step!.operations) {
-			if (op.type === "change_property_value") {
-				if (op.property.type === "image") { // note this checks the current property type. gets weid if we ever allow changing property types at runtime
-					unload_image(op.old_value as image);
-				}
-			}
-		}
+		unload_history_step(history.steps.shift()!);
 		history.index--;
 	};
+}
+
+export function unload_history_step(step: history_step) {
+	for (const op of step.operations) {
+		if (op.type === "change_property_value") {
+			if (op.property.type === "image") { // note this checks the current property type. gets weird if we ever allow changing property types at runtime (in that case we should just unload on that type change)
+				if (op.old_value) unload_image(op.old_value as image);
+			}
+		}
+	}
 }
 
 export function write_operation_to_history(history: history, focus: focus, op: operation, force_merging_once: boolean = false) {

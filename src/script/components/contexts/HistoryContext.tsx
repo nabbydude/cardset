@@ -8,6 +8,7 @@ export const HistoryContext = createContext<history>({ index: 0, steps: [], allo
 export const UndoRedoContext = createContext<undo_redo>({ undo: () => {}, redo: () => {}, can_undo: false, can_redo: false });
 
 export interface HistoryProviderProps {
+	history: history,
 	setActiveCard: Dispatch<SetStateAction<card | undefined>>,
 	children: ReactNode,
 }
@@ -24,8 +25,7 @@ export interface undo_redo {
 }
 
 export function HistoryProvider(props: HistoryProviderProps) {
-	const { setActiveCard, children } = props;
-	const [history, setHistory] = useState<history>({ index: 0, steps: [], allow_merging: false, force_merging: false, disable_next_merge: false });
+	const { history, setActiveCard, children } = props;
 
 	const [_, refresh_undo_redo] = useState({});
 	const can_undo = history.index > 0;
@@ -81,7 +81,7 @@ export function HistoryProvider(props: HistoryProviderProps) {
 			allowInInput: true,
 			onKeyDown: undo_redo.redo,
 		},
-	], [undo_redo.undo, undo_redo.redo]);
+	], [undo_redo]);
 
 	useHotkeys(hotkeys);
 

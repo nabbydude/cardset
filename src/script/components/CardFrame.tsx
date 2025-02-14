@@ -1,12 +1,12 @@
 import React, { useCallback, useContext } from "react";
-import { frame_images } from "../assets";
 import { ContextMenu, ContextMenuChildrenProps, Menu, MenuItem } from "@blueprintjs/core";
 import { image_property } from "../property";
 import { card } from "../card";
 import { apply_and_write } from "../history";
 import { HistoryContext } from "./contexts/HistoryContext";
-import { dumb_load_image_from_url } from "../image";
+import { load_asset_image_from_url } from "../image";
 import { ImageEnumControl, option } from "./ImageEnumControl";
+import { assets } from "../assets";
 
 export interface CardFrameProps {
 	card: card,
@@ -70,14 +70,14 @@ export function CardFrame(props: CardFrameProps) {
 	// const { card, propertyId, checkPropertyId: check_property, readOnly = false } = props;
 
 	const options: option[] = [
-		{ id: "white"       , label: "White"        , image: frame_images["white"       ] },
-		{ id: "blue"        , label: "Blue"         , image: frame_images["blue"        ] },
-		{ id: "black"       , label: "Black"        , image: frame_images["black"       ] },
-		{ id: "red"         , label: "Red"          , image: frame_images["red"         ] },
-		{ id: "green"       , label: "Green"        , image: frame_images["green"       ] },
-		{ id: "multicolored", label: "Multicolored" , image: frame_images["multicolored"] },
-		{ id: "colorless"   , label: "Colorless"    , image: frame_images["colorless"   ] },
-		{ id: "artifact"    , label: "Artifact"     , image: frame_images["artifact"    ] },
+		{ id: "white"       , label: "White"        , image: assets["frame_white"       ] },
+		{ id: "blue"        , label: "Blue"         , image: assets["frame_blue"        ] },
+		{ id: "black"       , label: "Black"        , image: assets["frame_black"       ] },
+		{ id: "red"         , label: "Red"          , image: assets["frame_red"         ] },
+		{ id: "green"       , label: "Green"        , image: assets["frame_green"       ] },
+		{ id: "multicolored", label: "Multicolored" , image: assets["frame_multicolored"] },
+		{ id: "colorless"   , label: "Colorless"    , image: assets["frame_colorless"   ] },
+		{ id: "artifact"    , label: "Artifact"     , image: assets["frame_artifact"    ] },
 	];
 
 	return (
