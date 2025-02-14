@@ -109,8 +109,10 @@ export function createTextPropertyControlEditor(project: project, history: histo
 	editor.observe = () => {
 		if (editor.observer) return;
 		editor.observer = (operation) => {
-			if (operation.type !== "modify_property_text") throw Error("non-text property");
-			editor.true_apply(operation.operation);
+			if (operation.type !== "modify_property_text") throw Error(`unexpected operation "${operation.type}"`);
+			withoutEverNormalizing(editor, () => {
+				editor.true_apply(operation.operation);
+			});
 		}
 		observe(editor.property, editor.observer);
 	}
@@ -150,6 +152,7 @@ export function createTextPropertyControlEditor(project: project, history: histo
 			history.allow_merging = true;
 		}
 		apply_operation(operation);
+		editor.normalize();
 	};
 
 	editor.normalize = (options) => {
@@ -178,8 +181,6 @@ export function createTextPropertyControlEditor(project: project, history: histo
 			doAutoReplace(editor);
 		}
 		editor.actionSource = undefined;
-		editor.property.value.children = editor.children;
-
 	};
 
 	// editor.children = editor.property.nodes;
