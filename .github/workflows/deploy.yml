@@ -27,7 +27,7 @@ jobs:
         run: pnpm build_gh_pages
 
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v1.0.8
+        uses: actions/upload-pages-artifact@v3
         with:
           name: github-pages
           path: dist/
@@ -49,4 +49,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
