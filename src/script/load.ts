@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import { card } from "./card";
+import { card, setCardId } from "./card";
 import { show_file_select } from "./file_select";
 import { project } from "./project";
 import { base_meta, current_meta, current_savefile_version, dehydrated_card, is_base_meta, is_dehydrated_card, version_is_later, version_is_same_or_earlier } from "./savefile";
@@ -73,6 +73,8 @@ export async function get_project_from_file(file: File): Promise<project> {
 	};
 	const cards_zipped = zip.file(/^cards\//);
 
+	let highest_id = 0;
+
 	await Promise.all(cards_zipped.map(async subfile => {
 		const text = await subfile.async("text");
 		let dehydrated_card: dehydrated_card;
@@ -120,7 +122,13 @@ export async function get_project_from_file(file: File): Promise<project> {
 			}
 		}
 		project.card_list.cards.add(card);
+
+		const match = /^card_(\d+)$/.exec(card.id); // if id matches our current default id schema, make sure there are no collisions
+		if (match) {
+			highest_id = Math.max(highest_id, parseInt(match[1], 10));
+		}
 	}));
 
+	setCardId(highest_id);
 	return project;
 }
