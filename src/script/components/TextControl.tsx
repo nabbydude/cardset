@@ -67,11 +67,6 @@ function onTextControlKeyDown(e: KeyboardEvent, editor: Editor) {
 			case "i": e.preventDefault(); toggleMark(editor, "italic"); break;
 		}
 	}
-
-	switch (e.key) {
-		case "ArrowRight": (editor as CardTextControlEditor).nudgeDirection = "forward" ; break;
-		case "ArrowLeft" : (editor as CardTextControlEditor).nudgeDirection = "backward"; break;
-	}
 }
 
 function onTextControlDOMBeforeInput(e: InputEvent, editor: ReactEditor & CardTextControlEditor) {

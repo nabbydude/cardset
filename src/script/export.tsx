@@ -10,15 +10,6 @@ import { project } from "./project";
 import { ProjectContext } from "./components/contexts/ProjectContext";
 
 export async function exportCardImage(project: project, card: card, dpi: number) {
-	// let name: string;
-
-	// const card = project.card_list[id];
-	// if (!card) throw Error("Cannot find active card in document");
-
-	// const nameNode = firstMatchingElement<Field>(card, { type: "Field", name: "name" });
-	// // eslint-disable-next-line no-control-regex
-	// if (nameNode) name = toSingleLinePlaintext(nameNode.children).replace(/[\\/<>:"|?*\0-\x1f]+/g, "");
-	// name ||= "Card";
 	saveAs(await generateCardImage(project, card, dpi), `${card.id}.png`);
 }
 
@@ -26,20 +17,6 @@ export async function exportManyCardImages(project: project, cards: card[], dpi:
 	const images: Map<string, Blob> = new Map();
 	
 	for (const card of cards) {
-		// let name: string;
-
-		// const card = project.card_list[id];
-		// if (!card) throw Error("Cannot find active card in document");
-
-		// const nameNode = firstMatchingElement<Field>(card, { type: "Field", name: "name" });
-		// // eslint-disable-next-line no-control-regex
-		// if (nameNode) name = toSingleLinePlaintext(nameNode.children).replace(/[\\/<>:"|?*\0-\x1f]+/g, "");
-		// name ||= "Card";
-		// if (images.has(name)) {
-		// 	let i = 2;
-		// 	while (images.has(`${name} (${i})`)) i++;
-		// 	name = `${name} (${i})`;
-		// }
 		images.set(card.id, await generateCardImage(project, card, dpi));
 	}
 

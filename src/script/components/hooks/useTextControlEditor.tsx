@@ -29,9 +29,7 @@ export function useCardTextControlEditor(card: card, control_id: string, propert
 			});
 		});
 		editor.observe();
-		return () => {
-			editor.unobserve();
-		}
+		return () => editor.unobserve();
 	}, [editor, project, history, card, property]);
 	return editor;
 }

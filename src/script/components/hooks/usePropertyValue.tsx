@@ -12,9 +12,7 @@ export function usePropertyValue<P extends property>(property: P): property_valu
 	useEffect(() => {
 		const observer: allowed_observer_for<P> = (operation) => setValue(operation.property.value);
 		observe(property, observer);
-		return () => {
-			unobserve(property, observer);
-		};
+		return () => unobserve(property, observer);
 	}, [property]);
 
 

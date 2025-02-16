@@ -9,9 +9,7 @@ export function useCardListCards(list: card_list): Set<card> {
 	useEffect(() => {
 		const observer: allowed_observer_for<card_list> = () => setRefresh({});
 		observe(list, observer);
-		return () => {
-			unobserve(list, observer);
-		};
+		return () => unobserve(list, observer);
 	}, [list]);
 
 	return list.cards;

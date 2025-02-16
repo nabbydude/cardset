@@ -1,5 +1,5 @@
 import React from "react";
-import { BaseEditor, createEditor, Descendant, Editor, Element, Node, Operation, Path, Text } from "slate";
+import { BaseEditor, createEditor, Descendant, Editor, EditorPositionsOptions, Element, isEditor, Node, Operation, Path, Point, Range, Text } from "slate";
 import { ReactEditor, RenderElementProps as BaseRenderElementProps, RenderLeafProps as BaseRenderLeafProps, withReact, Editable } from "slate-react";
 import { Field } from "./components/slate/Field";
 import { Paragraph, ParagraphElement } from "./components/slate/Paragraph";
@@ -8,13 +8,13 @@ import { HorizontalRule, HorizontalRuleElement, isHorizontalRule } from "./compo
 import { isManaPip, ManaPip, ManaPipElement } from "./components/slate/ManaPip";
 import { isIcon, Icon, IconElement } from "./components/slate/Icon";
 import { doAutoReplace } from "./autoReplace";
-import { cursorNudgeSelection } from "./cursorNudge";
 import { project } from "./project";
 import { history, SharedHistoryEditor, write_operation_to_history } from "./history";
 import { card } from "./card";
 import { text_property } from "./property";
 import { apply_operation, modify_property_text_operation, text_property_operation } from "./operation";
 import { observe, observer, unobserve } from "./observable";
+import { getCharacterDistance, getWordDistance, splitByCharacterDistance } from "./slate_utils/string";
 
 ///////////
 // Types //
@@ -58,20 +58,6 @@ export type EditableProps = Parameters<typeof Editable>[0];
 // Code //
 //////////
 
-// export function createDocumentEditor(initialValue: [Document]): DocumentEditor {
-// 	const editor = withReact(withMulti(withHistory(createEditor() as CardsetDocumentEditor)));
-// 	editor.isVoid = isVoid;
-// 	editor.isInline = isInline;
-// 	editor.isElementReadOnly = isAtomic;
-
-// 	editor.addCard = (card: Card) => addCard(editor, card);
-// 	editor.deleteCard = (id: number) => deleteCard(editor, id);
-// 	editor.deleteCards = (ids: Iterable<number>) => deleteCards(editor, ids);
-
-// 	editor.children = initialValue;
-// 	return editor;
-// }
-
 export interface BaseCardTextControlEditor extends BaseEditor {
 	project: project,
 
@@ -82,7 +68,6 @@ export interface BaseCardTextControlEditor extends BaseEditor {
 	control_id: string,
 	card?: card,
 	property: text_property
-	nudgeDirection?: "forward" | "backward",
 	actionSource?: "user" | "history",
 	true_apply: (operation: Operation) => void;
 	observer?: observer<text_property_operation>;
@@ -122,6 +107,8 @@ export function createTextPropertyControlEditor(project: project, history: histo
 		editor.observer = undefined;
 	}
 
+	editor.positions = (options) => positions(editor, options);
+
 	const { apply, normalize, normalizeNode, onChange } = editor;
 	
 	editor.true_apply = apply;
@@ -155,15 +142,6 @@ export function createTextPropertyControlEditor(project: project, history: histo
 		editor.normalize();
 	};
 
-	editor.normalize = (options) => {
-		normalize(options);
-		if (!editor.isNormalizing()) return; // normalize gets called even when normalizing is disabled, so we have to manually check or our code below will get run
-		withoutEverNormalizing(editor, () => {
-			cursorNudgeSelection(editor, { direction: editor.nudgeDirection });
-			editor.nudgeDirection = undefined;
-		});
-	};
-
 	editor.normalizeNode = (entry, options) => {
 		const [node, path] = entry;
 
@@ -183,52 +161,8 @@ export function createTextPropertyControlEditor(project: project, history: histo
 		editor.actionSource = undefined;
 	};
 
-	// editor.children = editor.property.nodes;
-
 	return editor;
 }
-
-// export function createCardTextControlEditor(project: project, history: history, control_id: string, card: card | undefined, property: text_property): CardTextControlEditor {
-// 	const editor = withSharedHistory(withReact(createEditor() as BaseEditor & BaseCardTextControlEditor), history);
-// 	editor.project = project;
-// 	editor.control_id = control_id;
-// 	editor.card = card;
-// 	editor.property = property;
-// 	editor.isVoid = isVoid;
-// 	editor.isInline = isInline;
-// 	editor.isElementReadOnly = isAtomic;
-// 	const { normalize, normalizeNode, onChange } = editor;
-
-// 	editor.normalize = (options) => {
-// 		if (!editor.isNormalizing()) return; // normalize gets called even when normalizing is disabled, so we have to manually check or our code below will get run
-// 		normalize(options);
-
-// 		withoutEverNormalizing(editor, () => {
-// 			cursorNudgeSelection(editor, { direction: editor.nudgeDirection });
-// 			editor.nudgeDirection = undefined;
-// 		});
-// 	};
-
-// 	editor.normalizeNode = (entry, options) => {
-// 		const [node, path] = entry;
-
-// 		if (isManaPip(node) && editor.isEmpty(node)) {
-// 			editor.removeNodes({ at: path });
-// 			return;
-// 		}
-
-// 		normalizeNode(entry, options);
-// 	};
-
-// 	editor.onChange = (options) => {
-// 		onChange(options);
-// 		if (editor.actionSource === "user" && editor.operations.find(v => v.type === "insert_text")) {
-// 			doAutoReplace(editor);
-// 		}
-// 		editor.actionSource = undefined;
-// 	};
-// 	return editor;
-// }
 
 export function toPlaintext(nodes: Descendant[]) {
 	return nodes.map(n => Node.string(n)).join("\n");
@@ -236,21 +170,6 @@ export function toPlaintext(nodes: Descendant[]) {
 
 export function toSingleLinePlaintext(nodes: Descendant[]) {
 	return nodes.map(n => Node.string(n)).join(" ");
-}
-
-export function firstMatchingEntry<T extends Element>(root: Node, partial: Partial<T>): [T, Path] | undefined {
-	for (const entry of Node.elements(root)) {
-		if (Element.matches(entry[0], partial)) return entry as [T, Path];
-	}
-	return undefined;
-}
-
-export function firstMatchingElement<T extends Element>(root: Node, partial: Partial<T>): T | undefined {
-	return firstMatchingEntry(root, partial)?.[0];
-}
-
-export function firstMatchingPath(root: Node, partial: Partial<Element>): Path | undefined {
-	return firstMatchingEntry(root, partial)?.[1];
 }
 
 /**
@@ -265,6 +184,7 @@ export function withoutEverNormalizing(editor: Editor, fn: () => void) {
 		Editor.setNormalizing(editor, value);
 	}
 }
+
 /**
  * perform one or more operations without sending to the attached property
  */
@@ -336,4 +256,203 @@ export function isAtomic(el: Element) {
 	return (
 		(isManaPip(el) && el.children.length === 3 && (el.children[0] as Text).text === "" && (el.children[1] as Element).type === "Icon" && (el.children[2] as Text).text === "")
 	);
+}
+
+
+export function isBoundarySplittingInline(el: Element) {
+	return isManaPip(el);
+}
+
+/**
+ * overriding the native slate positions generator with minor changes
+ */
+export function* positions(
+	editor: Editor,
+	options: EditorPositionsOptions = {}
+): Generator<Point, void, undefined> {
+	const {
+		at = editor.selection,
+		unit = 'offset',
+		reverse = false,
+		voids = false,
+		ignoreNonSelectable = false,
+	} = options
+
+	if (!at) {
+		return
+	}
+
+	/**
+	 * Algorithm notes:
+	 *
+	 * Each step `distance` is dynamic depending on the underlying text
+	 * and the `unit` specified.  Each step, e.g., a line or word, may
+	 * span multiple text nodes, so we iterate through the text both on
+	 * two levels in step-sync:
+	 *
+	 * `leafText` stores the text on a text leaf level, and is advanced
+	 * through using the counters `leafTextOffset` and `leafTextRemaining`.
+	 *
+	 * `blockText` stores the text on a block level, and is shortened
+	 * by `distance` every time it is advanced.
+	 *
+	 * We only maintain a window of one blockText and one leafText because
+	 * a block node always appears before all of its leaf nodes.
+	 */
+
+	const range = Editor.range(editor, at)
+	const [start, end] = Range.edges(range)
+	const first = reverse ? end : start
+	let isNewBlock = false
+	let isNewBoundarySplittingInline = false
+	let isAfterBoundarySplittingInline = false
+	let blockText = ''
+	let distance = 0 // Distance for leafText to catch up to blockText.
+	let leafTextRemaining = 0
+	let leafTextOffset = 0
+
+	// Iterate through all nodes in range, grabbing entire textual content
+	// of block nodes in blockText, and text nodes in leafText.
+	// Exploits the fact that nodes are sequenced in such a way that we first
+	// encounter the block node, then all of its text nodes, so when iterating
+	// through the blockText and leafText we just need to remember a window of
+	// one block node and leaf node, respectively.
+	for (const [node, path] of Editor.nodes(editor, {
+		at,
+		reverse,
+		voids,
+		ignoreNonSelectable,
+	})) {
+		/*
+		 * ELEMENT NODE - Yield position(s) for voids, collect blockText for blocks
+		 */
+		if (Element.isElement(node)) {
+			// Void nodes are a special case, so by default we will always
+			// yield their first point. If the `voids` option is set to true,
+			// then we will iterate over their content.
+			if (!voids && (editor.isVoid(node) || editor.isElementReadOnly(node))) {
+				yield Editor.start(editor, path)
+				continue
+			}
+
+			// Inline element nodes are ignored as they don't themselves
+			// contribute to `blockText` or `leafText` - their parent and
+			// children do.
+			if (editor.isInline(node)) {
+				isNewBoundarySplittingInline ||= editor.hasInlines(node) && isBoundarySplittingInline(node)
+				continue
+			}
+
+			// Block element node - set `blockText` to its text content.
+			if (Editor.hasInlines(editor, node)) {
+				// We always exhaust block nodes before encountering a new one:
+				//   console.assert(blockText === '',
+				//     `blockText='${blockText}' - `+
+				//     `not exhausted before new block node`, path)
+
+				// Ensure range considered is capped to `range`, in the
+				// start/end edge cases where block extends beyond range.
+				// Equivalent to this, but presumably more performant:
+				//   blockRange = Editor.range(editor, ...Editor.edges(editor, path))
+				//   blockRange = Range.intersection(range, blockRange) // intersect
+				//   blockText = Editor.string(editor, blockRange, { voids })
+				const e = Path.isAncestor(path, end.path)
+					? end
+					: Editor.end(editor, path)
+				const s = Path.isAncestor(path, start.path)
+					? start
+					: Editor.start(editor, path)
+
+				blockText = Editor.string(editor, { anchor: s, focus: e }, { voids })
+				isNewBlock = true
+			}
+		}
+
+		/*
+		 * TEXT LEAF NODE - Iterate through text content, yielding
+		 * positions every `distance` offset according to `unit`.
+		 */
+		if (Text.isText(node)) {
+			const isFirst = Path.equals(path, first.path)
+			const parent = Node.parent(editor, path)
+			const isLastInParent = path[path.length - 1] === parent.children.length - 1
+
+
+
+			// Proof that we always exhaust text nodes before encountering a new one:
+			//   console.assert(leafTextRemaining <= 0,
+			//     `leafTextRemaining=${leafTextRemaining} - `+
+			//     `not exhausted before new leaf text node`, path)
+
+			// Reset `leafText` counters for new text node.
+			if (isFirst) {
+				leafTextRemaining = reverse
+					? first.offset
+					: node.text.length - first.offset
+				leafTextOffset = first.offset // Works for reverse too.
+			} else {
+				leafTextRemaining = node.text.length
+				leafTextOffset = reverse ? leafTextRemaining : 0
+			}
+
+			// Yield position at the start of node (potentially).
+			if (isFirst || isNewBlock || isNewBoundarySplittingInline || isAfterBoundarySplittingInline || unit === 'offset') {
+				yield { path, offset: leafTextOffset }
+				isNewBlock = false
+				isNewBoundarySplittingInline = false
+				isAfterBoundarySplittingInline = false
+			}
+
+			// Yield positions every (dynamically calculated) `distance` offset.
+			while (true) {
+				// If `leafText` has caught up with `blockText` (distance=0),
+				// and if blockText is exhausted, break to get another block node,
+				// otherwise advance blockText forward by the new `distance`.
+				if (distance === 0) {
+					if (blockText === '') break
+					distance = calcDistance(blockText, unit, reverse)
+					// Split the string at the previously found distance and use the
+					// remaining string for the next iteration.
+					blockText = splitByCharacterDistance(blockText, distance, reverse)[1]
+				}
+
+				// Advance `leafText` by the current `distance`.
+				leafTextOffset = reverse
+					? leafTextOffset - distance
+					: leafTextOffset + distance
+				leafTextRemaining = leafTextRemaining - distance
+
+				// If `leafText` is exhausted, break to get a new leaf node
+				// and set distance to the overflow amount, so we'll (maybe)
+				// catch up to blockText in the next leaf text node.
+				if (leafTextRemaining < 0) {
+					distance = -leafTextRemaining
+					break
+				}
+
+				// Successfully walked `distance` offsets through `leafText`
+				// to catch up with `blockText`, so we can reset `distance`
+				// and yield this position in this node.
+				distance = 0
+				yield { path, offset: leafTextOffset }
+			}
+			isAfterBoundarySplittingInline ||= (isLastInParent && !isEditor(parent) && isBoundarySplittingInline(parent))
+		}
+	}
+	// Proof that upon completion, we've exahusted both leaf and block text:
+	//   console.assert(leafTextRemaining <= 0, "leafText wasn't exhausted")
+	//   console.assert(blockText === '', "blockText wasn't exhausted")
+
+	// Helper:
+	// Return the distance in offsets for a step of size `unit` on given string.
+	function calcDistance(text: string, unit: string, reverse?: boolean) {
+		if (unit === 'character') {
+			return getCharacterDistance(text, reverse)
+		} else if (unit === 'word') {
+			return getWordDistance(text, reverse)
+		} else if (unit === 'line' || unit === 'block') {
+			return text.length
+		}
+		return 1
+	}
 }
