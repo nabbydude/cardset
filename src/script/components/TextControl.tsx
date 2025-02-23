@@ -1,21 +1,19 @@
 import React, { KeyboardEvent, MouseEvent, useCallback, useLayoutEffect } from "react";
 import { Editor } from "slate";
 import { ReactEditor, Slate } from "slate-react";
-import { CardTextControlEditor, EditableProps, renderElement, renderLeaf, safeToDomNode, toggleMark, toSingleLinePlaintext } from "../slate";
+import { TextControlEditor, EditableProps, renderElement, renderLeaf, safeToDomNode, toggleMark, toSingleLinePlaintext } from "../slate";
 import { FocusSendingEditable } from "./FocusSendingEditable";
 import { ManaPip } from "./slate/ManaPip";
 import { colorNamesByLetter, iconUrls } from "../assets";
 import { asScalingPt, getFillSize } from "../autoScaleText";
 import { card } from "../card";
-import { useCardTextControlEditor } from "./hooks/useTextControlEditor";
+import { useTextControlEditor } from "./hooks/useTextControlEditor";
 import { text_property } from "../property";
+import { text_control } from "../control";
 
 export interface TextControlProps extends Omit<EditableProps, "property" | keyof TextControlEventProps>, TextControlEventProps {
 	card: card,
-	controlId: string,
-	property: text_property,
-	minFontSize: number,
-	maxFontSize: number,
+	control: text_control,
 }
 
 export interface TextControlEventProps {
@@ -25,12 +23,12 @@ export interface TextControlEventProps {
 }
 
 export function TextControl(props: TextControlProps) {
-	const { card, controlId, property, minFontSize, maxFontSize, onDOMBeforeInput, onClick, onKeyDown, ...rest } = props;
-	const editor = useCardTextControlEditor(card, controlId, property);
+	const { card, control, onDOMBeforeInput, onClick, onKeyDown, ...rest } = props;
+	const editor = useTextControlEditor(card, control);
 	useLayoutEffect(() => {
 		const el = safeToDomNode(editor, editor);
 		if (!el) return;
-		const size = getFillSize(el, minFontSize, maxFontSize, 0.5);
+		const size = getFillSize(el, control.min_font_size, control.max_font_size, 0.5);
 		el.style.fontSize = asScalingPt(size);
 	});
 
@@ -41,9 +39,9 @@ export function TextControl(props: TextControlProps) {
 	return (
 		<Slate editor={editor} initialValue={editor.children}>
 			<FocusSendingEditable
-				className="property"
+				className="text_control"
 				data-card-id={card.id}
-				data-control-id={controlId}
+				data-control-id={control.id}
 				renderElement={renderElement}
 				renderLeaf={renderLeaf}
 				onClick={thisOnClick}
@@ -69,13 +67,13 @@ function onTextControlKeyDown(e: KeyboardEvent, editor: Editor) {
 	}
 }
 
-function onTextControlDOMBeforeInput(e: InputEvent, editor: ReactEditor & CardTextControlEditor) {
+function onTextControlDOMBeforeInput(e: InputEvent, editor: ReactEditor & TextControlEditor) {
 	switch (e.inputType) {
 		case "insertText": return onTextControlInsertText(e, editor);
 	}
 }
 
-function onTextControlInsertText(e: InputEvent, editor: ReactEditor & CardTextControlEditor) {
+function onTextControlInsertText(e: InputEvent, editor: ReactEditor & TextControlEditor) {
 	editor.actionSource = "user";
 }
 

@@ -8,13 +8,13 @@ import { HorizontalRule, HorizontalRuleElement, isHorizontalRule } from "./compo
 import { isManaPip, ManaPip, ManaPipElement } from "./components/slate/ManaPip";
 import { isIcon, Icon, IconElement } from "./components/slate/Icon";
 import { doAutoReplace } from "./autoReplace";
-import { project } from "./project";
-import { history, SharedHistoryEditor, write_operation_to_history } from "./history";
-import { card } from "./card";
+import { history, write_operation_to_history } from "./history";
 import { text_property } from "./property";
 import { apply_operation, modify_property_text_operation, text_property_operation } from "./operation";
 import { observe, observer, unobserve } from "./observable";
 import { getCharacterDistance, getWordDistance, splitByCharacterDistance } from "./slate_utils/string";
+import { text_control } from "./control";
+import { card } from "./card";
 
 ///////////
 // Types //
@@ -59,57 +59,58 @@ export type EditableProps = Parameters<typeof Editable>[0];
 //////////
 
 export interface BaseCardTextControlEditor extends BaseEditor {
-	project: project,
-
 	history: history,
-	write_history: boolean,
+
+	card: card,
+	control: text_control,
+	get_property: () => text_property,
 	propagate_to_property: boolean,
 
-	control_id: string,
-	card?: card,
-	property: text_property
-	actionSource?: "user" | "history",
-	true_apply: (operation: Operation) => void;
-	observer?: observer<text_property_operation>;
-	observe: () => void;
-	unobserve: () => void;
-}
-export type CardTextControlEditor = BaseEditor & BaseCardTextControlEditor & SharedHistoryEditor & ReactEditor
+	true_apply: (operation: Operation) => void,
+	
+	observer?: observer<text_property_operation>,
+	observe: () => void,
+	unobserve: () => void,
 
-export function createTextPropertyControlEditor(project: project, history: history, control_id: string, card: card | undefined, property: text_property): CardTextControlEditor {
+	actionSource?: "user" | "history",
+}
+export type TextControlEditor = BaseEditor & BaseCardTextControlEditor & ReactEditor;
+
+export function createCardTextControlEditor(history: history, card: card, control: text_control): TextControlEditor {
 	const editor = withReact(createEditor() as BaseEditor & BaseCardTextControlEditor);
-	editor.project = project;
 
 	editor.history = history;
-	editor.write_history = true;
 	editor.propagate_to_property = true;
 
-	editor.control_id = control_id;
 	editor.card = card;
-	editor.property = property;
+	editor.control = control;
 	editor.isVoid = isVoid;
 	editor.isInline = isInline;
 	editor.isElementReadOnly = isAtomic;
 
+	editor.get_property = () => {
+		return editor.card.properties.get(editor.control.property_id) as text_property;
+	}
+
 	editor.observe = () => {
-		if (editor.observer) return;
+		// editor.unobserve();
 		editor.observer = (operation) => {
 			if (operation.type !== "modify_property_text") throw Error(`unexpected operation "${operation.type}"`);
 			withoutEverNormalizing(editor, () => {
 				editor.true_apply(operation.operation);
 			});
 		}
-		observe(editor.property, editor.observer);
+		observe(editor.get_property(), editor.observer);
 	}
 	editor.unobserve = () => {
 		if (!editor.observer) return;
-		unobserve(editor.property, editor.observer);
+		unobserve(editor.get_property(), editor.observer);
 		editor.observer = undefined;
 	}
 
 	editor.positions = (options) => positions(editor, options);
 
-	const { apply, normalize, normalizeNode, onChange } = editor;
+	const { apply, normalizeNode, onChange } = editor;
 	
 	editor.true_apply = apply;
 
@@ -119,7 +120,7 @@ export function createTextPropertyControlEditor(project: project, history: histo
 			return;
 		}
 		if (!editor.observer) {
-			console.warn(`[${editor.card?.id}:${editor.property.id}] Applying operation to TextPropertyControlEditor without observing. Falling back to regular #apply (may cause strange or unstable behavior)`)
+			console.warn(`[${editor.get_property().id}] Applying operation to TextPropertyControlEditor without observing. Falling back to regular #apply (may cause strange or unstable behavior)`)
 			editor.true_apply(slate_operation);
 			return;
 		}
@@ -127,19 +128,18 @@ export function createTextPropertyControlEditor(project: project, history: histo
 			editor.true_apply(slate_operation);
 			return;
 		}
-		const { operations, history, write_history, card, control_id, property, selection } = editor;
-		const operation: modify_property_text_operation = { type: "modify_property_text", property, operation: slate_operation };
-		if (write_history) {
-			write_operation_to_history(
-				history,
-				{ type: "card_text_control", card: card!, control_id, selection }, // todo: type safety on undefined
-				operation,
-				operations.length !== 0,
-			);
-			history.allow_merging = true;
-		}
+		const { operations, history, card, control, selection } = editor;
+		const operation: modify_property_text_operation = { type: "modify_property_text", property: editor.get_property(), operation: slate_operation };
+		const merge = operations.length !== 0;
+		write_operation_to_history(
+			history,
+			{ type: "card_text_control", card, control, selection },
+			operation,
+			merge,
+		);
+		history.allow_merging = true;
 		apply_operation(operation);
-		editor.normalize();
+		editor.normalize(); // apply usually ends by calling this so since we aren't directly calling super-apply, we do too
 	};
 
 	editor.normalizeNode = (entry, options) => {
@@ -188,7 +188,7 @@ export function withoutEverNormalizing(editor: Editor, fn: () => void) {
 /**
  * perform one or more operations without sending to the attached property
  */
-export function withoutPropagating(editor: CardTextControlEditor, fn: () => void) {
+export function withoutPropagating(editor: TextControlEditor, fn: () => void) {
 	const value = editor.propagate_to_property;
 	editor.propagate_to_property = false;
 	try {

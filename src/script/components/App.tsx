@@ -13,6 +13,7 @@ import { ProjectContext, ProjectProvider } from "./contexts/ProjectContext";
 import { card } from "../card";
 import { load_set } from "../load";
 import { history, new_history } from "../history";
+import { focus } from "../focus";
 
 const starting_project: project = {
 	name: "Untitled",
@@ -24,9 +25,9 @@ const starting_project: project = {
 };
 
 const listColumns: listColumn[] = [
-	{ property_id: "name", heading: "Name", width: 300 },
-	{ property_id: "cost", heading: "Cost", width: 100 },
-	{ property_id: "type", heading: "Type", width: 300 },
+	{ control: { id: "list#name", type: "text", property_id: "name", min_font_size: 10, max_font_size: 10 }, label: "Name", width: 300 },
+	{ control: { id: "list#cost", type: "text", property_id: "cost", min_font_size: 10, max_font_size: 10 }, label: "Cost", width: 100 },
+	{ control: { id: "list#type", type: "text", property_id: "type", min_font_size: 10, max_font_size: 10 }, label: "Type", width: 300 },
 ];
 
 export function getApp() {
@@ -57,13 +58,27 @@ export function App() {
 		}
 	}, [project, exportDpi]);
 
+	const setFocus = useCallback((focus: focus) => {
+		switch (focus.type) {
+			case "card_control": {
+				setActiveCard(focus.card);
+				(document.querySelector(`[data-control-id=${focus.control.id}]`) as HTMLElement).focus();
+			} break;
+			case "card_text_control": {
+				setActiveCard(focus.card);
+				(document.querySelector(`[data-control-id=${focus.control.id}]`) as HTMLElement).focus();
+			} break;
+			case "none": break;
+		}
+	}, [setActiveCard]);
+
 	return (
 		<HotkeysProvider>
 			<DpiProvider value={useMemo(() => ({ viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi }), [viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi])}>
 				{project ? (
 					<ProjectProvider project={project}>
 						<FocusedEditorProvider>
-							<HistoryProvider history={history} setActiveCard={setActiveCard}>
+							<HistoryProvider history={history} setFocus={setFocus}>
 								<Header
 									activeCard={activeCard}
 									selectedCards={selectedCards}

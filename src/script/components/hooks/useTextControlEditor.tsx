@@ -1,35 +1,29 @@
 import { useContext, useEffect, useMemo } from "react";
-import { card } from "../../card";
-import { ProjectContext } from "../contexts/ProjectContext";
 import { HistoryContext } from "../contexts/HistoryContext";
-import { text_property } from "../../property";
-import { createTextPropertyControlEditor, withoutPropagating } from "../../slate";
-import { without_writing_history } from "../../history";
+import { createCardTextControlEditor, withoutPropagating } from "../../slate";
+import { card } from "../../card";
+import { text_control } from "../../control";
 
-export function useCardTextControlEditor(card: card, control_id: string, property: text_property) {
-	const project = useContext(ProjectContext);
+export function useTextControlEditor(card: card, control: text_control) {
 	const history = useContext(HistoryContext);
 	const editor = useMemo(() => {
-		return createTextPropertyControlEditor(project, history, control_id, card, property);
-	}, [control_id]);
+		return createCardTextControlEditor(history, card, control);
+	}, []);
 
 	useEffect(() => {
-		editor.project  = project;
-		editor.history  = history;
-		editor.card     = card;
-		editor.property = property;
+		editor.history = history;
+		editor.card = card;
+		editor.control = control;
 
 		// replace editor contents with contents from new card
-		without_writing_history(editor, () => {
-			withoutPropagating(editor, () => {
-				editor.withoutNormalizing(() => {
-					for (const _ of editor.children) editor.removeNodes({ at: [0] });
-					editor.insertNodes(property.value.children, { at: [0] });
-				});
+		withoutPropagating(editor, () => {
+			editor.withoutNormalizing(() => {
+				for (const _ of editor.children) editor.removeNodes({ at: [0] });
+				editor.insertNodes(editor.get_property().value.children, { at: [0] });
+				editor.observe();
 			});
 		});
-		editor.observe();
 		return () => editor.unobserve();
-	}, [editor, project, history, card, property]);
+	}, [editor, history, card, control]);
 	return editor;
 }

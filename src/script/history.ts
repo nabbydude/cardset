@@ -1,4 +1,4 @@
-import { Editor, Path, Operation as SlateOperation } from 'slate'
+import { Path, Operation as SlateOperation } from 'slate'
 import { apply_operation, get_inverse, operation } from './operation';
 import { focus } from './focus';
 import { image, unload_image } from './image';
@@ -14,51 +14,22 @@ interface history_step {
 export interface history {
 	steps: history_step[],
 	index: number,
+	allow_writing: boolean,
 	force_merging: boolean,
 	allow_merging: boolean,
 	disable_next_merge: boolean,
 }
 
-export interface SharedHistoryEditor extends Editor {
-	history: history,
-	write_history: boolean,
-}
-
-export function new_history() {
+export function new_history(): history {
 	return {
 		index: 0,
 		steps: [],
+		allow_writing: true,
 		allow_merging: false,
 		force_merging: false,
 		disable_next_merge: false
 	};
 }
-
-// export function withSharedHistory<T extends BaseCardTextControlEditor>(editor: T, history: history): T & SharedHistoryEditor {
-// 	const e = editor as T & SharedHistoryEditor
-// 	const { apply } = e
-
-// 	e.history = history;
-// 	e.write_history = true;
-
-// 	e.apply = (slate_operation: SlateOperation) => {
-// 		const { operations, history, write_history, card, control_id, property, selection } = e;
-
-// 		if (write_history && slate_operation.type !== "set_selection") {
-// 			write_operation_to_history(
-// 				history,
-// 				{ type: "card_text_control", card: card!, control_id, selection }, // todo: type safety on undefined
-// 				{ type: "modify_property_text", property, operation: slate_operation },
-// 				operations.length !== 0
-// 			);
-// 			history.allow_merging = true;
-// 		}
-
-// 		apply(slate_operation);
-// 	}
-
-// 	return e;
-// }
 
 /**
  * Check whether to merge an operation into the previous operation.
@@ -101,6 +72,7 @@ function should_merge_slate(op: SlateOperation, prev: SlateOperation | undefined
 }
 
 export function write_history_step(history: history, step: history_step) {
+	if (!history.allow_writing) return;
 	history.steps.splice(history.index, history.steps.length - history.index, step);
 	history.index++;
 	while (history.steps.length > MAX_HISTORY_STEPS) {
@@ -120,6 +92,7 @@ export function unload_history_step(step: history_step) {
 }
 
 export function write_operation_to_history(history: history, focus: focus, op: operation, force_merging_once: boolean = false) {
+	if (!history.allow_writing) return;
 	const { steps, index, allow_merging, force_merging, disable_next_merge } = history;
 	const next_step = steps[index];
 	const previous_step = index > 0 ? steps[index - 1] : undefined;
@@ -143,28 +116,22 @@ export function apply_and_write(history: history, focus: focus, op: operation, f
 	write_operation_to_history(history, focus, op, force_merging_once);
 }
 
-export function undo(history: history) {
+export function undo(history: history, focus_callback?: (focus: focus) => void) {
 	const { index, steps } = history;
 	if (index <= 0) return;
-	const { operations } = steps[index - 1];
+	const { operations, focus_before } = steps[index - 1];
 	const reversed_operations = operations.map(get_inverse).reverse();
-	for (const op of reversed_operations) {
-		apply_operation(op);
-	}
-	// do focus_before
-
+	for (const op of reversed_operations) apply_operation(op);
+	focus_callback?.(focus_before);
 	history.index--;
 }
 
-export function redo(history: history) {
+export function redo(history: history, focus_callback?: (focus: focus) => void) {
 	const { index, steps } = history;
 	if (index >= steps.length) return;
-	const { operations } = steps[index];
-	// do focus_before
-	for (const op of operations) {
-		apply_operation(op);
-	}
-
+	const { operations, focus_before } = steps[index];
+	focus_callback?.(focus_before);
+	for (const op of operations) apply_operation(op);
 	history.index++;
 }
 
@@ -177,9 +144,9 @@ export function batch_in_history(history: history, callback: () => void) {
 	history.force_merging = upper_force;
 }
 
-export function without_writing_history(editor: SharedHistoryEditor, callback: () => void) {
-	const upper_write = editor.write_history;
-	editor.write_history = false;
+export function without_writing_history(history: history, callback: () => void) {
+	const upper_write = history.allow_writing;
+	history.allow_writing = false;
 	callback();
-	editor.write_history = upper_write;
+	history.allow_writing = upper_write;
 }

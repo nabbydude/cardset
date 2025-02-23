@@ -1,8 +1,8 @@
 import { Node, NodeEntry, Text } from "slate";
 import { colorNamesByLetter } from "./assets";
 import { createGenericPip, createManaPipFromLetter, createTapPip } from "./components/TextControl";
-import { batch_in_history, SharedHistoryEditor } from "./history";
-import { CardTextControlEditor } from "./slate";
+import { batch_in_history } from "./history";
+import { TextControlEditor } from "./slate";
 
 export interface Replacement {
 	pattern: RegExp,
@@ -16,7 +16,7 @@ export const replacements: Replacement[] = [
 	{ pattern: /{T}/d, substitute: () => [createTapPip(), { text: "" }] },
 ];
 
-export function doAutoReplace(editor: CardTextControlEditor & SharedHistoryEditor) {
+export function doAutoReplace(editor: TextControlEditor) {
 	if (!editor.selection) return;
 	const [node, path] = editor.node(editor.selection.focus) as NodeEntry<Text>;
 	const offset = editor.selection.focus.offset;

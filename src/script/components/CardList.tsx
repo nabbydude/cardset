@@ -8,14 +8,15 @@ import { card, createTestCard } from "../card";
 import { add_card, delete_cards } from "../project";
 import { ProjectContext } from "./contexts/ProjectContext";
 import { HistoryContext } from "./contexts/HistoryContext";
-import { useCardTextControlEditor } from "./hooks/useTextControlEditor";
-import { property, text_property } from "../property";
+import { useTextControlEditor } from "./hooks/useTextControlEditor";
+import { text_property } from "../property";
 import { card_list } from "../card_list";
 import { useCardListCards } from "./hooks/useCardListCards";
+import { control, text_control } from "../control";
 
 export interface listColumn {
-	property_id: string,
-	heading: string,
+	control: text_control,
+	label: string,
 	/** width in pixels */
 	width: number,
 }
@@ -127,9 +128,9 @@ export function CardList(props: CardListProps) {
 				<thead>
 					<tr>
 						{useMemo(() => columns.map((column, index) => (<CardListHeader
-							key={column.property_id}
+							key={column.control.property_id}
+							column={column}
 							setWidth={(value) => setColumnProperty(setColumns, index, "width", value)}
-							{...column}
 						/>)), [columns, setColumns])}
 					</tr>
 				</thead>
@@ -149,22 +150,21 @@ export function CardList(props: CardListProps) {
 }
 
 export interface CardListHeaderProps {
-	property_id: string,
-	heading: string,
-	/** width in pixels */
-	width: number,
+	column: listColumn
 	setWidth: Dispatch<SetStateAction<number>>,
 }
 
 export function CardListHeader(props: CardListHeaderProps) {
-	const { property_id, heading, width, setWidth } = props;
+	const { column, setWidth } = props;
+	const { control, label, width } = column;
+	const { property_id } = control;
 
 	return (
 		<th
 			style={{ minWidth: `${width}px`, width: `${width}px`, maxWidth: `${width}px` }}
 			data-field={property_id}
 		>
-			{heading}
+			{label}
 			<SizeHandle setWidth={setWidth}/>
 		</th>
 	);
@@ -184,11 +184,9 @@ export function SizeHandle({
 		};
 		const up = () => {
 			document.removeEventListener("pointermove", move);
-			document.body.style.removeProperty("cursor");
 		};
 		document.addEventListener("pointermove", move);
 		document.addEventListener("pointerup", up, { once: true });
-		// document.body.style.setProperty("cursor", "col-resize", "important");
 		e.currentTarget.setPointerCapture(e.pointerId);
 	}, [setWidth]);
 	return (
@@ -206,6 +204,8 @@ export interface CardListRowProps {
 	exportCards?: (cards: Iterable<card>) => void,
 	deleteCards?: (cards: Iterable<card>) => void,
 }
+
+const onPointerDown = (e => e.preventDefault()) as MouseEventHandler<HTMLTableRowElement>;
 
 export function CardListRow(props: CardListRowProps) {
 	const { columns, card, activeCard, setActiveCard, selectedCards, setSelectedCards, exportCards, deleteCards } = props;
@@ -241,6 +241,7 @@ export function CardListRow(props: CardListRowProps) {
 			{({ className, onContextMenu, ref, popover }: ContextMenuChildrenProps) => (
 				<tr
 					onClick={onClick}
+					onPointerDown={onPointerDown}
 					className={[...classList, className].join(" ")}
 					onContextMenu={useCallback<MouseEventHandler<HTMLTableRowElement>>(e => {
 						if (!selected) {
@@ -252,7 +253,7 @@ export function CardListRow(props: CardListRowProps) {
 					ref={ref}
 				>
 					{popover}{/* this is a portal, so it doesnt break table schema */}
-					{columns.map(({ property_id, width }) => <CardListCell key={property_id} card={card} property={card.properties.get(property_id) as text_property} controlId={`list_cell#${property_id}`} width={width}/>)}
+					{columns.map(({ control, width }) => <CardListCell key={control.id} card={card} control={control} width={width}/>)}
 				</tr>
 			)}
 		</ContextMenu>
@@ -261,18 +262,13 @@ export function CardListRow(props: CardListRowProps) {
 
 export interface CardListCellProps extends Omit<EditableProps, "property"> {
 	card: card,
-	property: text_property,
-	controlId: string,
+	control: text_control,
 	width: number,
 }
 
 export function CardListCell(props: CardListCellProps) {
-	const { card, property, controlId: controlCard, width, ...rest } = props;
-	// const doc = useDocument();
-	// const [editor] = useState(createCardTextControlEditor);
-	// useViewOfMatchingNode(editor, doc, cardPath, { type: "Field", name: field }, true);
-
-	const editor = useCardTextControlEditor(card, controlCard, property)
+	const { card, control, width, ...rest } = props;
+	const editor = useTextControlEditor(card, control);
 
 	return (
 		<Slate editor={editor} initialValue={editor.children}>

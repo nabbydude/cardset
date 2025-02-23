@@ -6,15 +6,16 @@ import { HistoryContext } from "./contexts/HistoryContext";
 import { apply_and_write } from "../history";
 import { load_image_from_blob } from "../image";
 import { usePropertyValue } from "./hooks/usePropertyValue";
+import { image_control } from "../control";
 
 export interface ImageControlProps {
 	card: card,
-	controlId: string,
-	property: image_property,
+	control: image_control,
 }
 
 export function ImageControl(props: ImageControlProps) {
-	const { card, controlId, property } = props;
+	const { card, control } = props;
+	const property = card.properties.get(control.property_id) as image_property;
 	const history = useContext(HistoryContext);
 	const value = usePropertyValue(property);
 
@@ -35,12 +36,12 @@ export function ImageControl(props: ImageControlProps) {
 		const new_value = load_image_from_blob(file);
 		apply_and_write(
 			history,
-			{ type: "none" }, // todo
+			{ type: "card_control", card, control },
 			{ type: "change_property_value", property, new_value, old_value }
 		);
 	}, [card.id, property]);
 
-	const src = property.value?.url ?? "";
+	const src = value?.url ?? "";
 
 	return src ? (
 		<img className="image" onDragOver={onDragOver} onDrop={onDrop} src={src}/>

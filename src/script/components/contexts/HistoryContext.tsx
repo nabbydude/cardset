@@ -1,15 +1,16 @@
 import React, { Dispatch, ReactNode, SetStateAction, createContext, useContext, useMemo, useState } from "react";
 import { HotkeyConfig, useHotkeys } from "@blueprintjs/core";
-import { history, redo, undo } from "../../history";
+import { history, new_history, redo, undo } from "../../history";
 import { card } from "../../card";
+import { focus } from "../../focus";
 
 
-export const HistoryContext = createContext<history>({ index: 0, steps: [], allow_merging: false, force_merging: false, disable_next_merge: false });
+export const HistoryContext = createContext<history>(new_history());
 export const UndoRedoContext = createContext<undo_redo>({ undo: () => {}, redo: () => {}, can_undo: false, can_redo: false });
 
 export interface HistoryProviderProps {
 	history: history,
-	setActiveCard: Dispatch<SetStateAction<card | undefined>>,
+	setFocus: (focus: focus) => void,
 	children: ReactNode,
 }
 
@@ -25,7 +26,7 @@ export interface undo_redo {
 }
 
 export function HistoryProvider(props: HistoryProviderProps) {
-	const { history, setActiveCard, children } = props;
+	const { history, setFocus, children } = props;
 
 	const [_, refresh_undo_redo] = useState({});
 	const can_undo = history.index > 0;
@@ -35,32 +36,12 @@ export function HistoryProvider(props: HistoryProviderProps) {
 		can_undo,
 		can_redo,
 		undo: () => {
-			undo(history);
+			undo(history, setFocus);
 			refresh_undo_redo({});
-			// TODO: set focus. maybe all of undo should be here?
-
-			// const selection = doc.history.undos[doc.history.undos.length - 1]?.selectionBefore;
-			// doc.undo();
-			// if (selection) {
-			// 	doc.select(selection); // undo/redo use setSelection which noops if there's no existing selection, so we force it here
-			// 	const cardEntry = doc.above<Card>({ at: selection, match: node => isCard(node) });
-			// 	if (cardEntry) setActiveId(cardEntry[0].id);
-			// }
 		},
 		redo: () => {
-			redo(history);
+			redo(history, setFocus);
 			refresh_undo_redo({});
-			// const selection = doc.history.redos[doc.history.redos.length - 1]?.selectionBefore;
-			// if (selection) doc.select(selection); // undo/redo use setSelection which noops if there's no existing selection, so we force it here
-			// doc.redo();
-			// if (selection) {
-			// 	try {
-			// 		const cardEntry = doc.above<Card>({ at: selection, match: node => isCard(node) });
-			// 		if (cardEntry) setActiveId(cardEntry[0].id);
-			// 	} catch {
-			// 		console.error("Error getting card entry for selection", selection, doc);
-			// 	}
-			// }
 		},
 	}), [history, can_undo, can_redo]);
 
