@@ -1,13 +1,10 @@
 import { toBlob } from "html-to-image";
 import { saveAs } from "file-saver";
 import { Root, createRoot } from "react-dom/client";
-import { CardEditor } from "./components/CardEditor";
-import React, { useLayoutEffect } from "react";
-import { DpiContext } from "./components/contexts/DpiContext";
 import JSZip from "jszip";
 import { card } from "./card";
 import { project } from "./project";
-import { ProjectContext } from "./components/contexts/ProjectContext";
+import { getFakeApp } from "./components/FakeApp";
 
 export async function exportCardImage(project: project, card: card, dpi: number) {
 	saveAs(await generateCardImage(project, card, dpi), `${card.id}.png`);
@@ -53,20 +50,5 @@ export async function generateCardImage(project: project, card: card, dpi: numbe
 export function renderFake(project: project, card: card, dpi: number): Promise<{ root: Root, rootElement: HTMLDivElement }> {
 	const rootElement = document.createElement("div");
 	const root = createRoot(rootElement);
-	return new Promise(resolve => root.render(<FakeApp project={project} card={card} dpi={dpi} callback={() => resolve({ root, rootElement })}/>));
-}
-
-export function FakeApp(props: { project: project, card: card, dpi: number, callback: () => void }) {
-	const { project, card, dpi, callback } = props;
-	const noop = () => {};
-	useLayoutEffect(callback);
-	return (
-		<DpiContext.Provider value={{ viewDpi: dpi, setViewDpi: noop, exportDpi: dpi, setExportDpi: noop, lockExportDpi: true, setLockExportDpi: noop }}>
-			<ProjectContext.Provider value={project}>
-				<div id="content">
-					<CardEditor card={card} setActiveCard={noop} setSelectedCards={noop} readOnly style={{ display: "none" }}/>
-				</div>
-			</ProjectContext.Provider>
-		</DpiContext.Provider>
-	);
+	return new Promise(resolve => root.render(getFakeApp({ project, card, dpi, callback: () => resolve({ root, rootElement }) })));
 }

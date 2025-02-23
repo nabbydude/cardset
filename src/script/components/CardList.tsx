@@ -1,6 +1,5 @@
 import React, { Dispatch, MouseEventHandler, PointerEventHandler, SetStateAction, useCallback, useContext, useMemo } from "react";
-
-import { EditableProps, renderElement, renderLeaf } from "../slate";
+import { EditableProps } from "../slate";
 import { Slate } from "slate-react";
 import { FocusSendingEditable } from "./FocusSendingEditable";
 import { Button, ContextMenu, ContextMenuChildrenProps, Divider, HTMLTable, Menu, MenuItem, Tooltip } from "@blueprintjs/core";
@@ -9,10 +8,11 @@ import { add_card, delete_cards } from "../project";
 import { ProjectContext } from "./contexts/ProjectContext";
 import { HistoryContext } from "./contexts/HistoryContext";
 import { useTextControlEditor } from "./hooks/useTextControlEditor";
-import { text_property } from "../property";
 import { card_list } from "../card_list";
 import { useCardListCards } from "./hooks/useCardListCards";
-import { control, text_control } from "../control";
+import { text_control } from "../control";
+import { RenderElement } from "./slate/RenderElement";
+import { RenderLeaf } from "./slate/RenderLeaf";
 
 export interface listColumn {
 	control: text_control,
@@ -274,8 +274,8 @@ export function CardListCell(props: CardListCellProps) {
 		<Slate editor={editor} initialValue={editor.children}>
 			<FocusSendingEditable
 				as="td"
-				renderElement={renderElement}
-				renderLeaf={renderLeaf}
+				renderElement={RenderElement}
+				renderLeaf={RenderLeaf}
 				disableDefaultStyles={true}
 				style={{
 					whiteSpace: "nowrap",

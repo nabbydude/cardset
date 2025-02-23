@@ -1,15 +1,16 @@
 import React, { KeyboardEvent, MouseEvent, useCallback, useLayoutEffect } from "react";
 import { Editor } from "slate";
 import { ReactEditor, Slate } from "slate-react";
-import { TextControlEditor, EditableProps, renderElement, renderLeaf, safeToDomNode, toggleMark, toSingleLinePlaintext } from "../slate";
+import { TextControlEditor, EditableProps, safeToDomNode, toggleMark } from "../slate";
 import { FocusSendingEditable } from "./FocusSendingEditable";
 import { ManaPip } from "./slate/ManaPip";
 import { colorNamesByLetter, iconUrls } from "../assets";
 import { asScalingPt, getFillSize } from "../autoScaleText";
 import { card } from "../card";
 import { useTextControlEditor } from "./hooks/useTextControlEditor";
-import { text_property } from "../property";
 import { text_control } from "../control";
+import { RenderElement } from "./slate/RenderElement";
+import { RenderLeaf } from "./slate/RenderLeaf";
 
 export interface TextControlProps extends Omit<EditableProps, "property" | keyof TextControlEventProps>, TextControlEventProps {
 	card: card,
@@ -42,8 +43,8 @@ export function TextControl(props: TextControlProps) {
 				className="text_control"
 				data-card-id={card.id}
 				data-control-id={control.id}
-				renderElement={renderElement}
-				renderLeaf={renderLeaf}
+				renderElement={RenderElement}
+				renderLeaf={RenderLeaf}
 				onClick={thisOnClick}
 				onKeyDown={thisOnKeyDown}
 				onDOMBeforeInput={thisOnDOMBeforeInput}

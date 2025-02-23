@@ -1,12 +1,11 @@
-import React from "react";
 import { BaseEditor, createEditor, Descendant, Editor, EditorPositionsOptions, Element, isEditor, Node, Operation, Path, Point, Range, Text } from "slate";
-import { ReactEditor, RenderElementProps as BaseRenderElementProps, RenderLeafProps as BaseRenderLeafProps, withReact, Editable } from "slate-react";
+import { ReactEditor, withReact, Editable } from "slate-react";
 import { Field } from "./components/slate/Field";
-import { Paragraph, ParagraphElement } from "./components/slate/Paragraph";
-import { StyledText, StyledTextElement } from "./components/slate/StyledText";
-import { HorizontalRule, HorizontalRuleElement, isHorizontalRule } from "./components/slate/HorizontalRule";
-import { isManaPip, ManaPip, ManaPipElement } from "./components/slate/ManaPip";
-import { isIcon, Icon, IconElement } from "./components/slate/Icon";
+import { Paragraph } from "./components/slate/Paragraph";
+import { StyledText } from "./components/slate/StyledText";
+import { HorizontalRule, isHorizontalRule } from "./components/slate/HorizontalRule";
+import { isManaPip, ManaPip } from "./components/slate/ManaPip";
+import { isIcon, Icon } from "./components/slate/Icon";
 import { doAutoReplace } from "./autoReplace";
 import { history, write_operation_to_history } from "./history";
 import { text_property } from "./property";
@@ -22,7 +21,7 @@ import { card } from "./card";
 
 declare module "slate" {
 	interface CustomTypes {
-		// Editor: BaseEditor | HistoryEditor | ReactEditor | MultiEditor | ViewEditor,
+		Editor: TextControlEditor,
 		Element: (
 			| Field
 			| HorizontalRule
@@ -34,22 +33,6 @@ declare module "slate" {
 		),
 		Text: StyledText,
 	}
-}
-
-export type EditorWithVersion<T extends BaseEditor> = { editor: T, v: number }
-
-// export type ChildOf<N extends Ancestor> = N["children"] extends (infer C)[] ? C : never;
-// export type DescendantOf<N extends Ancestor, Before extends Ancestor = never> = ChildOf<N> | (ChildOf<N> extends Before ? never : (ChildOf<N> extends Ancestor ? DescendantOf<ChildOf<N>, N | Before> : never))
-
-// export type DocumentEditor = BaseEditor & ReactEditor & HistoryEditor;
-
-export interface RenderElementProps<T extends Element = Element> extends BaseRenderElementProps {
-	element: T,
-}
-
-export interface RenderLeafProps<T extends Text = Text> extends BaseRenderLeafProps {
-	leaf: T,
-	text: T,
 }
 
 export type EditableProps = Parameters<typeof Editable>[0];
@@ -93,7 +76,7 @@ export function createCardTextControlEditor(history: history, card: card, contro
 	}
 
 	editor.observe = () => {
-		// editor.unobserve();
+		editor.unobserve();
 		editor.observer = (operation) => {
 			if (operation.type !== "modify_property_text") throw Error(`unexpected operation "${operation.type}"`);
 			withoutEverNormalizing(editor, () => {
@@ -221,21 +204,6 @@ export function safeToDomNode(editor: ReactEditor, node: Node): HTMLElement | un
 	} catch {
 		return undefined;
 	}
-}
-
-export function renderElement(props: RenderElementProps) {
-	switch (props.element.type) {
-		case "HorizontalRule": return <HorizontalRuleElement {...props as RenderElementProps<HorizontalRule>}/>;
-		case "ManaPip":        return <ManaPipElement        {...props as RenderElementProps<ManaPip       >}/>;
-		case "Icon":           return <IconElement           {...props as RenderElementProps<Icon          >}/>;
-		case "Paragraph":      return <ParagraphElement      {...props as RenderElementProps<Paragraph     >}/>;
-
-		default:               return <ParagraphElement      {...props as RenderElementProps<Paragraph     >}/>;
-	}
-}
-
-export function renderLeaf(props: RenderLeafProps) {
-	return <StyledTextElement {...props as RenderLeafProps<StyledText>} />;
 }
 
 export function isVoid(el: Element) {
