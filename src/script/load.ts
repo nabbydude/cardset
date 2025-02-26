@@ -1,12 +1,12 @@
 import JSZip from "jszip";
+import { assets } from "./assets";
 import { card, setCardId } from "./card";
 import { show_file_select } from "./file_select";
-import { project } from "./project";
-import { base_meta, current_meta, current_savefile_version, dehydrated_card, is_base_meta, is_dehydrated_card, version_is_later, version_is_same_or_earlier } from "./savefile";
 import { history, new_history, unload_history_step } from "./history";
 import { load_image_from_blob, unload_image } from "./image";
-import { assets } from "./assets";
+import { project } from "./project";
 import { property_value, text_property } from "./property";
+import { base_meta, current_meta, current_savefile_version, dehydrated_card, is_base_meta, is_dehydrated_card, version_is_later, version_is_same_or_earlier } from "./savefile";
 
 export function ensure_current_version(meta: base_meta): current_meta {
 	if (version_is_later(meta.version, current_savefile_version)) throw Error(`Version mismatch, Savefile is version ${meta.version.join(".")}, too new (loader version ${current_savefile_version.join(".")})`);
@@ -29,13 +29,17 @@ export function unload_project(project: project, history: history) {
 export async function load_set(project: project, history: history, setProject: (value: project | undefined) => void, setHistory: (value: history) => void) {
 	const file = await show_file_select();
 	if (!file) return; // cancelled, do nothing
- 
-	unload_project(project, history)
+	let loaded_project
+	try {
+		setProject(undefined); // todo: fix. this is omega jank. this is just showing nothing while loading. replace with loading indicator or something
+		loaded_project = await get_project_from_file(file);
+	} catch (e: unknown) {
+		setProject(project); // todo: fix. this is omega jank. this is just showing nothing while loading. replace with loading indicator or something
+		throw e;
+	}
+	setProject(loaded_project);
 
-	setProject(undefined); // todo: fix. this is omega jank. this is just showing nothing while loading. replace with loading indicator or something
-	
-	
-	setProject(await get_project_from_file(file));
+	unload_project(project, history)
 	setHistory(new_history());
 }
 

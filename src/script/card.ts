@@ -1,5 +1,4 @@
 import { assets } from "./assets";
-import { load_asset_image_from_url } from "./image";
 import { property } from "./property";
 
 export interface card {
@@ -28,15 +27,17 @@ export function createTestCard(name: string = "Test Card", color: card_color = "
 
 			name:  { type: "text", id: "name", value: { children: [{ type: "Paragraph", children: [{ text: `${name} [${id}]`, }] }] }, observers: new Set() },
 			cost:  { type: "text", id: "cost", value: { children: [{ type: "Paragraph", children: [{ text: "",                }] }] }, observers: new Set() },
-			type:  { type: "text", id: "type", value: { children: [{ type: "Paragraph", children: [{ text: "Legendary Test"   }] }] }, observers: new Set() },
-			pt:    { type: "text", id: "pt"  , value: { children: [{ type: "Paragraph", children: [{ text: "2/2"              }] }] }, observers: new Set() },
+
+			image: { type: "image", id: "image", value: undefined, observers: new Set() },
+
+			type:  { type: "text", id: "type", value: { children: [{ type: "Paragraph", children: [{ text: "Legendary Test" }] }] }, observers: new Set() },
 
 			cardText:   { type: "text", id: "cardText"  , value: { children: [{ type: "Paragraph", children: [{ text: "Wholetext are a lot." }] }] }, observers: new Set() },
 			rulesText:  { type: "text", id: "rulesText" , value: { children: [{ type: "Paragraph", children: [{ text: "Rules are rules."     }] }] }, observers: new Set() },
 			flavorText: { type: "text", id: "flavorText", value: { children: [{ type: "Paragraph", children: [{ text: "Flavor is nice."      }] }] }, observers: new Set() },
 
+			pt:    { type: "text", id: "pt", value: { children: [{ type: "Paragraph", children: [{ text: "2/2" }] }] }, observers: new Set() },
 			ptBox: { type: "image", id: "ptBox", value: assets[`pt_box_${color}`], observers: new Set() },
-			image: { type: "image", id: "image", value: undefined, observers: new Set() },
 		})),
 	};
 }

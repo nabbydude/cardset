@@ -1,16 +1,17 @@
-import React, { useCallback, useLayoutEffect, useRef } from "react";
+import React, { useLayoutEffect, useRef } from "react";
 import { BaseElement, Element } from "slate";
-import { RenderElementProps } from "../../slate";
 import { asEm, getFillSize } from "../../autoScaleText";
+import { useToastedCallback } from "../../toaster";
+import { TypedRenderElementProps } from "./RenderElement";
 
 export interface ManaPip extends BaseElement {
 	type: "ManaPip",
 	color: string,
 }
 
-export function ManaPipElement(props: RenderElementProps<ManaPip>) {
+export function ManaPipElement(props: TypedRenderElementProps<ManaPip>) {
 	const ref = useRef<HTMLSpanElement | undefined>(undefined);
-	const refHandle = useCallback((newRef: HTMLSpanElement) => {
+	const refHandle = useToastedCallback((newRef: HTMLSpanElement) => {
 		// props passes us down a callback-style ref so we have to use one here and pass it along
 		props.attributes.ref(newRef);
 		ref.current = newRef;

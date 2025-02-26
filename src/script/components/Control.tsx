@@ -1,10 +1,10 @@
 import React from "react";
 import { card } from "../card";
 import { control } from "../control";
-import { ManaTextControl } from "./ManaTextControl";
-import { TextControl, TextControlProps } from "./TextControl";
 import { ImageControl, ImageControlProps } from "./ImageControl";
 import { ImageEnumControl, ImageEnumControlProps } from "./ImageEnumControl";
+import { ManaTextControl } from "./ManaTextControl";
+import { TextControl, TextControlProps } from "./TextControl";
 
 export interface BaseControlProps {
 	card: card,

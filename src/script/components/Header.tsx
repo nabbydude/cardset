@@ -1,13 +1,14 @@
-import React, { useCallback, useContext } from "react";
 import { AnchorButton, AnchorButtonProps, ButtonGroup, Menu, MenuItem, Navbar, NumericInput, Popover, Tooltip } from "@blueprintjs/core";
-import { UndoRedoContext } from "./contexts/HistoryContext";
-import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
+import React, { useContext } from "react";
 import { ReactEditor } from "slate-react";
-import { isMarkActive, toggleMark } from "../slate";
-import { DpiContext } from "./contexts/DpiContext";
-import { exportCardImage, exportManyCardImages } from "../export";
-import { ProjectContext } from "./contexts/ProjectContext";
 import { card } from "../card";
+import { exportCardImage, exportManyCardImages } from "../export";
+import { isMarkActive, toggleMark } from "../slate";
+import { useToastedCallback } from "../toaster";
+import { DpiContext } from "./contexts/DpiContext";
+import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
+import { UndoRedoContext } from "./contexts/HistoryContext";
+import { ProjectContext } from "./contexts/ProjectContext";
 
 export interface HeaderProps {
 	activeCard: card | undefined,
@@ -24,11 +25,11 @@ export function Header(props: HeaderProps) {
 	const { viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi } = useContext(DpiContext);
 	const { cachedFocusedEditor } = useContext(FocusedEditorContext);
 
-	const exportActiveCard = useCallback(() => activeCard && exportCardImage(project, activeCard, exportDpi), [project, activeCard, exportDpi]);
-	const exportAll = useCallback(async () => {
+	const exportActiveCard = useToastedCallback(() => activeCard && exportCardImage(project, activeCard, exportDpi), [project, activeCard, exportDpi]);
+	const exportAll = useToastedCallback(async () => {
 		exportManyCardImages(project, [...project.card_list.cards], exportDpi);
 	}, [project, exportDpi]);
-	const exportSelected = useCallback(async () => {
+	const exportSelected = useToastedCallback(async () => {
 		exportManyCardImages(project, [...selectedCards], exportDpi);
 	}, [project, exportDpi, selectedCards]);
 
@@ -43,8 +44,8 @@ export function Header(props: HeaderProps) {
 				<NavbarButton tooltip="Undo" icon="undo" minimal={true} disabled={!can_undo} onClick={undo}/>
 				<NavbarButton tooltip="Redo" icon="redo" minimal={true} disabled={!can_redo} onClick={redo}/>
 				<Navbar.Divider/>
-				<NavbarButton tooltip="Bold"   icon="bold"   minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "bold"  )} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "bold"  ); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
-				<NavbarButton tooltip="Italic" icon="italic" minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "italic")} onClick={useCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "italic"); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
+				<NavbarButton tooltip="Bold"   icon="bold"   minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "bold"  )} onClick={useToastedCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "bold"  ); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
+				<NavbarButton tooltip="Italic" icon="italic" minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "italic")} onClick={useToastedCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "italic"); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
 				<Navbar.Divider/>
 				<Tooltip content="DPI" position="bottom">
 					<NumericInput
@@ -52,8 +53,8 @@ export function Header(props: HeaderProps) {
 						value={viewDpi}
 						buttonPosition="none"
 						rightElement={<ButtonGroup>
-							<AnchorButton icon="zoom-out" minimal={true} disabled={viewDpi <=  75} onClick={useCallback(() => setViewDpi(dpi => Math.max(Math.floor(dpi/25 - 1)*25,  75) ), [setViewDpi])}/>
-							<AnchorButton icon="zoom-in"  minimal={true} disabled={viewDpi >= 300} onClick={useCallback(() => setViewDpi(dpi => Math.min(Math.ceil (dpi/25 + 1)*25, 300) ), [setViewDpi])}/>
+							<AnchorButton icon="zoom-out" minimal={true} disabled={viewDpi <=  75} onClick={useToastedCallback(() => setViewDpi(dpi => Math.max(Math.floor(dpi/25 - 1)*25,  75) ), [setViewDpi])}/>
+							<AnchorButton icon="zoom-in"  minimal={true} disabled={viewDpi >= 300} onClick={useToastedCallback(() => setViewDpi(dpi => Math.min(Math.ceil (dpi/25 + 1)*25, 300) ), [setViewDpi])}/>
 						</ButtonGroup>}
 						onValueChange={setViewDpi}
 					/>
@@ -71,10 +72,10 @@ export function Header(props: HeaderProps) {
 									value={exportDpi}
 									buttonPosition="none"
 									disabled={lockExportDpi}
-									leftElement ={<AnchorButton icon={lockExportDpi ? "lock" : "unlock"} minimal={true} onClick={useCallback(() => setLockExportDpi(old => !old), [setLockExportDpi])}/>}
+									leftElement ={<AnchorButton icon={lockExportDpi ? "lock" : "unlock"} minimal={true} onClick={useToastedCallback(() => setLockExportDpi(old => !old), [setLockExportDpi])}/>}
 									rightElement={<ButtonGroup>
-										<AnchorButton icon="zoom-out" minimal={true} disabled={lockExportDpi || exportDpi <=  75} onClick={useCallback(() => setExportDpi(dpi => Math.max(Math.floor(dpi/25 - 1)*25,  75)), [setExportDpi])}/>
-										<AnchorButton icon="zoom-in"  minimal={true} disabled={lockExportDpi || exportDpi >= 300} onClick={useCallback(() => setExportDpi(dpi => Math.min(Math.ceil (dpi/25 + 1)*25, 300)), [setExportDpi])}/>
+										<AnchorButton icon="zoom-out" minimal={true} disabled={lockExportDpi || exportDpi <=  75} onClick={useToastedCallback(() => setExportDpi(dpi => Math.max(Math.floor(dpi/25 - 1)*25,  75)), [setExportDpi])}/>
+										<AnchorButton icon="zoom-in"  minimal={true} disabled={lockExportDpi || exportDpi >= 300} onClick={useToastedCallback(() => setExportDpi(dpi => Math.min(Math.ceil (dpi/25 + 1)*25, 300)), [setExportDpi])}/>
 									</ButtonGroup>}
 									onValueChange={setExportDpi}
 								/>
@@ -87,7 +88,7 @@ export function Header(props: HeaderProps) {
 								disabled={isOpen}
 								renderTarget={({ onClick, ...tooltipProps }) => (
 									<ButtonGroup>
-										<AnchorButton {...tooltipProps} icon="export"     minimal={true} disabled={!activeCard} onClick={useCallback<React.MouseEventHandler<HTMLElement>>(e => { onClick?.(e); exportActiveCard(); }, [onClick, exportActiveCard])}/>
+										<AnchorButton {...tooltipProps} icon="export"     minimal={true} disabled={!activeCard} onClick={useToastedCallback<React.MouseEventHandler<HTMLElement>>(e => { onClick?.(e); exportActiveCard(); }, [onClick, exportActiveCard])}/>
 										<AnchorButton {...popoverProps} icon="caret-down" minimal={true} small active={isOpen}/>
 									</ButtonGroup>
 								)}

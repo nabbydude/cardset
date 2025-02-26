@@ -1,12 +1,13 @@
-import React, { DragEvent, DragEventHandler, useCallback, useContext } from "react";
 import { NonIdealState } from "@blueprintjs/core";
+import React, { DragEvent, DragEventHandler, useContext } from "react";
 import { card } from "../card";
-import { image_property } from "../property";
-import { HistoryContext } from "./contexts/HistoryContext";
+import { image_control } from "../control";
 import { apply_and_write } from "../history";
 import { load_image_from_blob } from "../image";
+import { image_property } from "../property";
+import { useToastedCallback } from "../toaster";
+import { HistoryContext } from "./contexts/HistoryContext";
 import { usePropertyValue } from "./hooks/usePropertyValue";
-import { image_control } from "../control";
 
 export interface ImageControlProps {
 	card: card,
@@ -19,7 +20,7 @@ export function ImageControl(props: ImageControlProps) {
 	const history = useContext(HistoryContext);
 	const value = usePropertyValue(property);
 
-	const onDrop = useCallback<DragEventHandler>(e => {
+	const onDrop = useToastedCallback<DragEventHandler>(e => {
 		e.preventDefault();
 		let file: File;
 		if (e.dataTransfer.items) {

@@ -68,8 +68,8 @@
     "typescript": "5.6.3"
   },
   "dependencies": {
-    "@blueprintjs/core": "^5.1.1",
-    "@blueprintjs/icons": "^5.1.0",
+    "@blueprintjs/core": "^5.16.6",
+    "@blueprintjs/icons": "^5.18.1",
     "@parcel/config-default": "^2.8.3",
     "@parcel/transformer-sass": "^2.8.3",
     "@primer/octicons-react": "^19.4.0",

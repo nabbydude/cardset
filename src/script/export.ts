@@ -1,10 +1,10 @@
-import { toBlob } from "html-to-image";
 import { saveAs } from "file-saver";
-import { Root, createRoot } from "react-dom/client";
+import { toBlob } from "html-to-image";
 import JSZip from "jszip";
+import { Root, createRoot } from "react-dom/client";
 import { card } from "./card";
-import { project } from "./project";
 import { getFakeApp } from "./components/FakeApp";
+import { project } from "./project";
 
 export async function exportCardImage(project: project, card: card, dpi: number) {
 	saveAs(await generateCardImage(project, card, dpi), `${card.id}.png`);
@@ -26,9 +26,10 @@ export async function exportManyCardImages(project: project, cards: card[], dpi:
 }
 
 export async function generateCardImage(project: project, card: card, dpi: number): Promise<Blob> {
-	const { root, rootElement } = await renderFake(project, card, dpi);
-	document.body.appendChild(rootElement);
+	let root, rootElement;
 	try {
+		({ root, rootElement } = await renderFake(project, card, dpi));
+		document.body.appendChild(rootElement);
 		const editorElement = rootElement.querySelector<HTMLDivElement>("div.card-editor");
 		if (!editorElement) throw Error("Cannot find editorElement");
 
@@ -42,8 +43,8 @@ export async function generateCardImage(project: project, card: card, dpi: numbe
 		if (!blob) throw Error("Failed to generate blob.");
 		return blob;
 	} finally {
-		document.body.removeChild(rootElement);
-		root.unmount();
+		rootElement && document.body.removeChild(rootElement);
+		root?.unmount();
 	}
 }
 

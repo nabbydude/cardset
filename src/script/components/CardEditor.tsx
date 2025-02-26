@@ -1,12 +1,13 @@
-import React, { CSSProperties, Dispatch, SetStateAction, useCallback, useContext } from "react";
 import { Button, NonIdealState } from "@blueprintjs/core";
-import { DpiContext } from "./contexts/DpiContext";
-import { add_card } from "../project";
-import { ProjectContext } from "./contexts/ProjectContext";
+import React, { CSSProperties, Dispatch, SetStateAction, useContext } from "react";
 import { card, createTestCard } from "../card";
-import { HistoryContext } from "./contexts/HistoryContext";
-import { Control } from "./Control";
 import { controls } from "../controls";
+import { add_card } from "../project";
+import { useToastedCallback } from "../toaster";
+import { DpiContext } from "./contexts/DpiContext";
+import { HistoryContext } from "./contexts/HistoryContext";
+import { ProjectContext } from "./contexts/ProjectContext";
+import { Control } from "./Control";
 
 export interface CardEditorProps {
 	card: card | undefined,
@@ -22,7 +23,7 @@ export function CardEditor(props: CardEditorProps) {
 	const history = useContext(HistoryContext);
 	const { viewDpi } = useContext(DpiContext);
 
-	const addCardAndFocus = useCallback(() => {
+	const addCardAndFocus = useToastedCallback(() => {
 		const new_card = createTestCard("New Card", "colorless");
 		add_card(project, history, { type: "none" }, new_card);
 		setActiveCard(new_card);

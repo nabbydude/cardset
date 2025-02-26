@@ -1,4 +1,5 @@
-import React, { Dispatch, ReactNode, SetStateAction, createContext, useCallback, useMemo } from "react";
+import React, { Dispatch, ReactNode, SetStateAction, createContext, useMemo } from "react";
+import { useToastedCallback } from "../../toaster";
 
 export interface DpiContextValue {
 	viewDpi: number,
@@ -28,8 +29,8 @@ export function DpiProvider(props: DpiProviderProps) {
 	const { viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi } = value;
 
 	// this feels like over-comlicated hidden behavior and I wonder if there's a more robust way to do this
-	const setBothDpi = useCallback<Dispatch<SetStateAction<number>>>(v => { setViewDpi(v); setExportDpi(v); }, [setViewDpi, setExportDpi]);
-	const setLockAndReset = useCallback<Dispatch<SetStateAction<boolean>>>(v => { setLockExportDpi(v); setExportDpi(viewDpi); }, [setLockExportDpi, setExportDpi, viewDpi]);
+	const setBothDpi = useToastedCallback<Dispatch<SetStateAction<number>>>(v => { setViewDpi(v); setExportDpi(v); }, [setViewDpi, setExportDpi]);
+	const setLockAndReset = useToastedCallback<Dispatch<SetStateAction<boolean>>>(v => { setLockExportDpi(v); setExportDpi(viewDpi); }, [setLockExportDpi, setExportDpi, viewDpi]);
 	
 	const newValue = useMemo(() => ({
 		viewDpi: viewDpi,

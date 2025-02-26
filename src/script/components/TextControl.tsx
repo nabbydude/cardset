@@ -1,14 +1,15 @@
-import React, { KeyboardEvent, MouseEvent, useCallback, useLayoutEffect } from "react";
+import React, { KeyboardEvent, MouseEvent, useLayoutEffect } from "react";
 import { Editor } from "slate";
 import { ReactEditor, Slate } from "slate-react";
-import { TextControlEditor, EditableProps, safeToDomNode, toggleMark } from "../slate";
-import { FocusSendingEditable } from "./FocusSendingEditable";
-import { ManaPip } from "./slate/ManaPip";
 import { colorNamesByLetter, iconUrls } from "../assets";
 import { asScalingPt, getFillSize } from "../autoScaleText";
 import { card } from "../card";
-import { useTextControlEditor } from "./hooks/useTextControlEditor";
 import { text_control } from "../control";
+import { EditableProps, safeToDomNode, TextControlEditor, toggleMark } from "../slate";
+import { useToastedCallback } from "../toaster";
+import { FocusSendingEditable } from "./FocusSendingEditable";
+import { useTextControlEditor } from "./hooks/useTextControlEditor";
+import { ManaPip } from "./slate/ManaPip";
 import { RenderElement } from "./slate/RenderElement";
 import { RenderLeaf } from "./slate/RenderLeaf";
 
@@ -33,9 +34,9 @@ export function TextControl(props: TextControlProps) {
 		el.style.fontSize = asScalingPt(size);
 	});
 
-	const thisOnClick          = useCallback((e: MouseEvent   ) => { onClick         ?.(e, editor);                                                               }, [editor, onClick         ]);
-	const thisOnKeyDown        = useCallback((e: KeyboardEvent) => { onKeyDown       ?.(e, editor); if(!e.defaultPrevented) onTextControlKeyDown       (e, editor); }, [editor, onKeyDown       ]);
-	const thisOnDOMBeforeInput = useCallback((e: InputEvent   ) => { onDOMBeforeInput?.(e, editor); if(!e.defaultPrevented) onTextControlDOMBeforeInput(e, editor); }, [editor, onDOMBeforeInput]);
+	const thisOnClick          = useToastedCallback((e: MouseEvent   ) => { onClick         ?.(e, editor);                                                                 }, [editor, onClick         ]);
+	const thisOnKeyDown        = useToastedCallback((e: KeyboardEvent) => { onKeyDown       ?.(e, editor); if(!e.defaultPrevented) onTextControlKeyDown       (e, editor); }, [editor, onKeyDown       ]);
+	const thisOnDOMBeforeInput = useToastedCallback((e: InputEvent   ) => { onDOMBeforeInput?.(e, editor); if(!e.defaultPrevented) onTextControlDOMBeforeInput(e, editor); }, [editor, onDOMBeforeInput]);
 
 	return (
 		<Slate editor={editor} initialValue={editor.children}>

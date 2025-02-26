@@ -1,12 +1,12 @@
 import React from "react";
 import { BaseElement, Element } from "slate";
-import { RenderElementProps } from "../../slate";
+import { TypedRenderElementProps } from "./RenderElement";
 
 export interface Field extends BaseElement {
 	type: "Field",
 }
 
-export function FieldElement(props: RenderElementProps<Field>) {
+export function FieldElement(props: TypedRenderElementProps<Field>) {
 	return (
 		<div {...props.attributes}>
 			{props.children}

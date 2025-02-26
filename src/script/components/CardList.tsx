@@ -1,16 +1,17 @@
-import React, { Dispatch, MouseEventHandler, PointerEventHandler, SetStateAction, useCallback, useContext, useMemo } from "react";
-import { EditableProps } from "../slate";
-import { Slate } from "slate-react";
-import { FocusSendingEditable } from "./FocusSendingEditable";
 import { Button, ContextMenu, ContextMenuChildrenProps, Divider, HTMLTable, Menu, MenuItem, Tooltip } from "@blueprintjs/core";
+import React, { Dispatch, MouseEventHandler, PointerEventHandler, SetStateAction, useContext, useMemo } from "react";
+import { Slate } from "slate-react";
 import { card, createTestCard } from "../card";
-import { add_card, delete_cards } from "../project";
-import { ProjectContext } from "./contexts/ProjectContext";
-import { HistoryContext } from "./contexts/HistoryContext";
-import { useTextControlEditor } from "./hooks/useTextControlEditor";
 import { card_list } from "../card_list";
-import { useCardListCards } from "./hooks/useCardListCards";
 import { text_control } from "../control";
+import { add_card, delete_cards } from "../project";
+import { EditableProps } from "../slate";
+import { useToastedCallback } from "../toaster";
+import { HistoryContext } from "./contexts/HistoryContext";
+import { ProjectContext } from "./contexts/ProjectContext";
+import { FocusSendingEditable } from "./FocusSendingEditable";
+import { useCardListCards } from "./hooks/useCardListCards";
+import { useTextControlEditor } from "./hooks/useTextControlEditor";
 import { RenderElement } from "./slate/RenderElement";
 import { RenderLeaf } from "./slate/RenderLeaf";
 
@@ -52,7 +53,8 @@ export function ControllableCardList(props: ControllableCardListProps) {
 	const project = useContext(ProjectContext);
 	const history = useContext(HistoryContext);
 
-	const addCardAndFocus = useCallback(() => {
+	const onAddCardClick = useToastedCallback(() => {
+		// add card and focus it
 		const card = createTestCard("New Card", "colorless");
 		add_card(
 			project,
@@ -64,7 +66,8 @@ export function ControllableCardList(props: ControllableCardListProps) {
 		setSelectedCards(new Set([card]));
 	}, [setActiveCard]);
 
-	const deleteSelectedCards = useCallback(() => {
+	const onDeleteCardClick = useToastedCallback(() => {
+		// delete selected cards
 		delete_cards(
 			project,
 			history,
@@ -77,32 +80,11 @@ export function ControllableCardList(props: ControllableCardListProps) {
 
 	return (
 		<div className="controllable-card-list">
-			{/* <Popover
-				content={<Menu>
-					<MenuItem text="Planeswalker"/>
-				</Menu>}
-				renderTarget={({ isOpen: isPopoverOpen, ref: popoverRef, ...popoverProps }) => (
-					<Tooltip
-						content="I have a popover!"
-						disabled={isPopoverOpen}
-						openOnTargetFocus={false}
-						renderTarget={({ isOpen: isTooltipOpen, ref: tooltipRef, ...tooltipProps }) => (
-							<ButtonGroup
-								{...tooltipProps}
-								ref={mergeRefs(tooltipRef, popoverRef)}
-							>
-								<Button icon="add" onClick={addCard}/>
-								<Button {...popoverProps} icon="caret-down" active={isPopoverOpen}/>
-							</ButtonGroup>
-						)}
-					/>
-				)}
-			/> */}
 			<div className="controls">
-				<Tooltip content="Add Card"><Button icon="plus" onClick={addCardAndFocus}/></Tooltip>
+				<Tooltip content="Add Card"><Button icon="plus" onClick={onAddCardClick}/></Tooltip>
 				{selectedCards.size > 0 ? (<>
 					<Divider/>
-					<Tooltip content={`Delete ${selectedCards.size > 1 ? `${selectedCards.size} cards` : "card"}`}><Button icon="trash" onClick={deleteSelectedCards}/></Tooltip>
+					<Tooltip content={`Delete ${selectedCards.size > 1 ? `${selectedCards.size} cards` : "card"}`}><Button icon="trash" onClick={onDeleteCardClick}/></Tooltip>
 					<Divider/>
 					<div className="info">
 						{selectedCards.size} card{selectedCards.size === 1 ? "" : "s"} selected
@@ -175,7 +157,7 @@ export function SizeHandle({
 }: {
 	setWidth: Dispatch<SetStateAction<number>>,
 }) {
-	const onPointerDown = useCallback<PointerEventHandler>(e => {
+	const onPointerDown = useToastedCallback<PointerEventHandler>(e => {
 		let lastX = e.pageX;
 		const move = (e: PointerEvent) => {
 			const diff = e.pageX - lastX; // im scared of lastX changing beneath us if things if this gets called twice so we cache the value here
@@ -212,17 +194,17 @@ export function CardListRow(props: CardListRowProps) {
 	const active = activeCard === card;
 	const selected = selectedCards.has(card);
 
-	const onClick = useCallback((e => {
+	const onClick = useToastedCallback<MouseEventHandler<HTMLTableRowElement>>(e => {
 		if (e.ctrlKey) {
 			setSelectedCards(old => new Set(old.delete(card) ? old : old.add(card))); // delete entry if it exists and copy set (immutability is v inefficient), or if it doesn't exist, add it and copy set
 		} else {
 			setSelectedCards(new Set([card]));
 		}
 		setActiveCard(card);
-	}) as MouseEventHandler<HTMLTableRowElement>, [card, setActiveCard, setSelectedCards]);
+	}, [card, setActiveCard, setSelectedCards]);
 
-	const exportSelectedCards = useCallback(() => exportCards?.(selectedCards), [exportCards, selectedCards]);
-	const deleteSelectedCards = useCallback(() => deleteCards?.(selectedCards), [deleteCards, selectedCards]);
+	const exportSelectedCards = useToastedCallback(() => exportCards?.(selectedCards), [exportCards, selectedCards]);
+	const deleteSelectedCards = useToastedCallback(() => deleteCards?.(selectedCards), [deleteCards, selectedCards]);
 
 	const classList: string[] = [];
 	if (selected) classList.push("selected");
@@ -243,7 +225,7 @@ export function CardListRow(props: CardListRowProps) {
 					onClick={onClick}
 					onPointerDown={onPointerDown}
 					className={[...classList, className].join(" ")}
-					onContextMenu={useCallback<MouseEventHandler<HTMLTableRowElement>>(e => {
+					onContextMenu={useToastedCallback<MouseEventHandler<HTMLTableRowElement>>(e => {
 						if (!selected) {
 							setSelectedCards(new Set([card]));
 							setActiveCard(card);

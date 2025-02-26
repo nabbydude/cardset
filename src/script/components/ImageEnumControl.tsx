@@ -1,12 +1,13 @@
-import React, { useCallback, useContext, useMemo } from "react";
-import { ContextMenu, ContextMenuChildrenProps, Menu, MenuItem, Props } from "@blueprintjs/core";
-import { image_property } from "../property";
+import { ContextMenu, ContextMenuChildrenProps, Menu, MenuItem } from "@blueprintjs/core";
+import React, { useContext, useMemo } from "react";
 import { card } from "../card";
-import { apply_and_write } from "../history";
-import { HistoryContext } from "./contexts/HistoryContext";
-import { image } from "../image";
-import { usePropertyValue } from "./hooks/usePropertyValue";
 import { image_enum_control } from "../control";
+import { apply_and_write } from "../history";
+import { image } from "../image";
+import { image_property } from "../property";
+import { useToastedCallback } from "../toaster";
+import { HistoryContext } from "./contexts/HistoryContext";
+import { usePropertyValue } from "./hooks/usePropertyValue";
 
 export interface option {
 	id: string,
@@ -27,7 +28,7 @@ export function ImageEnumControl(props: ImageEnumControlProps) {
 
 	const value = usePropertyValue(property);
 
-	const change_option = useCallback((index: number) => {
+	const change_option = useToastedCallback((index: number) => {
 		const option = control.options[index];
 		apply_and_write(
 			history,
@@ -38,14 +39,11 @@ export function ImageEnumControl(props: ImageEnumControlProps) {
 
 	const src = value?.url ?? "";
 
-	const items = useMemo(() => control.options.map(({ id, label }, index) => (<MenuItem key={id} text={label} onClick={() => change_option(index)}/>)), [control, change_option])
+	const items = useMemo(() => control.options.map(({ id, label }, index) => (<MenuItem key={id} text={label} onClick={() => change_option(index)}/>)), [control, change_option]);
 	return (
 		<ContextMenu content={<Menu>{items}</Menu>} disabled={readOnly}>
 			{({ className, onContextMenu, ref, popover}: ContextMenuChildrenProps) => (
-				<div
-					className={className}
-					ref={ref}
-					>
+				<div className={className} ref={ref}>
 					{popover}
 					<img
 						data-control-id={control.id}

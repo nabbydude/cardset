@@ -1,13 +1,13 @@
 import React from "react";
 import { BaseElement, Element } from "slate";
-import { RenderElementProps } from "../../slate";
 import { useFocused, useSelected } from "slate-react";
+import { TypedRenderElementProps } from "./RenderElement";
 
 export interface HorizontalRule extends BaseElement {
 	type: "HorizontalRule",
 }
 
-export function HorizontalRuleElement(props: RenderElementProps<HorizontalRule>) {
+export function HorizontalRuleElement(props: TypedRenderElementProps<HorizontalRule>) {
 	// return (
 	// 	<hr {...props.attributes} className="hr" contentEditable={false}/>
 	// );

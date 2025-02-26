@@ -1,6 +1,6 @@
 import React from "react";
 import { BaseElement, Element } from "slate";
-import { RenderElementProps } from "../../slate";
+import { TypedRenderElementProps } from "./RenderElement";
 
 export interface Icon extends BaseElement {
 	type: "Icon",
@@ -8,7 +8,7 @@ export interface Icon extends BaseElement {
 	src: string,
 }
 
-export function IconElement(props: RenderElementProps<Icon>) {
+export function IconElement(props: TypedRenderElementProps<Icon>) {
 	return (
 		<span {...props.attributes} className="icon">
 			<img src={props.element.src ?? ""} alt={props.element.alt}/>

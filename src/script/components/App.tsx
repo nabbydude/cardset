@@ -1,19 +1,20 @@
-import React, { Dispatch, SetStateAction, useCallback, useContext, useMemo, useState } from "react";
-import { CardEditor } from "./CardEditor";
-import { Header } from "./Header";
-import { ControllableCardList, listColumn } from "./CardList";
+import { HotkeysProvider } from "@blueprintjs/core";
+import React, { Dispatch, SetStateAction, useContext, useMemo, useState } from "react";
+import { card } from "../card";
+import { exportCardImage, exportManyCardImages } from "../export";
+import { focus } from "../focus";
+import { history, new_history } from "../history";
+import { load_set } from "../load";
+import { project } from "../project";
 import { save_set } from "../save";
+import { useToastedCallback } from "../toaster";
+import { CardEditor } from "./CardEditor";
+import { ControllableCardList, listColumn } from "./CardList";
+import { DpiProvider } from "./contexts/DpiContext";
 import { FocusedEditorProvider } from "./contexts/FocusedEditorContext";
 import { HistoryProvider } from "./contexts/HistoryContext";
-import { DpiProvider } from "./contexts/DpiContext";
-import { exportCardImage, exportManyCardImages } from "../export";
-import { HotkeysProvider } from "@blueprintjs/core";
-import { project } from "../project";
 import { ProjectContext, ProjectProvider } from "./contexts/ProjectContext";
-import { card } from "../card";
-import { load_set } from "../load";
-import { history, new_history } from "../history";
-import { focus } from "../focus";
+import { Header } from "./Header";
 
 const starting_project: project = {
 	name: "Untitled",
@@ -46,10 +47,10 @@ export function App() {
 	const [exportDpi, setExportDpi] = useState(150);
 	const [lockExportDpi, setLockExportDpi] = useState(true);
 
-	const saveThisSet = useCallback(() => save_set(project!), [project]);
-	const loadThisSet = useCallback(() => load_set(project!, history, setProject, setHistory), [setProject]);
+	const saveThisSet = useToastedCallback(() => save_set(project!), [project]);
+	const loadThisSet = useToastedCallback(() => load_set(project!, history, setProject, setHistory), [setProject]);
 
-	const exportCards = useCallback((cards: Iterable<card>) => {
+	const exportCards = useToastedCallback((cards: Iterable<card>) => {
 		const arr = [...cards];
 		if (arr.length === 1) {
 			exportCardImage(project!, arr[0], exportDpi);
@@ -58,7 +59,7 @@ export function App() {
 		}
 	}, [project, exportDpi]);
 
-	const setFocus = useCallback((focus: focus) => {
+	const setFocus = useToastedCallback((focus: focus) => {
 		switch (focus.type) {
 			case "card_control": {
 				setActiveCard(focus.card);
