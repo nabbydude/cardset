@@ -1,5 +1,5 @@
 import { Button, ContextMenu, ContextMenuChildrenProps, Divider, HTMLTable, Menu, MenuItem, Tooltip } from "@blueprintjs/core";
-import React, { Dispatch, MouseEventHandler, PointerEventHandler, SetStateAction, useContext, useMemo } from "react";
+import React, { Dispatch, MouseEvent, MouseEventHandler, PointerEventHandler, SetStateAction, useContext, useMemo } from "react";
 import { Slate } from "slate-react";
 import { card, createTestCard } from "../card";
 import { card_list } from "../card_list";
@@ -187,7 +187,10 @@ export interface CardListRowProps {
 	deleteCards?: (cards: Iterable<card>) => void,
 }
 
-const onPointerDown = (e => e.preventDefault()) as MouseEventHandler<HTMLTableRowElement>;
+function onPointerDown(e: MouseEvent<HTMLTableRowElement>) {
+	if (e.target instanceof HTMLElement && e.target.classList.contains("bp5-context-menu-backdrop")) return; // clicking out of context menu
+	e.preventDefault();
+};
 
 export function CardListRow(props: CardListRowProps) {
 	const { columns, card, activeCard, setActiveCard, selectedCards, setSelectedCards, exportCards, deleteCards } = props;

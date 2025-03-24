@@ -1,4 +1,4 @@
-import { HotkeysProvider } from "@blueprintjs/core";
+import { BlueprintProvider } from "@blueprintjs/core";
 import React, { Dispatch, SetStateAction, useContext, useMemo, useState } from "react";
 import { card } from "../card";
 import { exportCardImage, exportManyCardImages } from "../export";
@@ -15,6 +15,7 @@ import { FocusedEditorProvider } from "./contexts/FocusedEditorContext";
 import { HistoryProvider } from "./contexts/HistoryContext";
 import { ProjectContext, ProjectProvider } from "./contexts/ProjectContext";
 import { Header } from "./Header";
+import { flushSync } from "react-dom";
 
 const starting_project: project = {
 	name: "Untitled",
@@ -48,7 +49,7 @@ export function App() {
 	const [lockExportDpi, setLockExportDpi] = useState(true);
 
 	const saveThisSet = useToastedCallback(() => save_set(project!), [project]);
-	const loadThisSet = useToastedCallback(() => load_set(project!, history, setProject, setHistory), [setProject]);
+	const loadThisSet = useToastedCallback(() => load_set(project!, history, setProject, setHistory), [project, history]);
 
 	const exportCards = useToastedCallback((cards: Iterable<card>) => {
 		const arr = [...cards];
@@ -62,11 +63,12 @@ export function App() {
 	const setFocus = useToastedCallback((focus: focus) => {
 		switch (focus.type) {
 			case "card_control": {
-				setActiveCard(focus.card);
+				flushSync(() => setActiveCard(focus.card));
 				(document.querySelector(`[data-control-id=${focus.control.id}]`) as HTMLElement).focus();
 			} break;
 			case "card_text_control": {
-				setActiveCard(focus.card);
+				// setActiveCard(focus.card);
+				flushSync(() => setActiveCard(focus.card));
 				(document.querySelector(`[data-control-id=${focus.control.id}]`) as HTMLElement).focus();
 			} break;
 			case "none": break;
@@ -74,7 +76,7 @@ export function App() {
 	}, [setActiveCard]);
 
 	return (
-		<HotkeysProvider>
+		<BlueprintProvider>
 			<DpiProvider value={useMemo(() => ({ viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi }), [viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi])}>
 				{project ? (
 					<ProjectProvider project={project}>
@@ -105,7 +107,7 @@ export function App() {
 					<div>Loading...</div>
 				)}
 			</DpiProvider>
-		</HotkeysProvider>
+		</BlueprintProvider>
 	);
 }
 

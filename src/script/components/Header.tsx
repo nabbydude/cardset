@@ -86,7 +86,7 @@ export function Header(props: HeaderProps) {
 								content="Export Active Card"
 								position="bottom"
 								disabled={isOpen}
-								renderTarget={({ onClick, ...tooltipProps }) => (
+								renderTarget={({ onClick, isOpen: _, ...tooltipProps }) => (
 									<ButtonGroup>
 										<AnchorButton {...tooltipProps} icon="export"     minimal={true} disabled={!activeCard} onClick={useToastedCallback<React.MouseEventHandler<HTMLElement>>(e => { onClick?.(e); exportActiveCard(); }, [onClick, exportActiveCard])}/>
 										<AnchorButton {...popoverProps} icon="caret-down" minimal={true} small active={isOpen}/>
@@ -108,6 +108,6 @@ interface NavbarButtonProps extends AnchorButtonProps {
 function NavbarButton(props: NavbarButtonProps) {
 	const { tooltip, ...rest } = props;
 	return (
-		<Tooltip content={tooltip} position="bottom" renderTarget={props => <AnchorButton {...props} {...rest}/>}/>
+		<Tooltip content={tooltip} position="bottom" renderTarget={({isOpen: _, ...props}) => <AnchorButton {...props} {...rest}/>}/>
 	);
 }

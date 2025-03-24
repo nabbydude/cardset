@@ -78,10 +78,12 @@
     "html-to-image": "^1.11.11",
     "jszip": "^3.10.1",
     "normalize.css": "^8.0.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^19.0.0",
+    "react-advanced-cropper": "^0.20.1",
+    "react-dom": "^19.0.0",
     "sass": "^1.63.6",
     "slate": "^0.94.1",
+    "slate-dom": "^0.112.2",
     "slate-history": "^0.93.0",
     "slate-react": "^0.97.0"
   }

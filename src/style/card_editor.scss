@@ -70,6 +70,10 @@ div.card-editor {
 		top:    calc(0.4  * var(--in));
 		width:  calc(2.1  * var(--in));
 		height: calc(1.54 * var(--in));
+		img {
+			width: 100%;
+			height: 100%;
+		}
 	}
 
 	div.type-line {

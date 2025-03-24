@@ -1,7 +1,8 @@
 import { OverlayToaster } from "@blueprintjs/core";
 import { useCallback } from "react";
+import { createRoot } from "react-dom/client";
 
-export const toaster = OverlayToaster.createAsync({ position: "bottom-right" });
+export const toaster = OverlayToaster.createAsync({ position: "bottom-right" }, { domRenderer: (reactNode, domNode) => createRoot(domNode).render(reactNode) });
 
 // export function toastErrors<P extends unknown[], R extends unknown>(fn: (...args: P) => R): (...args: P) => R {
 export function toastErrors<F extends (...args: never[]) => unknown>(fn: F): (...args: Parameters<F>) => (ReturnType<F> | undefined) {
@@ -43,7 +44,7 @@ export async function toastAsError(e: unknown) {
 		error = Error("Exception thrown of unknown type", { cause: e });
 	}
 
-	(await toaster).show({
+	(await toaster)?.show({
 		message: `${getFullErrorText(error)}`,
 		icon: "warning-sign",
 		intent: "danger",

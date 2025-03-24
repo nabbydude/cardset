@@ -1,6 +1,7 @@
 @import "/node_modules/normalize.css/normalize.css";
 @import "/node_modules/@blueprintjs/core/lib/css/blueprint.css";
 @import "/node_modules/@blueprintjs/icons/lib/css/blueprint-icons.css";
+@import "/node_modules/react-advanced-cropper/dist/style.css";
 
 @import "card_editor.scss";
 @import "card_list.scss";
@@ -22,13 +23,13 @@ body.bp5-dark {
 	margin: 0;
 }
 
-.bp5-dark .bp5-input-group .bp5-input:not(:focus) + .bp5-input-action .bp5-button.bp5-minimal:not(:hover):not(:focus).bp5-disabled {
-	color: #abb3bf99;
+.bp5-dark .bp5-input-group .bp5-input + .bp5-input-action .bp5-button.bp5-minimal.bp5-disabled {
+	color: #5f6b7c99 !important;
 }
 
-.bp5-dark .bp5-input-group.bp5-disabled .bp5-input:not(:focus) + .bp5-input-action .bp5-button.bp5-minimal:not(:hover):not(:focus).bp5-disabled {
-	color: $pt-dark-text-color-disabled;
-}
+// .bp5-dark .bp5-input-group.bp5-disabled .bp5-input:not(:focus) + .bp5-input-action .bp5-button.bp5-minimal:not(:hover):not(:focus).bp5-disabled {
+// 	color: $pt-dark-text-color-disabled;
+// }
 
 p:last-child {
 	margin-bottom: 0;
@@ -45,4 +46,30 @@ p:last-child {
 	grid-auto-flow: column;
 	grid-template-columns: auto 1fr;
 	align-items: start;
+}
+
+.cropperDialog .content {
+	display: grid;
+	grid-auto-flow: column;
+	grid-template-columns: auto auto;
+	align-items: start;
+	gap: 8px;
+	.controls {
+		display: grid;
+		grid-auto-flow: row;
+		align-items: start;
+		gap: 8px;
+		.h, .v {
+			display: grid;
+			align-items: start;
+			gap: 8px;
+		}
+		.h {
+			grid-auto-flow: column;
+			align-items: center;
+		}
+		.v {
+			grid-auto-flow: row;
+		}
+	}
 }

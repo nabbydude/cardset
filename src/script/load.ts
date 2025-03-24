@@ -8,6 +8,8 @@ import { project } from "./project";
 import { property_value, text_property } from "./property";
 import { base_meta, current_meta, current_savefile_version, dehydrated_card, is_base_meta, is_dehydrated_card, version_is_later, version_is_same_or_earlier } from "./savefile";
 
+const ACCEPTED_FILE_TYPES = ".zip";
+
 export function ensure_current_version(meta: base_meta): current_meta {
 	if (version_is_later(meta.version, current_savefile_version)) throw Error(`Version mismatch, Savefile is version ${meta.version.join(".")}, too new (loader version ${current_savefile_version.join(".")})`);
 	if (version_is_same_or_earlier(meta.version, [0, 2, 0])) throw Error(`Version mismatch, loader cannot convert from files version 0.2.0 or earlier`);
@@ -27,7 +29,7 @@ export function unload_project(project: project, history: history) {
 }
 
 export async function load_set(project: project, history: history, setProject: (value: project | undefined) => void, setHistory: (value: history) => void) {
-	const file = await show_file_select();
+	const file = await show_file_select(ACCEPTED_FILE_TYPES);
 	if (!file) return; // cancelled, do nothing
 	let loaded_project
 	try {

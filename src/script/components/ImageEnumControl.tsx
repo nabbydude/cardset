@@ -1,5 +1,5 @@
 import { ContextMenu, ContextMenuChildrenProps, Menu, MenuItem } from "@blueprintjs/core";
-import React, { useContext, useMemo } from "react";
+import React, { DragEvent, useContext, useMemo } from "react";
 import { card } from "../card";
 import { image_enum_control } from "../control";
 import { apply_and_write } from "../history";
@@ -49,6 +49,7 @@ export function ImageEnumControl(props: ImageEnumControlProps) {
 						data-control-id={control.id}
 						src={src}
 						onClick={onContextMenu}
+						onDragStart={onDragStart}
 						tabIndex={0}
 						{...rest}
 					/>
@@ -56,4 +57,8 @@ export function ImageEnumControl(props: ImageEnumControlProps) {
 			)}
 		</ContextMenu>
 	);
+}
+
+function onDragStart(e: DragEvent<HTMLImageElement>) {
+	e.preventDefault();
 }
