@@ -1,21 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { property, property_value } from "../../property";
-import { allowed_observer_for, observe, unobserve } from "../../observable";
+import { useObserver } from "./useObserver";
 
 export function usePropertyValue<P extends property>(property: P): property_value<P> {
-	const [value, setValue] = useState(property.value);
-
-	useEffect(() => {
-		setValue(property.value); // reset to value of new property when watched property changes
-	}, [property]);
-
-	useEffect(() => {
-		const observer: allowed_observer_for<P> = (operation) => setValue(operation.property.value);
-		observe(property, observer);
-		return () => unobserve(property, observer);
-	}, [property]);
-
-
-
-	return value;
+	const [_, setValue] = useState(property.value); // we don't actually use this as-stored, we just want to rerender when it changes (if the passed property changes this will be out of sync which isnt a worry)
+	useObserver(property, (operation) => setValue(operation.property.value), [property]);
+	return property.value;
 }

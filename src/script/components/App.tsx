@@ -16,6 +16,9 @@ import { HistoryProvider } from "./contexts/HistoryContext";
 import { ProjectContext, ProjectProvider } from "./contexts/ProjectContext";
 import { Header } from "./Header";
 import { flushSync } from "react-dom";
+import { Editor } from "slate";
+import { ReactEditor } from "slate-react";
+import { useObserver } from "./hooks/useObserver";
 
 const starting_project: project = {
 	name: "Untitled",
@@ -64,20 +67,36 @@ export function App() {
 		switch (focus.type) {
 			case "card_control": {
 				flushSync(() => setActiveCard(focus.card));
-				(document.querySelector(`[data-control-id=${focus.control.id}]`) as HTMLElement).focus();
+				const el = document.querySelector(`[data-control-id=${focus.control.id}]`) as HTMLElement;
+				el.focus();
 			} break;
 			case "card_text_control": {
-				// setActiveCard(focus.card);
 				flushSync(() => setActiveCard(focus.card));
-				(document.querySelector(`[data-control-id=${focus.control.id}]`) as HTMLElement).focus();
+				const el = document.querySelector(`[data-control-id=${focus.control.id}]`) as HTMLElement;
+
+				const editor = ReactEditor.toSlateNode(
+					undefined as unknown as Editor, // this is unused in the current implementation (global weakmap lookup)
+					el,
+				) as Editor; // throws if it cant find
+
+				editor.select(focus.selection || editor.selection || { anchor: editor.end([]), focus: editor.end([]) });
+				ReactEditor.focus(editor);
 			} break;
 			case "none": break;
 		}
-	}, [setActiveCard]);
+	}, []);
+
+	useObserver(starting_project.card_list, (operation) => {
+		if (operation.type === "remove_card_from_list") {
+			console.log(operation);
+			if (operation.card === activeCard) setActiveCard(undefined);
+			if (selectedCards.has(operation.card)) setSelectedCards(old => { old.delete(operation.card); return new Set(old) }); // I kinda wanna change this I hate immutability for this
+		}
+	}, [starting_project.card_list, activeCard, selectedCards]);
 
 	return (
 		<BlueprintProvider>
-			<DpiProvider value={useMemo(() => ({ viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi }), [viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi])}>
+			<DpiProvider value={useMemo(() => ({ viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi }), [viewDpi, exportDpi, lockExportDpi])}>
 				{project ? (
 					<ProjectProvider project={project}>
 						<FocusedEditorProvider>

@@ -47,8 +47,7 @@ export interface CardListProps {
 }
 
 export function ControllableCardList(props: ControllableCardListProps) {
-	const { ...rest } = props;
-	const { selectedCards, setActiveCard, setSelectedCards, activeCard } = rest;
+	const { activeCard, selectedCards, setActiveCard, setSelectedCards, ...rest } = props;
 
 	const project = useContext(ProjectContext);
 	const history = useContext(HistoryContext);
@@ -64,19 +63,18 @@ export function ControllableCardList(props: ControllableCardListProps) {
 		);
 		setActiveCard(card);
 		setSelectedCards(new Set([card]));
-	}, [setActiveCard]);
+	}, [project, history]);
 
 	const onDeleteCardClick = useToastedCallback(() => {
-		// delete selected cards
 		delete_cards(
 			project,
 			history,
 			{ type: "none" },
 			selectedCards
 		);
-		if (selectedCards.has(activeCard!)) setActiveCard(undefined);
-		setSelectedCards(new Set());
-	}, [activeCard, selectedCards, setActiveCard, setSelectedCards]);
+	}, [project, history, selectedCards]);
+
+
 
 	return (
 		<div className="controllable-card-list">
@@ -89,14 +87,20 @@ export function ControllableCardList(props: ControllableCardListProps) {
 					<div className="info">
 						{selectedCards.size} card{selectedCards.size === 1 ? "" : "s"} selected
 					</div>
-				</>
+				</> 
 				) : (
 					undefined
 				)}
 
 			</div>
 
-			<CardList {...rest}/>
+			<CardList
+				activeCard={activeCard}
+				selectedCards={selectedCards}
+				setActiveCard={setActiveCard}
+				setSelectedCards={setSelectedCards}
+				{...rest}
+			/>
 		</div>
 	);
 }
