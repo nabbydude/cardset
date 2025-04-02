@@ -1,22 +1,30 @@
-import React, { useContext } from "react";
-import { Editable, useSlate } from "slate-react";
-import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
+import React, { useContext, useEffect } from "react";
+import { Editable, ReactEditor, useSlateWithV } from "slate-react";
+import { EditorWithV, FocusedEditorWriteContext } from "./contexts/FocusedEditorContext";
 import { EditableProps } from "../slate";
 import { useToastedCallback } from "../toaster";
 
 export function FocusSendingEditable(props: EditableProps) {
 	const { onFocus, onBlur, ...rest } = props;
-	const thisSlate = useSlate();
-	const { setFocusedEditor, setCachedFocusedEditor } = useContext(FocusedEditorContext);
+	const slateWithV = useSlateWithV() as EditorWithV;
+	const { setFocusedEditor, clearFocusedEditor } = useContext(FocusedEditorWriteContext);
+
+	useEffect(() => {
+		if (ReactEditor.isFocused(slateWithV.editor)) setFocusedEditor(slateWithV);
+		return () => {
+			if (ReactEditor.isFocused(slateWithV.editor)) clearFocusedEditor();
+		};
+	}, [slateWithV]);
 
 	const newOnFocus: React.FocusEventHandler<HTMLDivElement> = useToastedCallback(e => {
-		setFocusedEditor(thisSlate);
-		setCachedFocusedEditor(thisSlate);
+		setFocusedEditor(slateWithV);
 		if (onFocus) onFocus(e);
-	}, [setFocusedEditor, setCachedFocusedEditor, onFocus]);
+	}, [setFocusedEditor, onFocus]);
+
 	const newOnBlur: React.FocusEventHandler<HTMLDivElement> = useToastedCallback(e => {
 		setFocusedEditor(undefined);
 		if (onBlur) onBlur(e);
 	}, [setFocusedEditor, onBlur]);
+
 	return <Editable onFocus={newOnFocus} onBlur={newOnBlur} {...rest}/>;
 }

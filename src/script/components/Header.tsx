@@ -1,12 +1,11 @@
 import { AnchorButton, AnchorButtonProps, ButtonGroup, Menu, MenuItem, Navbar, NumericInput, Popover, Tooltip } from "@blueprintjs/core";
-import React, { useContext } from "react";
-import { ReactEditor } from "slate-react";
+import React, { SyntheticEvent, useContext } from "react";
 import { card } from "../card";
 import { exportCardImage, exportManyCardImages } from "../export";
-import { isMarkActive, toggleMark } from "../slate";
+import { toggleMark } from "../slate";
 import { useToastedCallback } from "../toaster";
 import { DpiContext } from "./contexts/DpiContext";
-import { FocusedEditorContext } from "./contexts/FocusedEditorContext";
+import { FocusedEditorReadContext } from "./contexts/FocusedEditorContext";
 import { UndoRedoContext } from "./contexts/HistoryContext";
 import { ProjectContext } from "./contexts/ProjectContext";
 
@@ -17,13 +16,14 @@ export interface HeaderProps {
 	loadSet: () => void,
 }
 
+function preventDefault(e: SyntheticEvent) { e.preventDefault(); }
 
 export function Header(props: HeaderProps) {
 	const { activeCard, selectedCards, saveSet, loadSet } = props;
 	const { undo, redo, can_undo, can_redo } = useContext(UndoRedoContext);
 	const project = useContext(ProjectContext);
 	const { viewDpi, setViewDpi, exportDpi, setExportDpi, lockExportDpi, setLockExportDpi } = useContext(DpiContext);
-	const { cachedFocusedEditor } = useContext(FocusedEditorContext);
+	const { cachedFocusedEditor } = useContext(FocusedEditorReadContext);
 
 	const exportActiveCard = useToastedCallback(() => activeCard && exportCardImage(project, activeCard, exportDpi), [project, activeCard, exportDpi]);
 	const exportAll = useToastedCallback(async () => {
@@ -44,8 +44,8 @@ export function Header(props: HeaderProps) {
 				<NavbarButton tooltip="Undo" icon="undo" minimal={true} disabled={!can_undo} onClick={undo}/>
 				<NavbarButton tooltip="Redo" icon="redo" minimal={true} disabled={!can_redo} onClick={redo}/>
 				<Navbar.Divider/>
-				<NavbarButton tooltip="Bold"   icon="bold"   minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "bold"  )} onClick={useToastedCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "bold"  ); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
-				<NavbarButton tooltip="Italic" icon="italic" minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor && isMarkActive(cachedFocusedEditor, "italic")} onClick={useToastedCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "italic"); ReactEditor.toDOMNode(cachedFocusedEditor, cachedFocusedEditor).focus(); } }, [cachedFocusedEditor])}/>
+				<NavbarButton tooltip="Bold"   icon="bold"   minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor?.getMarks()?.bold  } onMouseDown={preventDefault} onClick={useToastedCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "bold"  ); } }, [cachedFocusedEditor])}/>
+				<NavbarButton tooltip="Italic" icon="italic" minimal={true} disabled={!cachedFocusedEditor} active={cachedFocusedEditor?.getMarks()?.italic} onMouseDown={preventDefault} onClick={useToastedCallback(() => { if (cachedFocusedEditor) { toggleMark(cachedFocusedEditor, "italic"); } }, [cachedFocusedEditor])}/>
 				<Navbar.Divider/>
 				<Tooltip content="DPI" position="bottom">
 					<NumericInput

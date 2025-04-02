@@ -7,9 +7,9 @@ import { HorizontalRule, isHorizontalRule } from "./components/slate/HorizontalR
 import { isManaPip, ManaPip } from "./components/slate/ManaPip";
 import { isIcon, Icon } from "./components/slate/Icon";
 import { doAutoReplace } from "./autoReplace";
-import { history, write_operation_to_history } from "./history";
+import { apply_and_write, history } from "./history";
 import { text_property } from "./property";
-import { apply_operation, modify_property_text_operation, text_property_operation } from "./operation";
+import { text_property_operation } from "./operation";
 import { observe, observer, unobserve } from "./observable";
 import { getCharacterDistance, getWordDistance, splitByCharacterDistance } from "./slate_utils/string";
 import { text_control } from "./control";
@@ -57,10 +57,10 @@ export interface BaseCardTextControlEditor extends BaseEditor {
 
 	actionSource?: "user" | "history",
 }
-export type TextControlEditor = BaseEditor & BaseCardTextControlEditor & ReactEditor;
+export type TextControlEditor = BaseCardTextControlEditor & ReactEditor;
 
 export function createCardTextControlEditor(history: history, card: card, control: text_control): TextControlEditor {
-	const editor = withReact(createEditor() as BaseEditor & BaseCardTextControlEditor);
+	const editor = withReact(createEditor() as BaseCardTextControlEditor);
 
 	editor.history = history;
 	editor.propagate_to_property = true;
@@ -112,16 +112,13 @@ export function createCardTextControlEditor(history: history, card: card, contro
 			return;
 		}
 		const { operations, history, card, control, selection } = editor;
-		const operation: modify_property_text_operation = { type: "modify_property_text", property: editor.get_property(), operation: slate_operation };
-		const merge = operations.length !== 0;
-		write_operation_to_history(
+		apply_and_write(
 			history,
 			{ type: "card_text_control", card, control, selection },
-			operation,
-			merge,
+			{ type: "modify_property_text", property: editor.get_property(), operation: slate_operation },
+			operations.length !== 0,
 		);
 		history.allow_merging = true;
-		apply_operation(operation);
 		editor.normalize(); // apply usually ends by calling this so since we aren't directly calling super-apply, we do too
 	};
 
@@ -181,21 +178,13 @@ export function withoutPropagating(editor: TextControlEditor, fn: () => void) {
 	}
 }
 
-export function toggleMark(editor: Editor, mark: keyof StyledText) {
-	const isActive = isMarkActive(editor, mark);
+export function toggleMark(editor: Editor, mark: keyof Omit<StyledText, "text">) {
+	const isActive = editor.getMarks()?.[mark];
 	if (isActive) {
 		editor.removeMark(mark);
 	} else {
 		editor.addMark(mark, true);
 	}
-}
-
-export function isMarkActive(editor: Editor, key: keyof StyledText) {
-	const [match] = editor.nodes({
-		match: n => Text.isText(n) && n[key] === true,
-		universal: true,
-	});
-	return !!match;
 }
 
 export function safeToDomNode(editor: ReactEditor, node: Node): HTMLElement | undefined {
