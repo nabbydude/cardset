@@ -5,6 +5,8 @@
 	display: grid;
 	grid-template-rows: auto 1fr;
 	height: 100%;
+	margin-left: -4px;
+	padding-left: 4px;
 }
 
 .scroll-container {
@@ -18,13 +20,21 @@ table.card-list {
 	height: 100%;
 	overflow: auto;
 	display: block;
+	margin-left: -1px;
+	padding-left: 1px;
 	thead {
 		padding: 1px;
 		th {
 			position: sticky;
 			box-shadow: inset 0 -1px rgba(255, 255, 255, 0.2);
 			top: 0;
-			background-color: #2f343c;;
+			background-color: #2f343c;
+			&:first-child {
+				box-shadow: inset 0 -1px rgba(255, 255, 255, 0.2), -1px 0 #2f343c; // stops active row outline from peeking out as it scrolls underneath
+			}
+			&:last-child {
+				box-shadow: inset 0 -1px rgba(255, 255, 255, 0.2), 1px 0 #2f343c; // stops active row outline from peeking out as it scrolls underneath
+			}
 		}
 	}
 	tbody {
@@ -95,6 +105,7 @@ table.card-list {
 	display: flex;
 	flex-direction: row;
 	padding-top: 0.5rem;
+	z-index: 1; //so focuse highlight isnt cut off
 	.info {
 		align-self: center;
 	}
