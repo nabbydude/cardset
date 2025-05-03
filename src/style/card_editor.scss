@@ -109,6 +109,24 @@ div.card-editor {
 		}
 	}
 
+	.embeddedProperty {
+		&:hover {
+			outline: $pt-outline-color solid 2px;
+			outline-offset: -1px;
+			-moz-outline-radius: 6px;
+		}
+		&:focus {
+			outline: $pt-outline-color solid 2px;
+			outline-offset: -1px;
+			-moz-outline-radius: 6px;
+		}
+		&[data-error] {
+			background-color: lightgray;
+			color: red;
+			font-family: 'Courier New', Courier, monospace;
+		}
+	}
+
 	div[data-control-id="cardText"] {
 		position: absolute;
 		left:   calc(0.2  * var(--in));
@@ -116,10 +134,10 @@ div.card-editor {
 		right:  calc(0.2  * var(--in));
 		height: calc(1.0625 * var(--in));
 		margin: 0;
-		padding-bottom: calc(0.025 * var(--in));
+		padding: calc(1.8 * var(--pt)) calc(2.88 * var(--pt));
 		box-sizing: border-box;
 		align-content: center;
-		font: calc(0.125 * var(--in)) "MPlantin";
+		font: calc(9 * var(--pt)) "MPlantin";
 		color: var(--text-color);
 		line-height: 1.05;
 		display: grid;
@@ -127,25 +145,15 @@ div.card-editor {
 		overflow: hidden auto;
 		overflow-wrap: break-word;
 
-		.section {
-			z-index: 10;
-			padding: 0.4em calc(0.04 * var(--in)) 0.4em calc(0.04 * var(--in));
-			&:last-of-type {
-				margin-bottom: calc(-0.025 * var(--in));
-			}
-			&:hover {
-				background-color: transparent;
-			}
-			// .atom {
-			// 	background-color: var(--faded-grey);
-			// }
-			&[data-name="flavorText"] {
-				--normal-style: italic;
-				--italic-style: normal;
+		p {
+			margin-bottom: calc(4 * var(--pt));
+			&:last-child {
+				margin-bottom: 0;
 			}
 		}
+		
 		.hr {
-			margin: 0 calc(0.08 * var(--in)) calc(-0.00675 * var(--in));
+			margin: calc(4 * var(--pt)) 0;
 			height: calc(0.00675 * var(--in));
 			background-image: var(--flavor-bar-gradient);
 			border: none;

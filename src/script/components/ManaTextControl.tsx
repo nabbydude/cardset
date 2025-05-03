@@ -1,8 +1,6 @@
 import React from "react";
-import { Editor } from "slate";
 import { ReactEditor } from "slate-react";
 import { colorNamesByLetter } from "../assets";
-import { TextControlEditor } from "../slate";
 import { useToastedCallback } from "../toaster";
 import { isManaPip } from "./slate/ManaPip";
 import { TextControl, TextControlProps, createGenericPip, createManaPipFromLetter } from "./TextControl";
@@ -25,16 +23,20 @@ function onManaTextControlDOMBeforeInput(e: InputEvent, editor: ReactEditor) {
 
 function onInsertText(e: InputEvent, editor: ReactEditor) {
 	if (!(editor.selection && e.data)) return;
-	const closestPipEntry = Editor.above(editor as TextControlEditor, { match: node => isManaPip(node) });
-	if (closestPipEntry && !/[WUBRGC]/i.test(e.data)) return; // type in the existing pip
+	const closestPipEntry = editor.above({ at: editor.selection, match: node => isManaPip(node) });
+	const isManaTypeLetter = /[WUBRGC]/i.test(e.data);
+	if (closestPipEntry && !isManaTypeLetter) return; // type in the existing pip
 
 	e.preventDefault();
 
 	let node;
-	if (/[WUBRGC]/i.test(e.data)) {
+	if (isManaTypeLetter) {
 		node = createManaPipFromLetter(e.data.toUpperCase() as keyof typeof colorNamesByLetter);
 	} else {
 		node = createGenericPip(e.data);
 	}
-	editor.insertNode(node, { match: closestPipEntry && ((n) => isManaPip(n)), select: true });
+	// editor.insertNode(node, { at: editor.selection, match: closestPipEntry && ((n) => isManaPip(n)), select: true });
+	editor.insertNodes([node, { text: "" }], { at: editor.selection, match: closestPipEntry && ((n) => isManaPip(n)), select: true });
+	console.log(editor.selection);
+	console.log(editor.children);
 }

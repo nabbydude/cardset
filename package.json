@@ -82,9 +82,8 @@
     "react-advanced-cropper": "^0.20.1",
     "react-dom": "^19.0.0",
     "sass": "^1.63.6",
-    "slate": "^0.94.1",
-    "slate-dom": "^0.112.2",
-    "slate-history": "^0.93.0",
-    "slate-react": "^0.97.0"
+    "slate": "^0.112.0",
+    "slate-history": "^0.110.3",
+    "slate-react": "^0.112.1"
   }
 }

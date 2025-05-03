@@ -1,6 +1,5 @@
-import { BaseEditor, createEditor, Descendant, Editor, EditorPositionsOptions, Element, isEditor, Node, Operation, Path, Point, Range, Text } from "slate";
+import { BaseEditor, createEditor, Descendant, Editor, EditorPositionsOptions, Element, isEditor, Node, Operation as SlateOperation, Path, PathRef, Point, Range, Text, Ancestor, NodeMatch } from "slate";
 import { ReactEditor, withReact, Editable } from "slate-react";
-import { Field } from "./components/slate/Field";
 import { Paragraph } from "./components/slate/Paragraph";
 import { StyledText } from "./components/slate/StyledText";
 import { HorizontalRule, isHorizontalRule } from "./components/slate/HorizontalRule";
@@ -8,12 +7,13 @@ import { isManaPip, ManaPip } from "./components/slate/ManaPip";
 import { isIcon, Icon } from "./components/slate/Icon";
 import { doAutoReplace } from "./autoReplace";
 import { apply_and_write, history } from "./history";
-import { text_property } from "./property";
-import { text_property_operation } from "./operation";
+import { property, text_property } from "./property";
+import { operation, text_property_operation } from "./operation";
 import { observe, observer, unobserve } from "./observable";
 import { getCharacterDistance, getWordDistance, splitByCharacterDistance } from "./slate_utils/string";
 import { text_control } from "./control";
 import { card } from "./card";
+import { EmbeddedProperty, isEmbeddedProperty } from "./components/slate/EmbeddedProperty";
 
 ///////////
 // Types //
@@ -23,13 +23,14 @@ declare module "slate" {
 	interface CustomTypes {
 		Editor: TextControlEditor,
 		Element: (
-			| Field
 			| HorizontalRule
 			| Paragraph
 
 			| Icon
 
 			| ManaPip
+
+			| EmbeddedProperty
 		),
 		Text: StyledText,
 	}
@@ -43,17 +44,24 @@ export type EditableProps = Parameters<typeof Editable>[0];
 
 export interface BaseCardTextControlEditor extends BaseEditor {
 	history: history,
-
 	card: card,
 	control: text_control,
-	get_property: () => text_property,
-	propagate_to_property: boolean,
+	getProperty: () => text_property,
+	propagateToProperty: boolean,
 
-	true_apply: (operation: Operation) => void,
+	/** actually modifies this editors children (unlike #apply modifying the linked property) */
+	trueApply: (operation: SlateOperation) => void,
 	
-	observer?: observer<text_property_operation>,
-	observe: () => void,
-	unobserve: () => void,
+	// observer?: observer<text_property_operation>,
+	// observe: () => void,
+	// unobserve: () => void,
+
+	/** Replace editor contents with contents from new card */
+	hydrate: (history: history, card: card, control: text_control) => void,
+	/** Disconnect all observers and pathRefs */
+	dispose: () => void,
+	/** All properties depended on by this, and their associated refs and observers. Populated by #hydrate and cleared by #dispose */
+	dependees: Map<property, [{ pathRef: PathRef, observer: observer<text_property_operation> }]>
 
 	actionSource?: "user" | "history",
 }
@@ -63,7 +71,8 @@ export function createCardTextControlEditor(history: history, card: card, contro
 	const editor = withReact(createEditor() as BaseCardTextControlEditor);
 
 	editor.history = history;
-	editor.propagate_to_property = true;
+	editor.propagateToProperty = true;
+	editor.dependees = new Map();
 
 	editor.card = card;
 	editor.control = control;
@@ -71,55 +80,178 @@ export function createCardTextControlEditor(history: history, card: card, contro
 	editor.isInline = isInline;
 	editor.isElementReadOnly = isAtomic;
 
-	editor.get_property = () => {
+	editor.getProperty = () => {
 		return editor.card.properties.get(editor.control.property_id) as text_property;
 	}
 
-	editor.observe = () => {
-		editor.unobserve();
-		editor.observer = (operation) => {
-			if (operation.type !== "modify_property_text") throw Error(`unexpected operation "${operation.type}"`);
-			withoutEverNormalizing(editor, () => {
-				editor.true_apply(operation.operation);
+	// editor.observe = () => {
+	// 	editor.unobserve();
+	// 	editor.observer = (operation) => {
+	// 		if (operation.type !== "modify_property_text") throw Error(`unexpected operation "${operation.type}"`);
+	// 		withoutEverNormalizing(editor, () => {
+	// 			editor.trueApply(operation.operation);
+	// 		});
+	// 	}
+	// 	observe(editor.getProperty(), editor.observer);
+	// }
+	// editor.unobserve = () => {
+	// 	if (!editor.observer) return;
+	// 	unobserve(editor.getProperty(), editor.observer);
+	// 	editor.observer = undefined;
+	// }
+
+	editor.dispose = () => {
+		editor.withoutNormalizing(() => {
+			withoutPropagating(editor, () => {
+				for (const [property, entries] of editor.dependees) {
+					for (const { pathRef, observer } of entries) {
+						unobserve(property, observer);
+						pathRef.unref();
+					}
+				}
+				editor.dependees.clear();
+				editor.children = []; // will normalize after #withoutNormalizing
 			});
-		}
-		observe(editor.get_property(), editor.observer);
+		});
 	}
-	editor.unobserve = () => {
-		if (!editor.observer) return;
-		unobserve(editor.get_property(), editor.observer);
-		editor.observer = undefined;
+
+	editor.hydrate = (history: history, card: card, control: text_control) => {
+		editor.dispose();
+		editor.history = history;
+		editor.card = card;
+		editor.control = control;
+
+		// assumed to be called when not normalizing or propagating
+		function addPropertyAtPath(property: text_property, path: Path, propertyAncestors: property[] = []) {
+			const pathRef = editor.pathRef(path);
+			const observer: observer<text_property_operation> = (operation) => {
+				if (operation.type !== "modify_property_text") throw Error(`unexpected operation "${operation.type}"`);
+				withoutEverNormalizing(editor, () => {
+					if (!pathRef.current) return; // todo: should we cull this if this happens? or trust it will be culled when relevant elsewhere?
+					if (pathRef.current.length === 0) {
+						editor.trueApply(operation.operation);
+					} else {
+						const modifiedOperation = { ...operation.operation };
+						if ("path"    in modifiedOperation) modifiedOperation.path    = [...pathRef.current, ...modifiedOperation.path   ];
+						if ("newPath" in modifiedOperation) modifiedOperation.newPath = [...pathRef.current, ...modifiedOperation.newPath];
+						editor.trueApply(modifiedOperation);
+					}
+				});
+			};
+
+			observe(property, observer);
+
+			if (editor.dependees.has(property)) {
+				editor.dependees.get(property)!.push({ pathRef, observer });
+			} else {
+				editor.dependees.set(property, [{ pathRef, observer }]);
+			}
+
+			editor.removeNodes({ at: path, match: (n, p) => p.length > path.length, mode: "highest" });
+			editor.insertNodes(property.value.children, { at: [...path, 0] });
+			
+			const newAncestors = [...propertyAncestors, property]
+			for (const [subNode, subPath] of editor.nodes({ at: path, match: ((n, p) => p.length > path.length && isEmbeddedProperty(n)) as NodeMatch<EmbeddedProperty> })) {
+				const subProperty = editor.card.properties.get(subNode.propertyId);
+				if      (!subProperty                      ) editor.setNodes({ error: "propertyMissing"   }, { at: subPath, match: (n, p) => p.length === subPath.length });
+				else if (subProperty.type !== "text"       ) editor.setNodes({ error: "propertyWrongType" }, { at: subPath, match: (n, p) => p.length === subPath.length });
+				else if (newAncestors.includes(subProperty)) editor.setNodes({ error: "recursive"         }, { at: subPath, match: (n, p) => p.length === subPath.length });
+				else addPropertyAtPath(subProperty, subPath, newAncestors);
+
+			}
+		}
+
+		editor.withoutNormalizing(() => {
+			withoutPropagating(editor, () => {
+				addPropertyAtPath(editor.getProperty(), []);
+			});
+		});
 	}
 
 	editor.positions = (options) => positions(editor, options);
 
 	const { apply, normalizeNode, onChange } = editor;
 	
-	editor.true_apply = apply;
+	editor.trueApply = (slateOperation) => {
+		if (slateOperation.type === "insert_node") {
+			// Okay so slate-react uses a number of optimizations to navigate the node tree, one of the ways it does this is by hashmapping each node to its parent at render-time in a global NODE_TO_PARENT.
+			// This is a problem when we want to apply the same insert operation to multiple editors/embedded properties within editors, since we're adding the exact same (ie linked) node object to both trees
+			// which causes them to have the same key in this hashmap and override eachother.
+			// So we deep copy the object into a new one.
+			slateOperation.node = structuredClone(slateOperation.node);
+		}
+		apply(slateOperation);
+	};
 
-	editor.apply = (slate_operation) => {
-		if (!editor.propagate_to_property) {
-			editor.true_apply(slate_operation);
-			return;
+	editor.apply = (slateOperation) => {
+		if (slateOperation.type === "set_selection" || !editor.propagateToProperty) return editor.trueApply(slateOperation);
+		if (editor.dependees.size === 0) {
+			console.warn(`[${editor.getProperty().id}] Applying operation to TextPropertyControlEditor without observing. Falling back to #trueApply (may cause strange or unstable behavior)`)
+			return editor.trueApply(slateOperation);
 		}
-		if (!editor.observer) {
-			console.warn(`[${editor.get_property().id}] Applying operation to TextPropertyControlEditor without observing. Falling back to regular #apply (may cause strange or unstable behavior)`)
-			editor.true_apply(slate_operation);
-			return;
-		}
-		if (slate_operation.type === "set_selection") {
-			editor.true_apply(slate_operation);
-			return;
-		}
+
 		const { operations, history, card, control, selection } = editor;
-		apply_and_write(
-			history,
-			{ type: "card_text_control", card, control, selection },
-			{ type: "modify_property_text", property: editor.get_property(), operation: slate_operation },
-			operations.length !== 0,
-		);
+
+		let [propertyNode, propertyRoot]: [Ancestor | undefined, Path] = editor.parent(slateOperation.path); // we have to start 1 level up because the referenced path might not exist yet, and could fail to find a node
+		if (!isEmbeddedProperty(propertyNode)) { // and we have to manually check the direct parent because #above will never return the path passed to it, only ancestors.
+			[propertyNode, propertyRoot] = editor.above({ at: propertyRoot, match: n => isEmbeddedProperty(n) }) ?? [undefined, []];
+		}
+		const property = propertyNode ? card.properties.get(propertyNode.propertyId) : editor.getProperty();
+		if (!property || property.type !== "text") {
+			console.warn(`[${editor.getProperty().id}] property "${propertyNode?.propertyId}" not found or not text. Falling back to #trueApply (may cause strange or unstable behavior)`);
+			return editor.trueApply(slateOperation);
+		}
+
+		
+		let operation: operation, secondOperation: operation | undefined;
+
+		if (slateOperation.type === "move_node") {
+			// move_node is an annoying twig in our gears, since it has a second path that could resolve to a different property than the first.
+			// in ideal and all known "proper" cases it wont, but I dont want to create a future bug.
+			// if it does, we split into a `remove` and an `insert`.
+			let [newPropertyNode, newPropertyRoot]: [Ancestor | undefined, Path] = editor.parent(slateOperation.newPath); // we have to start 1 level up because the referenced path might not exist yet, and could fail to find a node
+			if (!isEmbeddedProperty(newPropertyNode)) { // and we have to manually check the direct parent because #above will never return the path passed to it, only ancestors.
+				[newPropertyNode, newPropertyRoot] = editor.above({ at: newPropertyRoot, match: n => isEmbeddedProperty(n) }) ?? [undefined, []];
+			}
+			if (propertyNode === newPropertyNode) {
+				operation = {
+					type: "modify_property_text",
+					property,
+					operation: { type: "move_node", path: Path.relative(slateOperation.path, propertyRoot), newPath: Path.relative(slateOperation.newPath, propertyRoot) },
+				};
+			} else {
+
+				
+				const newProperty = newPropertyNode ? card.properties.get(newPropertyNode.propertyId) : editor.getProperty();
+				if (!newProperty || newProperty.type !== "text") {
+					console.warn(`[${editor.getProperty().id}] property "${newPropertyNode?.propertyId}" not found or not text. not applying move for safety.`);
+					// return editor.trueApply(slateOperation);
+					return;
+				}	
+
+				const [node] = editor.node(slateOperation.path);
+				operation = {
+					type: "modify_property_text",
+					property,
+					operation: { type: "remove_node", node, path: Path.relative(slateOperation.path, propertyRoot) },
+				};
+				secondOperation = {
+					type: "modify_property_text",
+					property: newProperty,
+					operation: { type: "insert_node", node, path: Path.relative(slateOperation.newPath, newPropertyRoot) },
+				};
+			}
+		} else {
+			operation = {
+				type: "modify_property_text",
+				property,
+				operation: { ...slateOperation, path: Path.relative(slateOperation.path, propertyRoot) }
+			};
+		}
+		apply_and_write(history, { type: "card_text_control", card, control, selection }, operation, operations.length !== 0);
+		if (secondOperation) apply_and_write(history, { type: "card_text_control", card, control, selection }, secondOperation, true);
 		history.allow_merging = true;
-		editor.normalize(); // apply usually ends by calling this so since we aren't directly calling super-apply, we do too
+		editor.normalize(); // #trueApply ends by calling this but the observer will call it with normalizing disabled, so we normalize here.
 	};
 
 	editor.normalizeNode = (entry, options) => {
@@ -169,12 +301,12 @@ export function withoutEverNormalizing(editor: Editor, fn: () => void) {
  * perform one or more operations without sending to the attached property
  */
 export function withoutPropagating(editor: TextControlEditor, fn: () => void) {
-	const value = editor.propagate_to_property;
-	editor.propagate_to_property = false;
+	const value = editor.propagateToProperty;
+	editor.propagateToProperty = false;
 	try {
 		fn();
 	} finally {
-		editor.propagate_to_property = value;
+		editor.propagateToProperty = value;
 	}
 }
 
@@ -196,32 +328,48 @@ export function safeToDomNode(editor: ReactEditor, node: Node): HTMLElement | un
 }
 
 export function isVoid(el: Element) {
-	return (
-		isHorizontalRule(el) ||
-		isIcon(el)
-	);
+	switch (el.type) {
+		case "HorizontalRule": return true;
+		case "Icon"          : return true;
+
+		case "EmbeddedProperty": return !!el.error;
+
+		default: return false;
+	}
 }
 
 export function isInline(el: Element) {
-	return isManaPip(el) || isIcon(el);
+	switch (el.type) {
+		case "ManaPip": return true;
+		case "Icon"   : return true;
+
+		default: return false;
+	}
 }
 
 /**
  * returns true if the component acts like a void in the editor (ie cant be edited within) but still contains markup content
  */
 export function isAtomic(el: Element) {
-	return (
-		(isManaPip(el) && el.children.length === 3 && (el.children[0] as Text).text === "" && (el.children[1] as Element).type === "Icon" && (el.children[2] as Text).text === "")
-	);
+	switch (el.type) {
+		case "ManaPip": return el.children.length === 3 && (el.children[0] as Text).text === "" && (el.children[1] as Element).type === "Icon" && (el.children[2] as Text).text === "";
+
+		default: return false;
+	};
 }
 
 
 export function isBoundarySplittingInline(el: Element) {
-	return isManaPip(el);
+	switch (el.type) {
+		case "ManaPip": return true;
+
+		default: return false;
+	}
 }
 
 /**
  * overriding the native slate positions generator with minor changes
+ * (namely support for boundary-splitting inline elements, which have cursor position both before and after them)
  */
 export function* positions(
 	editor: Editor,

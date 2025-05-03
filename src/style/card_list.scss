@@ -43,7 +43,6 @@ table.card-list {
 	}
 
 	td {
-		// box-shadow: inset -1px 0 rgba(255, 255, 255, 0.2) !important;
 		box-shadow: none !important;
 
 		p {
@@ -61,20 +60,24 @@ table.card-list {
 		}
 		.size-handle {
 			position: absolute;
-			background-color: rgba(255, 255, 255, 0.2);
+			// background-color: rgba(255, 255, 255, 0.2);
+			background: repeating-linear-gradient(90deg, #0000 0px, #0000 1px, rgba(255, 255, 255, 0.2) 1px, rgba(255, 255, 255, 0.2) 2px);
+			border-top: 11px solid $dark-gray3;
+			border-bottom: 9px solid $dark-gray3;
 			top: 0;
 			right: 0;
 			bottom: 1px;
-			width: 0;
+			width: 5px;
+			opacity: 0;
 			cursor: col-resize;
-			transition: all .05s ease-out;
+			transition: all .1s ease-out;
 		}
 	}
 	
 	tr:hover {
 		.size-handle {
 			// right: -2px;
-			width: 4px;
+			opacity: 1;
 			transition: all .2s ease-out;
 		}
 	}

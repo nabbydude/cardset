@@ -148,7 +148,7 @@ export function CardListHeader(props: CardListHeaderProps) {
 	return (
 		<th
 			style={{ minWidth: `${width}px`, width: `${width}px`, maxWidth: `${width}px` }}
-			data-field={property_id}
+			data-property={property_id}
 		>
 			{label}
 			<SizeHandle setWidth={setWidth}/>

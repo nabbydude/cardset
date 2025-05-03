@@ -170,9 +170,7 @@ export function CropperDialog(props: CropperDialogProps) {
 							ref={ref}
 							src={cropperSrc}
 							onUpdate={onUpdate}
-							// onChange={onChange}
 							aspectRatio={aspectRatioLocked ? { minimum: 15/11, maximum: 15/11 } : undefined}
-							// transitions={!opening.current}
 							defaultPosition={(state, settings) => ({
 								top: (state.imageSize.height - (state.coordinates?.height ?? state.imageSize.height)) / 2,
 								left: (state.imageSize.width - (state.coordinates?.width ?? state.imageSize.width)) / 2,
@@ -292,8 +290,8 @@ function CropValue(props: CropValueProps) {
 				buttonPosition="none"
 				rightElement={<ButtonGroup>
 					{/* //todo: This should read value at time of edit, not cache it, could cause issues */}
-					<Button icon={downIcon} minimal={true} onClick={useCallback(() => { const newValue = value - (stepSize ?? 1); wrappedOnValueChange(newValue, String(newValue)); }, [onValueChange, value, stepSize])}/>
-					<Button icon={upIcon}   minimal={true} onClick={useCallback(() => { const newValue = value + (stepSize ?? 1); wrappedOnValueChange(newValue, String(newValue)); }, [onValueChange, value, stepSize])}/>
+					<Button icon={downIcon} minimal={true} onClick={useCallback(() => { const newValue = value - (stepSize ?? 1); wrappedOnValueChange(newValue, String(newValue)); }, [wrappedOnValueChange, value, stepSize])}/>
+					<Button icon={upIcon}   minimal={true} onClick={useCallback(() => { const newValue = value + (stepSize ?? 1); wrappedOnValueChange(newValue, String(newValue)); }, [wrappedOnValueChange, value, stepSize])}/>
 				</ButtonGroup>}
 			/>
 		</Tooltip>

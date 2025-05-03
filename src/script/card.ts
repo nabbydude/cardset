@@ -30,14 +30,19 @@ export function createTestCard(name: string = "Test Card", color: card_color = "
 
 			image: { type: "image", id: "image", value: undefined, observers: new Set() },
 
-			type:  { type: "text", id: "type", value: { children: [{ type: "Paragraph", children: [{ text: "Legendary Test" }] }] }, observers: new Set() },
+			type:  { type: "text", id: "type", value: { children: [{ type: "Paragraph", children: [{ text: "" }] }] }, observers: new Set() },
 
-			cardText:   { type: "text", id: "cardText"  , value: { children: [{ type: "Paragraph", children: [{ text: "Wholetext are a lot." }] }] }, observers: new Set() },
-			rulesText:  { type: "text", id: "rulesText" , value: { children: [{ type: "Paragraph", children: [{ text: "Rules are rules."     }] }] }, observers: new Set() },
-			flavorText: { type: "text", id: "flavorText", value: { children: [{ type: "Paragraph", children: [{ text: "Flavor is nice."      }] }] }, observers: new Set() },
+			cardText:   { type: "text", id: "cardText", value: { children: [
+				{ type: "EmbeddedProperty", propertyId: "rulesText", children: [{ text: "" }] },
+				{ type: "HorizontalRule", children: [{ text: "" }] },
+				{ type: "EmbeddedProperty", propertyId: "flavorText", children: [{ text: "" }] },
+			] }, observers: new Set() },
+
+			rulesText:  { type: "text", id: "rulesText" , value: { children: [{ type: "Paragraph", children: [{ text: "Rules are rules." }] }] }, observers: new Set() },
+			flavorText: { type: "text", id: "flavorText", value: { children: [{ type: "Paragraph", children: [{ text: "Flavor is nice."  }] }] }, observers: new Set() },
 
 			pt:    { type: "text", id: "pt", value: { children: [{ type: "Paragraph", children: [{ text: "2/2" }] }] }, observers: new Set() },
 			ptBox: { type: "image", id: "ptBox", value: assets[`pt_box_${color}`], observers: new Set() },
-		})),
+		} as Record<string, property>)),
 	};
 }

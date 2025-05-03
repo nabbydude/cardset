@@ -30,9 +30,9 @@ const starting_project: project = {
 };
 
 const listColumns: listColumn[] = [
-	{ control: { id: "list#name", type: "text", property_id: "name", min_font_size: 10, max_font_size: 10 }, label: "Name", width: 300 },
+	{ control: { id: "list#name", type: "text", property_id: "name", min_font_size: 10, max_font_size: 10 }, label: "Name", width: 150 },
 	{ control: { id: "list#cost", type: "text", property_id: "cost", min_font_size: 10, max_font_size: 10 }, label: "Cost", width: 100 },
-	{ control: { id: "list#type", type: "text", property_id: "type", min_font_size: 10, max_font_size: 10 }, label: "Type", width: 300 },
+	{ control: { id: "list#type", type: "text", property_id: "type", min_font_size: 10, max_font_size: 10 }, label: "Type", width: 120 },
 ];
 
 export function getApp() {

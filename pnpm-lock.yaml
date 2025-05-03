@@ -44,17 +44,14 @@ dependencies:
     specifier: ^1.63.6
     version: 1.63.6
   slate:
-    specifier: ^0.94.1
-    version: 0.94.1
-  slate-dom:
-    specifier: ^0.112.2
-    version: 0.112.2(slate@0.94.1)
+    specifier: ^0.112.0
+    version: 0.112.0
   slate-history:
-    specifier: ^0.93.0
-    version: 0.93.0(slate@0.94.1)
+    specifier: ^0.110.3
+    version: 0.110.3(slate@0.112.0)
   slate-react:
-    specifier: ^0.97.0
-    version: 0.97.0(react-dom@19.0.0)(react@19.0.0)(slate@0.94.1)
+    specifier: ^0.112.1
+    version: 0.112.1(react-dom@19.0.0)(react@19.0.0)(slate-dom@0.112.2)(slate@0.112.0)
 
 devDependencies:
   '@parcel/bundler-default':
@@ -1276,17 +1273,9 @@ packages:
     resolution: {integrity: sha512-zv9kNf3keYegP5oThGLaPk8E081DFDuwfqjtiTzm6PoxChdJ1raSuADf2YGCVIyrSynLrgc8JWv296s7Q7pQSQ==}
     dev: true
 
-  /@types/is-hotkey@0.1.7:
-    resolution: {integrity: sha512-yB5C7zcOM7idwYZZ1wKQ3pTfjA9BbvFqRWvKB46GFddxnJtHwi/b9y84ykQtxQPg5qhdpg4Q/kWU3EGoCTmLzQ==}
-    dev: false
-
   /@types/json-schema@7.0.11:
     resolution: {integrity: sha512-wOuvG1SN4Us4rez+tylwwwCV1psiNVOkJeM3AUWUNWg/jDQY2+HE/444y5gc+jBmRqASOm2Oeh5c1axHobwRKQ==}
     dev: true
-
-  /@types/lodash@4.14.195:
-    resolution: {integrity: sha512-Hwx9EUgdwf2GLarOjQp5ZH8ZmblzcbTBC2wtQWNKARBSxM9ezRIAUpeDTgoQRAFB0+8CNWXVA9+MaSOzOF3nPg==}
-    dev: false
 
   /@types/prop-types@15.7.5:
     resolution: {integrity: sha512-JCB8C6SnDoQf0cNycqd/35A7MjcnK+ZTqE7judS6o7utxUCg6imJg3QK2qzHKszlTjcj2cn+NwMB2i96ubpj7w==}
@@ -1670,10 +1659,6 @@ packages:
   /commander@7.2.0:
     resolution: {integrity: sha512-QrWXB+ZQSVPmIWIhtEO9H+gwHaMGYiF5ChvoJ+K9ZGHG/sVsa6yiesAD1GC/x46sET00Xlwo1u49RVVVzvcSkw==}
     engines: {node: '>= 10'}
-
-  /compute-scroll-into-view@1.0.20:
-    resolution: {integrity: sha512-UCB0ioiyj8CRjtrvaceBLqqhZCVP+1B8+NWQhmdsm0VXOJtobBCf1dBQmebCCo34qZmUwZfIH2MZLqNHazrfjg==}
-    dev: false
 
   /compute-scroll-into-view@3.1.1:
     resolution: {integrity: sha512-VRhuHOLoKYOy4UbilLbUzbYg93XLjv2PncJC50EuTWPA3gaja1UjBsUP/D/9/juV3vQFr6XBEzn9KCAHdUvOHw==}
@@ -2198,8 +2183,8 @@ packages:
     resolution: {integrity: sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==}
     dev: false
 
-  /immer@9.0.21:
-    resolution: {integrity: sha512-bc4NBHqOqSfRW7POMkHd51LvClaeMXpm8dx0e8oE2GORbq5aRK7Bxl4FyzVLdGtLmvLKL7BTDBG5ACQm4HWjTA==}
+  /immer@10.1.1:
+    resolution: {integrity: sha512-s2MPrmjovJcoMaHtx6K11Ra7oD05NT97w1IC5zpMkT6Atjr7H8LjaDd81iIxUYpMKSRRNMJE703M1Fhr/TctHw==}
     dev: false
 
   /immutable@4.3.1:
@@ -2258,10 +2243,6 @@ packages:
     engines: {node: '>=0.10.0'}
     dependencies:
       is-extglob: 2.1.1
-
-  /is-hotkey@0.1.8:
-    resolution: {integrity: sha512-qs3NZ1INIS+H+yeo7cD9pDfwYV/jqRh1JG9S9zYrNudkoUQg7OL7ziXqRKu+InFjUIDoP2o6HIkLYMh1pcWgyQ==}
-    dev: false
 
   /is-hotkey@0.2.0:
     resolution: {integrity: sha512-UknnZK4RakDmTgz4PI1wIph5yxSs/mvChWs9ifnlXsKuXgWmOkY/hAE0H/k2MIqH0RlRye0i1oC07MCRSD28Mw==}
@@ -2978,12 +2959,6 @@ packages:
     resolution: {integrity: sha512-xFVuu11jh+xcO7JOAGJNOXld8/TcEHK/4CituBUeUb5hqxJLj9YuemAEuvm9gQ/+pgXYfbQuqAkiYu+u7YEsNA==}
     dev: false
 
-  /scroll-into-view-if-needed@2.2.31:
-    resolution: {integrity: sha512-dGCXy99wZQivjmjIqihaBQNjryrz5rueJY7eHfTdyWEiR4ttYpsajb14rn9s5d4DY4EcY6+4+U/maARBXJedkA==}
-    dependencies:
-      compute-scroll-into-view: 1.0.20
-    dev: false
-
   /scroll-into-view-if-needed@3.1.0:
     resolution: {integrity: sha512-49oNpRjWRvnU8NyGVmUaYG4jtTkNonFZI86MmGRDqBphEK2EXT9gdEUoQPZhuBM8yWHxCWbobltqYO5M4XrUvQ==}
     dependencies:
@@ -3050,7 +3025,7 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /slate-dom@0.112.2(slate@0.94.1):
+  /slate-dom@0.112.2(slate@0.112.0):
     resolution: {integrity: sha512-cozITMlpcBxrov854reM6+TooiHiqpfM/nZPrnjpN1wSiDsAQmYbWUyftC+jlwcpFj80vywfDHzlG6hXIc5h6A==}
     peerDependencies:
       slate: '>=0.99.0'
@@ -3061,44 +3036,44 @@ packages:
       is-plain-object: 5.0.0
       lodash: 4.17.21
       scroll-into-view-if-needed: 3.1.0
-      slate: 0.94.1
+      slate: 0.112.0
       tiny-invariant: 1.3.1
     dev: false
 
-  /slate-history@0.93.0(slate@0.94.1):
-    resolution: {integrity: sha512-Gr1GMGPipRuxIz41jD2/rbvzPj8eyar56TVMyJBvBeIpQSSjNISssvGNDYfJlSWM8eaRqf6DAcxMKzsLCYeX6g==}
+  /slate-history@0.110.3(slate@0.112.0):
+    resolution: {integrity: sha512-sgdff4Usdflmw5ZUbhDkxFwCBQ2qlDKMMkF93w66KdV48vHOgN2BmLrf+2H8SdX8PYIpP/cTB0w8qWC2GwhDVA==}
     peerDependencies:
       slate: '>=0.65.3'
     dependencies:
       is-plain-object: 5.0.0
-      slate: 0.94.1
+      slate: 0.112.0
     dev: false
 
-  /slate-react@0.97.0(react-dom@19.0.0)(react@19.0.0)(slate@0.94.1):
-    resolution: {integrity: sha512-C/e0l5hg/z+JZvGlfQJ4MDNJTjQxi4g6vUsSFmUhZXByDwsU0d0+jcbHO2KUjMe+sUKuFrcZmgzoByaeW9UjqA==}
+  /slate-react@0.112.1(react-dom@19.0.0)(react@19.0.0)(slate-dom@0.112.2)(slate@0.112.0):
+    resolution: {integrity: sha512-V9b+waxPweXqAkSQmKQ1afG4Me6nVQACPpxQtHPIX02N7MXa5f5WilYv+bKt7vKKw+IZC2F0Gjzhv5BekVgP/A==}
     peerDependencies:
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
-      slate: '>=0.65.3'
+      react: '>=18.2.0'
+      react-dom: '>=18.2.0'
+      slate: '>=0.99.0'
+      slate-dom: '>=0.110.2'
     dependencies:
       '@juggle/resize-observer': 3.4.0
-      '@types/is-hotkey': 0.1.7
-      '@types/lodash': 4.14.195
       direction: 1.0.4
-      is-hotkey: 0.1.8
+      is-hotkey: 0.2.0
       is-plain-object: 5.0.0
       lodash: 4.17.21
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
-      scroll-into-view-if-needed: 2.2.31
-      slate: 0.94.1
-      tiny-invariant: 1.0.6
+      scroll-into-view-if-needed: 3.1.0
+      slate: 0.112.0
+      slate-dom: 0.112.2(slate@0.112.0)
+      tiny-invariant: 1.3.1
     dev: false
 
-  /slate@0.94.1:
-    resolution: {integrity: sha512-GH/yizXr1ceBoZ9P9uebIaHe3dC/g6Plpf9nlUwnvoyf6V1UOYrRwkabtOCd3ZfIGxomY4P7lfgLr7FPH8/BKA==}
+  /slate@0.112.0:
+    resolution: {integrity: sha512-PRnfFgDA3tSop4OH47zu4M1R4Uuhm/AmASu29Qp7sGghVFb713kPBKEnSf1op7Lx/nCHkRlCa3ThfHtCBy+5Yw==}
     dependencies:
-      immer: 9.0.21
+      immer: 10.1.1
       is-plain-object: 5.0.0
       tiny-warning: 1.0.3
     dev: false
@@ -3202,10 +3177,6 @@ packages:
 
   /timsort@0.3.0:
     resolution: {integrity: sha512-qsdtZH+vMoCARQtyod4imc2nIJwg9Cc7lPRrw9CzF8ZKR0khdr8+2nX80PBhET3tcyTtJDxAffGh2rXH4tyU8A==}
-
-  /tiny-invariant@1.0.6:
-    resolution: {integrity: sha512-FOyLWWVjG+aC0UqG76V53yAWdXfH8bO6FNmyZOuUrzDzK8DI3/JRY25UD7+g49JWM1LXwymsKERB+DzI0dTEQA==}
-    dev: false
 
   /tiny-invariant@1.3.1:
     resolution: {integrity: sha512-AD5ih2NlSssTCwsMznbvwMZpJ1cbhkGd2uueNxzv2jDlEeZdU04JQfRnggJQ8DrcVBGjAsCKwFBbDlVNtEMlzw==}

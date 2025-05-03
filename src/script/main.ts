@@ -1,4 +1,3 @@
-// import "@saeris/typeface-beleren-bold"
 import { createRoot } from "react-dom/client";
 import { getApp } from "./components/App";
 
