@@ -33,6 +33,9 @@ const listColumns: listColumn[] = [
 	{ control: { id: "list#name", type: "text", property_id: "name", min_font_size: 10, max_font_size: 10 }, label: "Name", width: 150 },
 	{ control: { id: "list#cost", type: "text", property_id: "cost", min_font_size: 10, max_font_size: 10 }, label: "Cost", width: 100 },
 	{ control: { id: "list#type", type: "text", property_id: "type", min_font_size: 10, max_font_size: 10 }, label: "Type", width: 120 },
+	// { control: { id: "list#rulesText", type: "text", property_id: "rulesText", min_font_size: 10, max_font_size: 10 }, label: "Rules", width: 200 },
+	// { control: { id: "list#flavorText", type: "text", property_id: "flavorText", min_font_size: 10, max_font_size: 10 }, label: "Flavor", width: 200 },
+	// { control: { id: "list#cardText", type: "text", property_id: "cardText", min_font_size: 10, max_font_size: 10 }, label: "Full", width: 200 },
 ];
 
 export function getApp() {
@@ -66,7 +69,7 @@ export function App() {
 	const setFocus = useToastedCallback((focus: focus) => {
 		switch (focus.type) {
 			case "card_control": {
-				flushSync(() => setActiveCard(focus.card));
+				flushSync(() => setActiveCard(focus.card)); 
 				const el = document.querySelector(`[data-control-id=${focus.control.id}]`) as HTMLElement;
 				el.focus();
 			} break;

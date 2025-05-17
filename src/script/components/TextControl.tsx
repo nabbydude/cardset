@@ -1,4 +1,4 @@
-import React, { KeyboardEvent, MouseEvent, useLayoutEffect } from "react";
+import React, { KeyboardEvent, MouseEvent, useCallback, useLayoutEffect } from "react";
 import { Editor } from "slate";
 import { ReactEditor, Slate } from "slate-react";
 import { colorNamesByLetter, iconUrls } from "../assets";
@@ -27,19 +27,21 @@ export interface TextControlEventProps {
 export function TextControl(props: TextControlProps) {
 	const { card, control, onDOMBeforeInput, onClick, onKeyDown, ...rest } = props;
 	const editor = useTextControlEditor(card, control);
-	useLayoutEffect(() => {
+
+	const resizeText = useCallback(() => {
 		const el = safeToDomNode(editor, editor);
 		if (!el) return;
 		const size = getFillSize(el, control.min_font_size, control.max_font_size, 0.5);
 		el.style.fontSize = asScalingPt(size);
-	});
+	}, []);
+	useLayoutEffect(resizeText);
 
 	const thisOnClick          = useToastedCallback((e: MouseEvent   ) => { onClick         ?.(e, editor);                                                                 }, [editor, onClick         ]);
 	const thisOnKeyDown        = useToastedCallback((e: KeyboardEvent) => { onKeyDown       ?.(e, editor); if(!e.defaultPrevented) onTextControlKeyDown       (e, editor); }, [editor, onKeyDown       ]);
 	const thisOnDOMBeforeInput = useToastedCallback((e: InputEvent   ) => { onDOMBeforeInput?.(e, editor); if(!e.defaultPrevented) onTextControlDOMBeforeInput(e, editor); }, [editor, onDOMBeforeInput]);
 
 	return (
-		<Slate editor={editor} initialValue={editor.children}>
+		<Slate editor={editor} initialValue={editor.children} onChange={useCallback(() => requestAnimationFrame(resizeText), [resizeText])}>
 			<FocusSendingEditable
 				className="text_control"
 				data-card-id={card.id}

@@ -44,16 +44,24 @@ table.card-list {
 
 	td {
 		box-shadow: none !important;
-
-		p {
-			text-overflow: ellipsis;
-			overflow: hidden;
-			white-space: nowrap;
+		text-overflow: ellipsis;
+		overflow: hidden;
+		white-space: nowrap;
+		p, div {
+			display: inline; // I dont think this will cause issues. inline-block causes issues with ellipses
+			margin: 0;
+			&:not(:last-child)::after {
+				content: "/";
+				margin: 0 1ch;
+			}
 		}
 	}
 	th {
 		user-select: none;
 		position: relative;
+		text-overflow: ellipsis;
+		overflow: hidden;
+		white-space: nowrap;
 		&:hover {
 			// background-color: rgba($gray1, 0.3);
 			cursor: pointer;
